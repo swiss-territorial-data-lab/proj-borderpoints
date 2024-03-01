@@ -1,0 +1,33 @@
+ 
+prepare_data.py:
+  working_dir: .
+  output_dir: outputs/formatted_labels
+  border_points: inputs/PL_realite_terrain_20240220/PL_realite_terrain_20240220.shp
+  tile_dir: inputs/geofer_images
+  plan_scales: inputs/plan_scales.xlsx
+
+
+generate_tilesets.py:
+  debug_mode: 
+    enable: False  # sample of tiles
+    nb_tiles_max: 10
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs
+  datasets:
+    aoi_tiles: formatted_labels/tiles.gpkg
+    ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
+    orthophotos_web_service:
+      type: FOLDER
+      url: ../inputs/geofer_images/renamed
+      srs: 2056
+  output_folder: object_detector
+  overwrite: False
+  n_jobs: 10
+  COCO_metadata:
+    year: 1800-2000
+    version: 1.0
+    description: Points limites des anciens plans cadastraux
+    contributor: Canton of Fribourg
+    url: none
+    license:
+      name: unknown
+      url: unknown
