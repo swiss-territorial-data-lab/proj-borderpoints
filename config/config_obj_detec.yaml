@@ -1,10 +1,17 @@
- 
+globals:
+  grid_width_large: 512
+  grid_width_small: 256
+
+
 prepare_data.py:
   working_dir: .
   output_dir: outputs/formatted_labels
   border_points: inputs/PL_realite_terrain_20240220/PL_realite_terrain_20240220.shp
   tile_dir: inputs/geofer_images
   plan_scales: inputs/plan_scales.xlsx
+  thresholds:
+    overlap_large_tiles: 0.5
+    overlap_small_tiles: 0.5
 
 
 generate_tilesets.py:
@@ -31,3 +38,14 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
+
+
+
+prepare_whole_tiles.py:
+  working_dir: .
+  output_dir: outputs/formatted_labels
+  tile_dir: inputs/geofer_images
+  plan_scales: inputs/plan_scales.xlsx
+  thresholds:
+    overlap_large_tiles: 0.5
+    overlap_small_tiles: 0.5

@@ -1,0 +1,189 @@
+import os
+import sys
+from argparse import ArgumentParser
+from loguru import logger
+from tqdm import tqdm
+from yaml import load, FullLoader
+
+import geopandas as gpd
+import pandas as pd
+import rasterio as rio
+from glob import glob
+from shapely.geometry import box
+
+sys.path.insert(1, 'scripts')
+import functions.fct_misc as misc
+import functions.fct_rasters as rasters
+
+logger = misc.format_logger(logger)
+
+
+def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
+    
+    gdf1['total_area'] = gdf1.area
+
+    intersection_gdf = gpd.overlay(gdf1, gdf2, how="difference", keep_geom_type=True)
+    intersection_gdf = intersection_gdf.dissolve('id', as_index=False)
+    intersection_gdf['percentage_area_left'] = intersection_gdf.area / intersection_gdf.total_area
+    if op=='larger':
+        id_to_keep = intersection_gdf.loc[intersection_gdf.percentage_area_left > threshold, 'id'].unique().tolist()
+    elif op=='seq':
+        id_to_keep = intersection_gdf.loc[intersection_gdf.percentage_area_left <= threshold, 'id'].unique().tolist()
+    else:
+        logger.critical('Passed operator is unknow. Please pass "larger" or "seq" (= smaller or equal).')
+        sys.exit(1)
+
+    return id_to_keep
+
+
+def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, overlap_large_tiles=0.5, overlap_small_tiles=0.5, output_dir='outputs'):
+
+    subtiles_gdf = gpd.GeoDataFrame()
+    for tile in tqdm(tiles_gdf.itertuples(), desc='Define a grid to subdivide tiles', total=tiles_gdf.shape[0]):
+        tile_infos = {
+            'tile_size': tuple(map(int, tile.dimension.strip('()').split(', '))), 
+            'tile_origin': tuple(map(float, tile.origin.strip('()').split(', '))), 
+            'pixel_size': tile.pixel_size
+        }
+        nodata_subset_gdf = nodata_gdf[nodata_gdf.tile_name==tile.name]
+
+        # Make a large tiling grid to cover the image
+        temp_gdf = rasters.grid_over_tiles(grid_width=grid_width_large, grid_height=grid_width_large, **tile_infos)
+
+        # Only keep tiles that do not overlap too much the nodata zone
+        large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=overlap_large_tiles)
+        large_subtiles_gdf = temp_gdf[temp_gdf.id.isin(large_id_on_image)].copy()
+        large_subtiles_gdf.loc[:, 'id'] = [subtile_id + '_' + str(tile.scale) for subtile_id in large_subtiles_gdf.id] 
+        large_subtiles_gdf['initial_tile'] = tile.name
+
+        # Make a smaller tiling grid to not lose too much data
+        temp_gdf = rasters.grid_over_tiles(grid_width=grid_width_small, grid_height=grid_width_small, **tile_infos)
+        small_subtiles_gdf = gpd.overlay(temp_gdf, large_subtiles_gdf, how='difference', keep_geom_type=True)
+        small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area < 1].copy()
+        
+        if not small_subtiles_gdf.empty:
+            # Only keep tiles that do not overlap too much the nodata zone
+            small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=overlap_small_tiles)
+            small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
+            small_subtiles_gdf.loc[:, 'id'] = [subtile_id + '_' + str(tile.scale) for subtile_id in small_subtiles_gdf.id] 
+
+        subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf, small_subtiles_gdf], ignore_index=True)
+        large_subtiles_gdf['initial_tile'] = tile.name
+
+    filepath = os.path.join(output_dir, 'subtiles.gpkg')
+    subtiles_gdf.to_file(filepath)
+
+    return subtiles_gdf, filepath
+
+
+def get_delimitation_tiles(tile_dir, plan_scales_path, 
+                           grid_width_large, grid_width_small, overlap_large_tiles=0.5, overlap_small_tiles=0.5, 
+                           output_dir='outputs', overwrite_tiles=False, subtiles=False):
+
+    os.makedirs(output_dir, exist_ok=True)
+    written_files = [] 
+
+    output_path_tiles = os.path.join(output_dir, 'tiles.gpkg')
+    output_path_nodata = os.path.join(output_dir, 'nodata_areas.gpkg')
+
+    if not overwrite_tiles and os.path.exists(output_path_tiles) and os.path.exists(output_path_nodata):
+        tiles_gdf = gpd.read_file(output_path_tiles)
+        nodata_gdf=gpd.read_file(output_path_nodata)
+
+    else:
+        logger.info('Get the delimitation and nodata area of tiles...')
+        tile_list = glob(os.path.join(tile_dir, '*.tif'))
+        plan_scales = pd.read_excel(plan_scales_path)
+
+        tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size': [], 'dimension': [], 'origin': []}
+        nodata_gdf = gpd.GeoDataFrame()
+        strip_str = '_georeferenced.tif'
+        for tile in tqdm(tile_list, desc='Read tile info'):
+            tile_name = os.path.basename(tile).rstrip(strip_str)
+            tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+
+            # Set attribute of the tiles
+            tiles_dict['name'].append(tile_name)
+            tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:]}, {tile_scale})")
+            tiles_dict['scale'].append(tile_scale)
+
+            with rio.open(tile) as src:
+                bounds = src.bounds
+                first_band = src.read(1)
+                transform = src.transform
+                nodata_value = 0 # src.nodata
+                tile_size = (src.width, src.height)
+                    
+            # Set tile geometry
+            geom = box(*bounds)
+            tiles_dict['geometry'].append(geom)
+            tiles_dict['dimension'].append(str(tile_size))
+            tiles_dict['origin'].append(str(rasters.get_tiles_origin(geom)))
+
+            # Set pixel size
+            pixel_size = round(transform[0], 5)
+            try:
+                assert round(transform[0], 5) == round(-transform[4], 5), f'The pixels are not square on tile {tile_name}: {transform[0]}x{-transform[4]}.'
+            except AssertionError as e:
+                logger.error(e)
+                logger.warning('Using the smaller dimension as the pixel size.')
+
+            tiles_dict['pixel_size'].append(pixel_size)
+
+            # Transform nodata area into polygons
+            padded_band = rasters.pad_band_with_nodata(first_band, tile_size, nodata_value, grid_width=grid_width_large, grid_height=grid_width_large)
+            temp_gdf = rasters.no_data_to_polygons(padded_band, transform, nodata_value, tile_name)
+            nodata_gdf = pd.concat([nodata_gdf, temp_gdf], ignore_index=True)
+
+        tiles_gdf = gpd.GeoDataFrame(tiles_dict, crs='EPSG:2056')
+
+        tiles_gdf.to_file(output_path_tiles)
+        written_files.append(output_path_tiles)
+
+        nodata_gdf.to_file(output_path_nodata)
+        written_files.append(output_path_nodata)
+
+
+    if subtiles:
+        subtiles_gdf, filepath = define_subtiles(tiles_gdf, nodata_gdf, 
+                                                        grid_width_large, grid_width_small, overlap_large_tiles, overlap_small_tiles, 
+                                                        output_dir)
+        written_files.append(filepath)
+
+        return tiles_gdf, subtiles_gdf, written_files
+    else:
+        return tiles_gdf, None, written_files
+
+
+# Argument and parameter specification
+parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
+parser.add_argument('config_file', type=str, help='Framework configuration file')
+args = parser.parse_args()
+
+logger.info(f"Using {args.config_file} as config file.")
+with open(args.config_file) as fp:
+    cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+
+
+# Load input parameters
+WORKING_DIR = cfg['working_dir']
+OUTPUT_DIR = cfg['output_dir']
+
+TILE_DIR = cfg['tile_dir']
+PLAN_SCALES = cfg['plan_scales']
+
+OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
+OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
+GRID_LARGE_TILES = 512
+GRID_SMALL_TILES = 256
+
+os.chdir(WORKING_DIR)
+
+_, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
+                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES, 
+                                             OUTPUT_DIR, subtiles=True)
+
+print()
+logger.success("The following files were written. Let's check them out!")
+for written_file in written_files:
+    logger.success(written_file)
