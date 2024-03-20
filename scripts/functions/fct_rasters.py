@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.features
-from shapely.geometry import box, Polygon, shape
+from shapely.geometry import Polygon, shape
 
 from math import ceil
 
@@ -56,7 +56,7 @@ def grid_over_tiles(tile_size, tile_origin, pixel_size, grid_width=256, grid_hei
     return grid_gdf
 
 
-def no_data_to_polygons(image_band, transform, nodata_value, tile_name=None):
+def no_data_to_polygons(image_band, transform, nodata_value, crs="EPSG:2056"):
     """Convert nodata values in raster (numpy array) to polygons
     cf. https://gis.stackexchange.com/questions/295362/polygonize-raster-file-according-to-band-values
 
@@ -72,22 +72,21 @@ def no_data_to_polygons(image_band, transform, nodata_value, tile_name=None):
     shapes = list(rasterio.features.shapes(image_band, transform=transform))
     nodata_polygons.extend([shape(geom) for geom, value in shapes if value == nodata_value])
 
-    nodata_df = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs='EPSG:2056')
-    if tile_name:
-        nodata_df['tile_name'] = tile_name
+    nodata_df = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs=crs)
 
     return nodata_df
 
 
-def pad_band_with_nodata(tile, tile_size, nodata = 9999, grid_width=256, grid_height=256):     # TODO: nodata value to adapt
+# def pad_band_with_nodata(tile, tile_size, nodata = 9999, grid_width=256, grid_height=256):     # TODO: nodata value to adapt
 
-    tile_width, tile_height = tile_size
-    number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height)
+#     tile_width, tile_height = tile_size
+#     number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height)
 
-    # Get difference between grid size and tile size
-    pad_width_x = number_cells_x * grid_width - tile_width
-    pad_width_y = number_cells_y * grid_height - tile_height
+#     # Get difference between grid size and tile size
+#     pad_width_x = number_cells_x * grid_width - tile_width
+#     pad_width_y = number_cells_y * grid_height - tile_height
 
-    padded_tile = np.pad(tile, ((0, pad_width_x), (0, pad_width_y)), constant_values=nodata)
+#     # Pad the tile on its top and right side
+#     padded_tile = np.pad(tile, ((pad_width_x, 0), (0, pad_width_y)), constant_values=nodata)
 
-    return padded_tile
+#     return padded_tile

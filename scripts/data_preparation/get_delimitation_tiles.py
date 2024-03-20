@@ -9,7 +9,7 @@ import geopandas as gpd
 import pandas as pd
 import rasterio as rio
 from glob import glob
-from shapely.geometry import box
+from shapely.geometry import box, Polygon
 
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
@@ -135,8 +135,9 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             tiles_dict['pixel_size'].append(pixel_size)
 
             # Transform nodata area into polygons
-            padded_band = rasters.pad_band_with_nodata(first_band, tile_size, nodata_value, grid_width=grid_width_large, grid_height=grid_width_large)
-            temp_gdf = rasters.no_data_to_polygons(padded_band, transform, nodata_value, tile_name)
+            temp_gdf = rasters.no_data_to_polygons(first_band, transform, nodata_value)
+            temp_gdf = pad_geodataframe(temp_gdf, bounds, tile_size, pixel_size, grid_width_large, grid_width_large)
+            temp_gdf['tile_name'] = tile_name
             nodata_gdf = pd.concat([nodata_gdf, temp_gdf], ignore_index=True)
 
         tiles_gdf = gpd.GeoDataFrame(tiles_dict, crs='EPSG:2056')
@@ -157,6 +158,39 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
         return tiles_gdf, subtiles_gdf, written_files
     else:
         return tiles_gdf, None, written_files
+    
+    
+def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256):
+
+    min_x, min_y, max_x, max_y = tile_bounds
+    tile_width, tile_height = tile_size
+    number_cells_x, number_cells_y = rasters.get_grid_size(tile_size, grid_width, grid_height)
+
+    # Get difference between grid size and tile size
+    pad_width_px_x = number_cells_x * grid_width - tile_width
+    pad_width_px_y = number_cells_y * grid_height - tile_height
+
+    # Convert dimensions from pixels to meters
+    pad_width_m_x = pad_width_px_x * pixel_size
+    pad_width_m_y = pad_width_px_y * pixel_size
+
+    # Pad on the top
+    vertices = [(min_x, max_y),
+                (max_x + pad_width_m_x, max_y),
+                (max_x + pad_width_m_x, max_y + pad_width_m_y),
+                (min_x, max_y + pad_width_m_y)]
+    polygon_top = Polygon(vertices)
+    
+    # Pad on the right
+    vertices = [(max_x, min_y),
+                (max_x + pad_width_m_x, min_y),
+                (max_x + pad_width_m_x, max_y ),
+                (max_x, max_y)]
+    polygon_right = Polygon(vertices)
+
+    gdf = pd.concat([gdf, gpd.GeoDataFrame({'id_nodata_poly': [10001, 10002], 'geometry': [polygon_top, polygon_right]}, crs="EPSG:2056")])
+
+    return gdf
 
 # ------------------------------------------
 
@@ -171,6 +205,8 @@ if __name__ == "__main__":
     with open(args.config_file) as fp:
         cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
+    with open(args.config_file) as fp:
+        cfg_globals = load(fp, Loader=FullLoader)['globals']
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
@@ -179,16 +215,18 @@ if __name__ == "__main__":
     TILE_DIR = cfg['tile_dir']
     PLAN_SCALES = cfg['plan_scales']
 
-    OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
-    OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
-    GRID_LARGE_TILES = 512
-    GRID_SMALL_TILES = 256
+    OVERLAP_LARGE_TILES = cfg_globals['thresholds']['overlap_large_tiles']
+    OVERLAP_SMALL_TILES = cfg_globals['thresholds']['overlap_small_tiles']
+    GRID_LARGE_TILES = cfg_globals['grid_width_large']
+    GRID_SMALL_TILES = cfg_globals['grid_width_large']
+
+    OVERWRITE = cfg_globals['overwrite']
 
     os.chdir(WORKING_DIR)
 
     _, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
                                                 GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES, 
-                                                OUTPUT_DIR, subtiles=True)
+                                                OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
 
     print()
     logger.success("The following files were written. Let's check them out!")
