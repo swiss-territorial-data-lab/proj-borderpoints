@@ -1,6 +1,7 @@
 globals:
   grid_width_large: 512
   grid_width_small: 256
+  overwrite: False
 
 
 prepare_data.py:
