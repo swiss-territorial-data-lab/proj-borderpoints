@@ -31,26 +31,30 @@ def format_labels(path_points_poly, output_dir='outputs'):
 
     return pts_gdf, written_files
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
 
-logger.info(f"Using {args.config_file} as config file.")
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+# ------------------------------------------
 
-# Load input parameters
-WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR = cfg['output_dir']
+if __name__ == "__main__":
+    # Argument and parameter specification
+    parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
+    parser.add_argument('config_file', type=str, help='Framework configuration file')
+    args = parser.parse_args()
 
-BORDER_POINTS = cfg['border_points']
+    logger.info(f"Using {args.config_file} as config file.")
+    with open(args.config_file) as fp:
+        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
-os.chdir(WORKING_DIR)
+    # Load input parameters
+    WORKING_DIR = cfg['working_dir']
+    OUTPUT_DIR = cfg['output_dir']
 
-_, written_files = format_labels(BORDER_POINTS, OUTPUT_DIR)
+    BORDER_POINTS = cfg['border_points']
 
-print()
-logger.success("The following files were written. Let's check them out!")
-for written_file in written_files:
-    logger.success(written_file)
+    os.chdir(WORKING_DIR)
+
+    _, written_files = format_labels(BORDER_POINTS, OUTPUT_DIR)
+
+    print()
+    logger.success("The following files were written. Let's check them out!")
+    for written_file in written_files:
+        logger.success(written_file)

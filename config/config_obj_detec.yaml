@@ -4,10 +4,10 @@ globals:
 
 
 prepare_data.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir: outputs/formatted_labels
-  border_points: inputs/PL_realite_terrain_20240220/PL_realite_terrain_20240220.shp
-  tile_dir: inputs/geofer_images
+  border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
+  tile_dir: inputs/plans/geofer_images/2nd_save
   plan_scales: inputs/plan_scales.xlsx
   thresholds:
     overlap_large_tiles: 0.5

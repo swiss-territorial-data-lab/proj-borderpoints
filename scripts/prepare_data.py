@@ -41,16 +41,18 @@ PLAN_SCALES = cfg['plan_scales']
 OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
 OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
 GRID_LARGE_TILES = cfg_globals['grid_width_large']
-GRID_SMALL_TILES = cfg_globals['grid_width_large']
+GRID_SMALL_TILES = cfg_globals['grid_width_small']
 
 os.chdir(WORKING_DIR)
 
-pts_gdf, written_files = format_labels(BORDER_POINTS, OUTPUT_DIR)
+pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR)
 
-tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, GRID_LARGE_TILES, OUTPUT_DIR, subtiles=True)
+tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, PLAN_SCALES,
+                                                                                            GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
+                                                                                            OUTPUT_DIR, subtiles=True)
 written_files.extend(tmp_written_files)
 
-rename_with_hard_link(tiles_gdf, TILE_DIR)
+rename_with_hard_link.rename_with_hard_link(tiles_gdf, TILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")

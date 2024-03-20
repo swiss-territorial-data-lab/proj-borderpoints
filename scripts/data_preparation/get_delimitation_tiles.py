@@ -100,7 +100,11 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
         strip_str = '_georeferenced.tif'
         for tile in tqdm(tile_list, desc='Read tile info'):
             tile_name = os.path.basename(tile).rstrip(strip_str)
-            tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+            if tile_name in plan_scales.Num_plan.unique():
+                tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+            else:
+                logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
+                continue
 
             # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
@@ -154,36 +158,39 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
     else:
         return tiles_gdf, None, written_files
 
+# ------------------------------------------
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
+if __name__ == "__main__":
 
-logger.info(f"Using {args.config_file} as config file.")
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+    # Argument and parameter specification
+    parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
+    parser.add_argument('config_file', type=str, help='Framework configuration file')
+    args = parser.parse_args()
+
+    logger.info(f"Using {args.config_file} as config file.")
+    with open(args.config_file) as fp:
+        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
 
-# Load input parameters
-WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR = cfg['output_dir']
+    # Load input parameters
+    WORKING_DIR = cfg['working_dir']
+    OUTPUT_DIR = cfg['output_dir']
 
-TILE_DIR = cfg['tile_dir']
-PLAN_SCALES = cfg['plan_scales']
+    TILE_DIR = cfg['tile_dir']
+    PLAN_SCALES = cfg['plan_scales']
 
-OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
-OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
-GRID_LARGE_TILES = 512
-GRID_SMALL_TILES = 256
+    OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
+    OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
+    GRID_LARGE_TILES = 512
+    GRID_SMALL_TILES = 256
 
-os.chdir(WORKING_DIR)
+    os.chdir(WORKING_DIR)
 
-_, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
-                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES, 
-                                             OUTPUT_DIR, subtiles=True)
+    _, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
+                                                GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES, 
+                                                OUTPUT_DIR, subtiles=True)
 
-print()
-logger.success("The following files were written. Let's check them out!")
-for written_file in written_files:
-    logger.success(written_file)
+    print()
+    logger.success("The following files were written. Let's check them out!")
+    for written_file in written_files:
+        logger.success(written_file)
