@@ -17,8 +17,8 @@ def get_grid_size(tile_size, grid_width=256, grid_height=256):
     return number_cells_x, number_cells_y
 
 
-def get_tiles_origin(tile_geom):
-    coords = tile_geom.exterior.coords.xy
+def get_bbox_origin(bbox_geom):
+    coords = bbox_geom.exterior.coords.xy
     min_x = min(coords[0])
     min_y = min(coords[1])
 
@@ -51,7 +51,7 @@ def grid_over_tiles(tile_size, tile_origin, pixel_size, grid_width=256, grid_hei
     # Create a GeoDataFrame from the polygons
     grid_gdf = gpd.GeoDataFrame(geometry=polygons, crs=crs)
 
-    grid_gdf['id'] = [f'{round(min_x)}_{round(min_y)}' for min_x, min_y in [get_tiles_origin(poly) for poly in grid_gdf.geometry]]
+    grid_gdf['id'] = [f'{round(min_x)}_{round(min_y)}' for min_x, min_y in [get_bbox_origin(poly) for poly in grid_gdf.geometry]]
 
     return grid_gdf
 

@@ -103,8 +103,11 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             if tile_name in plan_scales.Num_plan.unique():
                 tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
             else:
-                logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
-                continue
+                try:
+                    tile_scale = int(tile_name.split('_')[0])
+                except:
+                    logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
+                    continue
 
             # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
@@ -122,7 +125,7 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             geom = box(*bounds)
             tiles_dict['geometry'].append(geom)
             tiles_dict['dimension'].append(str(tile_size))
-            tiles_dict['origin'].append(str(rasters.get_tiles_origin(geom)))
+            tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
 
             # Set pixel size
             pixel_size = round(transform[0], 5)
@@ -188,7 +191,7 @@ def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, gr
                 (max_x, max_y)]
     polygon_right = Polygon(vertices)
 
-    gdf = pd.concat([gdf, gpd.GeoDataFrame({'id_nodata_poly': [10001, 10002], 'geometry': [polygon_top, polygon_right]}, crs="EPSG:2056")])
+    gdf = pd.concat([gdf, gpd.GeoDataFrame({'id_nodata_poly': [10001, 10002], 'geometry': [polygon_top, polygon_right]}, crs="EPSG:2056")], ignore_index=True)
 
     return gdf
 

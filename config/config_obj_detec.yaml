@@ -1,18 +1,20 @@
 globals:
   grid_width_large: 512
   grid_width_small: 256
-  overwrite: False
+  overwrite: True
+  thresholds:
+    overlap_large_tiles: 0.5
+    overlap_small_tiles: 0.5
 
 
 prepare_data.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  output_dir: outputs/formatted_labels
+  output_dir_vectors: outputs/formatted_labels
+  output_dir_tiles: outputs/clipped_tiles
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
+  bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
   tile_dir: inputs/plans/geofer_images/2nd_save
   plan_scales: inputs/plan_scales.xlsx
-  thresholds:
-    overlap_large_tiles: 0.5
-    overlap_small_tiles: 0.5
 
 
 generate_tilesets.py:
@@ -41,12 +43,8 @@ generate_tilesets.py:
       url: unknown
 
 
-
 prepare_whole_tiles.py:
-  working_dir: .
-  output_dir: outputs/formatted_labels
-  tile_dir: inputs/geofer_images
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  output_dir: outputs/whole_tiles
+  tile_dir: inputs/plans/geofer_images/2nd_save
   plan_scales: inputs/plan_scales.xlsx
-  thresholds:
-    overlap_large_tiles: 0.5
-    overlap_small_tiles: 0.5

@@ -16,7 +16,7 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs'):
+def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs', overwrite=False):
 
     written_files = []
 
@@ -37,6 +37,9 @@ def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs'):
             
             (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
             output_path = os.path.join(output_dir, f"{bbox.Echelle}_{round(min_x)}_{round(min_y)}.tif")
+
+            if not overwrite and os.path.exists(output_path):
+                continue
 
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
@@ -70,10 +73,12 @@ if __name__ == "__main__":
     TILE_DIR = cfg['tile_dir']
     BBOX_PATH = cfg['bbox_path']
 
+    OVERWRITE = cfg_globals['overwrite']
+
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
+    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES, OVERWRITE)
 
     print()
     logger.success("The following files were written. Let's check them out!")

@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import format_labels, get_delimitation_tiles  , rename_with_hard_link
+from data_preparation import format_labels, tiles_to_bbox, get_delimitation_tiles  , rename_with_hard_link
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -32,14 +32,16 @@ with open(args.config_file) as fp:
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR = cfg['output_dir']
+OUTPUT_DIR_VECTORS = cfg['output_dir_vectors']
+OUTPUT_DIR_TILES = cfg['output_dir_tiles']
 
 BORDER_POINTS = cfg['border_points']
+BBOX = cfg['bbox']
 TILE_DIR = cfg['tile_dir']
 PLAN_SCALES = cfg['plan_scales']
 
-OVERLAP_LARGE_TILES = cfg['thresholds']['overlap_large_tiles']
-OVERLAP_SMALL_TILES = cfg['thresholds']['overlap_small_tiles']
+OVERLAP_LARGE_TILES = cfg_globals['thresholds']['overlap_large_tiles']
+OVERLAP_SMALL_TILES = cfg_globals['thresholds']['overlap_small_tiles']
 GRID_LARGE_TILES = cfg_globals['grid_width_large']
 GRID_SMALL_TILES = cfg_globals['grid_width_small']
 
@@ -47,14 +49,14 @@ OVERWRITE = cfg_globals['overwrite']
 
 os.chdir(WORKING_DIR)
 
-pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR)
+pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
-tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, PLAN_SCALES,
+tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
+
+tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES, PLAN_SCALES,
                                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
-                                                                                            OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
+                                                                                            OUTPUT_DIR_VECTORS, overwrite_tiles=OVERWRITE, subtiles=True)
 written_files.extend(tmp_written_files)
-
-rename_with_hard_link.rename_with_hard_link(tiles_gdf, TILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")
