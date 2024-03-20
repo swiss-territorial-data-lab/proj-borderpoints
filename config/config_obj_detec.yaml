@@ -1,7 +1,7 @@
 globals:
   grid_width_large: 512
   grid_width_small: 256
-  overwrite: True
+  overwrite: False
   thresholds:
     overlap_large_tiles: 0.5
     overlap_small_tiles: 0.5

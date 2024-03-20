@@ -59,7 +59,7 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, o
         # Make a smaller tiling grid to not lose too much data
         temp_gdf = rasters.grid_over_tiles(grid_width=grid_width_small, grid_height=grid_width_small, **tile_infos)
         small_subtiles_gdf = gpd.overlay(temp_gdf, large_subtiles_gdf, how='difference', keep_geom_type=True)
-        small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area < 1].copy()
+        small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area > 10].copy()
         
         if not small_subtiles_gdf.empty:
             # Only keep tiles that do not overlap too much the nodata zone
