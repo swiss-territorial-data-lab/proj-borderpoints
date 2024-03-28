@@ -35,9 +35,10 @@ OUTPUT_DIR = cfg['output_dir']
 
 TILE_DIR = cfg['tile_dir']
 PLAN_SCALES = cfg['plan_scales']
+OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
-OVERLAP_LARGE_TILES = cfg_globals['thresholds']['overlap_large_tiles']
-OVERLAP_SMALL_TILES = cfg_globals['thresholds']['overlap_small_tiles']
+OVERLAP_LARGE_TILES = cfg_globals['thresholds']['max_nodata_large_tiles']
+OVERLAP_SMALL_TILES = cfg_globals['thresholds']['max_nodata_small_tiles']
 GRID_LARGE_TILES = cfg_globals['grid_width_large']
 GRID_SMALL_TILES = cfg_globals['grid_width_large']
 
@@ -47,6 +48,7 @@ os.chdir(WORKING_DIR)
 
 tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, PLAN_SCALES,
                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
+                                                                            OVERLAP_INFO,
                                                                             OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
 
 rename_with_hard_link.rename_with_hard_link(tiles_gdf, TILE_DIR, OVERWRITE)

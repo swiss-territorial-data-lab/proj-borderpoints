@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import format_labels, tiles_to_bbox, get_delimitation_tiles  , rename_with_hard_link
+from data_preparation import format_labels, tiles_to_bbox, get_delimitation_tiles, get_point_bbox_size
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -39,9 +39,10 @@ BORDER_POINTS = cfg['border_points']
 BBOX = cfg['bbox']
 TILE_DIR = cfg['tile_dir']
 PLAN_SCALES = cfg['plan_scales']
+OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
-OVERLAP_LARGE_TILES = cfg_globals['thresholds']['overlap_large_tiles']
-OVERLAP_SMALL_TILES = cfg_globals['thresholds']['overlap_small_tiles']
+OVERLAP_LARGE_TILES = cfg_globals['thresholds']['max_nodata_large_tiles']
+OVERLAP_SMALL_TILES = cfg_globals['thresholds']['max_nodata_small_tiles']
 GRID_LARGE_TILES = cfg_globals['grid_width_large']
 GRID_SMALL_TILES = cfg_globals['grid_width_small']
 
@@ -51,10 +52,15 @@ os.chdir(WORKING_DIR)
 
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
-tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
+size_per_scale_df, tmp_written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR_VECTORS)
+written_files.extend(tmp_written_files)
+
+# tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
+# written_files.extend(tmp_written_files)
 
 tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES, PLAN_SCALES,
                                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
+                                                                                            OVERLAP_INFO,
                                                                                             OUTPUT_DIR_VECTORS, overwrite_tiles=OVERWRITE, subtiles=True)
 written_files.extend(tmp_written_files)
 

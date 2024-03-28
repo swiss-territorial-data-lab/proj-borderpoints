@@ -6,13 +6,13 @@ import rasterio
 import rasterio.features
 from shapely.geometry import Polygon, shape
 
-from math import ceil
+from math import ceil, floor
 
-def get_grid_size(tile_size, grid_width=256, grid_height=256):
+def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
 
     tile_width, tile_height = tile_size
-    number_cells_x = ceil(tile_width/grid_width)
-    number_cells_y = ceil(tile_height/grid_height)
+    number_cells_x = ceil((tile_width - max_dx)/(grid_width - max_dx))
+    number_cells_y = ceil((tile_height - max_dy)/(grid_height - max_dy))
 
     return number_cells_x, number_cells_y
 
@@ -24,25 +24,27 @@ def get_bbox_origin(bbox_geom):
 
     return (min_x, min_y)
 
-def grid_over_tiles(tile_size, tile_origin, pixel_size, grid_width=256, grid_height=256, crs='EPSG:2056'):
+def grid_over_tiles(tile_size, tile_origin, pixel_size, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
 
     min_x, min_y = tile_origin
 
-    number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height)
+    number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height, max_dx, max_dy)
 
     # Convert dimensions from pixels to meters
     grid_x_dim = grid_width * pixel_size
     grid_y_dim = grid_height * pixel_size
+    max_dx_dim = max_dx * pixel_size
+    max_dy_dim = max_dy * pixel_size
 
     # Create grid polygons
     polygons = []
     for x in range(number_cells_x):
         for y in range(number_cells_y):
             # Define the coordinates of the polygon vertices
-            vertices = [(min_x + x * grid_x_dim, min_y + y * grid_y_dim),
-                        (min_x + (x + 1) * grid_x_dim, min_y + y * grid_y_dim),
-                        (min_x + (x + 1) * grid_x_dim, min_y + (y + 1) * grid_y_dim),
-                        (min_x + x * grid_x_dim, min_y + (y + 1) * grid_y_dim)]
+            vertices = [(min_x + x * (grid_x_dim - max_dx_dim), min_y + y * (grid_y_dim - max_dy_dim)),
+                        (min_x + (x + 1) * grid_x_dim - x * max_dx_dim, min_y + y * (grid_y_dim - max_dy_dim)),
+                        (min_x + (x + 1) * grid_x_dim - x * max_dx_dim, min_y + (y + 1) * grid_y_dim - y * max_dy_dim),
+                        (min_x + x * (grid_x_dim - max_dx_dim), min_y + (y + 1) * grid_y_dim - y * max_dy_dim)]
 
             # Create a Polygon object
             polygon = Polygon(vertices)
@@ -75,18 +77,3 @@ def no_data_to_polygons(image_band, transform, nodata_value, crs="EPSG:2056"):
     nodata_df = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs=crs)
 
     return nodata_df
-
-
-# def pad_band_with_nodata(tile, tile_size, nodata = 9999, grid_width=256, grid_height=256):     # TODO: nodata value to adapt
-
-#     tile_width, tile_height = tile_size
-#     number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height)
-
-#     # Get difference between grid size and tile size
-#     pad_width_x = number_cells_x * grid_width - tile_width
-#     pad_width_y = number_cells_y * grid_height - tile_height
-
-#     # Pad the tile on its top and right side
-#     padded_tile = np.pad(tile, ((pad_width_x, 0), (0, pad_width_y)), constant_values=nodata)
-
-#     return padded_tile
