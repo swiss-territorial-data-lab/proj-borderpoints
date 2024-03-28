@@ -15,7 +15,7 @@ prepare_data.py:
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
   plan_scales: inputs/plan_scales.xlsx
-  overlap_info: outputs/formatted_labels/max_point_size.csv
+  # overlap_info: outputs/formatted_labels/max_point_size.csv
 
 
 generate_tilesets.py:
