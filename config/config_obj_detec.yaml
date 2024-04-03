@@ -50,3 +50,9 @@ prepare_whole_tiles.py:
   tile_dir: inputs/plans/geofer_images/2nd_save
   plan_scales: inputs/plan_scales.xlsx
   overlap_info: outputs/formatted_labels/max_point_size.csv
+
+
+pct_to_rgb.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  input_dir: inputs/plans
+  output_dir: outputs/plans_rgb

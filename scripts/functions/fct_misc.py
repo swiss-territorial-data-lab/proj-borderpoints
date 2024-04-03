@@ -27,7 +27,7 @@ def format_logger(logger):
 
 
 def make_hard_link(img_file, new_img_file):
-
+        
         if not os.path.isfile(img_file):
                 raise FileNotFoundError(img_file)
 
