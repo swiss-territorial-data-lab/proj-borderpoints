@@ -18,7 +18,7 @@ logger = format_logger(logger)
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_value=0, overwrite=False):
+def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overwrite=False):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -39,6 +39,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_value=0, overw
             meta = src.meta
             colormap = src.colormap(1)
 
+        nodata_value = colormap[nodata_key][0]
         converted_image = np.empty((3, meta['height'], meta['width']))
         # Efficient mapping: https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
         mapping_key = np.array(list(colormap.keys()))
@@ -80,13 +81,13 @@ if __name__ == "__main__":
     INPUT_DIR = cfg['input_dir']
     OUTPUT_DIR = cfg['output_dir']
 
-    NODATA_VALUE = cfg['nodata_value'] if 'nodata_value' in cfg.keys() else 0
+    NODATA_KEY = cfg['nodata_key'] if 'nodata_key' in cfg.keys() else 255
 
     OVERWRITE = cfg_globals['overwrite']
 
     os.chdir(WORKING_DIR)
 
-    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, NODATA_VALUE, OVERWRITE)
+    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, NODATA_KEY, OVERWRITE)
 
     print()
     logger.success(f"The files were written in the folder {OUTPUT_DIR}. Let's check them out!")
