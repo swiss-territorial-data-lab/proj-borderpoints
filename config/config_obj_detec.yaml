@@ -1,0 +1,12 @@
+globals:
+  grid_width_large: 512
+  grid_width_small: 256
+  overwrite: True
+  thresholds:
+    max_nodata_large_tiles: 0.5
+    max_nodata_small_tiles: 0.5
+
+pct_to_rgb.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  input_dir: inputs/plans
+  output_dir: outputs/plans_rgb
