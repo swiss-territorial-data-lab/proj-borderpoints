@@ -41,6 +41,8 @@ TILE_DIR = cfg['tile_dir']
 PLAN_SCALES = cfg['plan_scales']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
+TILE_SUFFIX = cfg_globals['original_tile_suffix']
+
 OVERLAP_LARGE_TILES = cfg_globals['thresholds']['max_nodata_large_tiles']
 OVERLAP_SMALL_TILES = cfg_globals['thresholds']['max_nodata_small_tiles']
 GRID_LARGE_TILES = cfg_globals['grid_width_large']
@@ -55,12 +57,12 @@ pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_V
 size_per_scale_df, tmp_written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 written_files.extend(tmp_written_files)
 
-tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
+tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE, tile_suffix=TILE_SUFFIX)
 written_files.extend(tmp_written_files)
 
 tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES, PLAN_SCALES,
                                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
-                                                                                            OVERLAP_INFO,
+                                                                                            OVERLAP_INFO, TILE_SUFFIX,
                                                                                             OUTPUT_DIR_VECTORS, overwrite_tiles=OVERWRITE, subtiles=True)
 written_files.extend(tmp_written_files)
 

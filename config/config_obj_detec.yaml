@@ -1,4 +1,5 @@
 globals:
+  original_tile_suffix: _geo.tif
   grid_width_large: 512
   grid_width_small: 256
   overwrite: True
@@ -7,11 +8,17 @@ globals:
     max_nodata_small_tiles: 0.5
 
 
+pct_to_rgb.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  input_dir: inputs/plans
+  output_dir: outputs/plans_rgb
+
+
 prepare_data.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir_vectors: outputs/formatted_labels
   output_dir_tiles: outputs/clipped_tiles
-  tile_dir: inputs/plans/geofer_images/2nd_save
+  tile_dir: outputs/plans_rgb
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
   plan_scales: inputs/plan_scales.xlsx
@@ -47,12 +54,7 @@ generate_tilesets.py:
 prepare_whole_tiles.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir: outputs/whole_tiles
-  tile_dir: inputs/plans/geofer_images/2nd_save
+  tile_dir: outputs/plans_rgb
   plan_scales: inputs/plan_scales.xlsx
   overlap_info: outputs/formatted_labels/max_point_size.csv
 
-
-pct_to_rgb.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  input_dir: inputs/plans
-  output_dir: outputs/plans_rgb

@@ -38,12 +38,14 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
 
 def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, max_nodata_large_tiles=0.5, max_nodata_small_tiles=0.5, output_dir='outputs'):
 
+    logger.info('Determine subtiles...')
     subtiles_gdf = gpd.GeoDataFrame()
     for tile in tqdm(tiles_gdf.itertuples(), desc='Define a grid to subdivide tiles', total=tiles_gdf.shape[0]):
         tile_infos = {
             'tile_size': tuple(map(int, tile.dimension.strip('()').split(', '))), 
             'tile_origin': tuple(map(float, tile.origin.strip('()').split(', '))), 
-            'pixel_size': tile.pixel_size,
+            'pixel_size_x': tile.pixel_size_x,
+            'pixel_size_y': tile.pixel_size_y,
             'max_dx': tile.max_dx,
             'max_dy': tile.max_dy
         }
@@ -69,11 +71,11 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, m
                 small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=max_nodata_small_tiles)
                 small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
                 small_subtiles_gdf.loc[:, 'id'] = [subtile_id + '_' + str(tile.scale) for subtile_id in small_subtiles_gdf.id]
+                small_subtiles_gdf['initial_tile'] = tile.name
 
-                subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf, small_subtiles_gdf], ignore_index=True)
+                subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
         
-        else:
-            subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
+        subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
 
 
     filepath = os.path.join(output_dir, 'subtiles.gpkg')
@@ -84,7 +86,7 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, m
 
 def get_delimitation_tiles(tile_dir, plan_scales_path,
                            grid_width_large, grid_width_small, max_nodata_large_tiles=0.5, max_nodata_small_tiles=0.5, 
-                           overlap_info = None,
+                           overlap_info=None, tile_suffix='.tif',
                            output_dir='outputs', overwrite_tiles=False, subtiles=False):
 
     os.makedirs(output_dir, exist_ok=True)
@@ -99,7 +101,7 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
 
     else:
         
-        logger.info('Get the delimitation and nodata area of tiles...')
+        logger.info('Read info for tiles...')
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
         plan_scales = pd.read_excel(plan_scales_path)
 
@@ -116,12 +118,12 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             logger.error('Unrecognized format for the overlap info!')
             sys.exit(1)
 
-        tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
+        logger.info('Create a geodataframe with tile info...')
+        tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
         nodata_gdf = gpd.GeoDataFrame()
-        strip_str = '_georeferenced.tif'
         for tile in tqdm(tile_list, desc='Read tile info'):
 
-            tile_name = os.path.basename(tile).rstrip(strip_str)
+            tile_name = os.path.basename(tile).rstrip(tile_suffix)
             if tile_name in plan_scales.Num_plan.unique():
                 tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
             else:
@@ -133,7 +135,7 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
 
             # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
-            tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:]}, {tile_scale})")
+            tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
             tiles_dict['scale'].append(tile_scale)
 
             with rio.open(tile) as src:
@@ -150,22 +152,24 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
 
             # Set pixel size
-            pixel_size = round(transform[0], 5)
             try:
-                assert round(transform[0], 5) == round(-transform[4], 5), f'The pixels are not square on tile {tile_name}: {transform[0]}x{-transform[4]}.'
+                pixel_size_x = transform[0]
+                pixel_size_y = -transform[4]
+                assert round(pixel_size_x, 5) == round(pixel_size_y, 5), f'The pixels are not square on tile {tile_name}: {round(pixel_size_x, 5)} x {round(pixel_size_y, 5)} m.'
             except AssertionError as e:
-                logger.error(e)
-                logger.warning('Using the smaller dimension as the pixel size.')
+                print()
+                logger.warning(e)
 
-            tiles_dict['pixel_size'].append(pixel_size)
-            max_dx = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dx'].iloc[0]/pixel_size
-            max_dy = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dy'].iloc[0]/pixel_size
+            tiles_dict['pixel_size_x'].append(pixel_size_x)
+            tiles_dict['pixel_size_y'].append(pixel_size_y)
+            max_dx = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dx'].iloc[0]/pixel_size_x
+            max_dy = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dy'].iloc[0]/pixel_size_y
             tiles_dict['max_dx'].append(max_dx)
             tiles_dict['max_dy'].append(max_dy)
 
             # Transform nodata area into polygons
             temp_gdf = rasters.no_data_to_polygons(first_band, transform, nodata_value)
-            temp_gdf = pad_geodataframe(temp_gdf, bounds, tile_size, pixel_size, grid_width_large, grid_width_large, max_dx, max_dy)
+            temp_gdf = pad_geodataframe(temp_gdf, bounds, tile_size, max(pixel_size_x, pixel_size_y), grid_width_large, grid_width_large, max_dx, max_dy)
             temp_gdf['tile_name'] = tile_name
             nodata_gdf = pd.concat([nodata_gdf, temp_gdf], ignore_index=True)
 
@@ -233,22 +237,24 @@ if __name__ == "__main__":
 
     logger.info(f"Using {args.config_file} as config file.")
     with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_whole_tiles.py']
+        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
     with open(args.config_file) as fp:
         cfg_globals = load(fp, Loader=FullLoader)['globals']
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
-    OUTPUT_DIR = cfg['output_dir']
+    OUTPUT_DIR = cfg['output_dir_vectors']
 
-    TILE_DIR = cfg['tile_dir']
+    TILE_DIR = cfg['output_dir_tiles']
     PLAN_SCALES = cfg['plan_scales']
+
+    TILE_SUFFIX = cfg_globals['original_tile_suffix']
 
     MAX_NODATA_LARGE_TILES = cfg_globals['thresholds']['max_nodata_large_tiles']
     MAX_NODATA_SMALL_TILES = cfg_globals['thresholds']['max_nodata_small_tiles']
     GRID_LARGE_TILES = cfg_globals['grid_width_large']
-    GRID_SMALL_TILES = cfg_globals['grid_width_large']
+    GRID_SMALL_TILES = cfg_globals['grid_width_small']
 
     OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
@@ -258,7 +264,7 @@ if __name__ == "__main__":
 
     _, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
                                                 GRID_LARGE_TILES, GRID_SMALL_TILES, MAX_NODATA_LARGE_TILES, MAX_NODATA_SMALL_TILES, 
-                                                OVERLAP_INFO,
+                                                OVERLAP_INFO, TILE_SUFFIX,
                                                 OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
 
     print()

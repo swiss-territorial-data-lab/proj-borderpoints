@@ -9,6 +9,7 @@ from yaml import FullLoader, load
 import numpy as np
 import rasterio
 from glob import glob
+from rasterio.crs import CRS
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger
@@ -50,6 +51,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
 
             new_band = mapping_array[image]
             converted_image[band_nbr, :, :] = new_band
+
+        if meta['crs'] != CRS.from_epsg(2056):
+            logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}.')
 
         meta.update(count=3, nodata=nodata_value)
         with rasterio.open(out_path, 'w', **meta) as dst:

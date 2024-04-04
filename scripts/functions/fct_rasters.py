@@ -24,17 +24,18 @@ def get_bbox_origin(bbox_geom):
 
     return (min_x, min_y)
 
-def grid_over_tiles(tile_size, tile_origin, pixel_size, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
+def grid_over_tiles(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
 
     min_x, min_y = tile_origin
 
     number_cells_x, number_cells_y = get_grid_size(tile_size, grid_width, grid_height, max_dx, max_dy)
 
     # Convert dimensions from pixels to meters
-    grid_x_dim = grid_width * pixel_size
-    grid_y_dim = grid_height * pixel_size
-    max_dx_dim = max_dx * pixel_size
-    max_dy_dim = max_dy * pixel_size
+    pixel_size_y = pixel_size_y if pixel_size_y else pixel_size_x
+    grid_x_dim = grid_width * pixel_size_x
+    grid_y_dim = grid_height * pixel_size_y
+    max_dx_dim = max_dx * pixel_size_x
+    max_dy_dim = max_dy * pixel_size_y
 
     # Create grid polygons
     polygons = []

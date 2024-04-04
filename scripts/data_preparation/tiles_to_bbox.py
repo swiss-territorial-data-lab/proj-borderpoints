@@ -2,7 +2,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from loguru import logger
-from time import time
+from tqdm import tqdm
 from yaml import load, FullLoader
 
 import geopandas as gpd
@@ -16,14 +16,15 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs', overwrite=False):
+def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs', overwrite=False, tile_suffix='.tif'):
 
     written_files = []
 
+    logger.info('Read bounding boxes...')
     bbox_gdf = gpd.read_file(bbox_path)
 
-    for bbox in bbox_gdf.itertuples():
-        tilepath = os.path.join(tile_dir, bbox.Num_plan + '_georeferenced.tif')
+    for bbox in tqdm(bbox_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox'):
+        tilepath = os.path.join(tile_dir, bbox.Num_plan + tile_suffix)
 
         if os.path.exists(tilepath):
             with rasterio.open(tilepath) as src:
@@ -73,14 +74,15 @@ if __name__ == "__main__":
     TILE_DIR = cfg['tile_dir']
     BBOX_PATH = cfg['bbox_path']
 
+    TILE_SUFFIX = cfg_globals['original_tile_suffix']
     OVERWRITE = cfg_globals['overwrite']
 
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES, OVERWRITE)
+    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES, OVERWRITE, TILE_SUFFIX)
 
     print()
-    logger.success("The following files were written. Let's check them out!")
+    logger.success("Done! The following files were written. Let's check them out!")
     for written_file in written_files:
         logger.success(written_file)

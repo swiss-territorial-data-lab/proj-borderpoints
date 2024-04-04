@@ -14,10 +14,10 @@ logger = format_logger(logger)
 
 def get_point_bbox_size(border_pts_path, output_dir='outputs'):
 
-    logger.info('Read data')
+    logger.info('Read data...')
     pts_gdf = gpd.read_file(border_pts_path)
 
-    logger.info('Iterate through scale to find the max point size')
+    logger.info('Iterate through scale to find the max point size...')
     size_per_scale_dict = {'scale': [], 'max_dx': [], 'max_dy': []}
     for scale in pts_gdf.Echelle.unique():
         pts_single_scale_gdf = pts_gdf[pts_gdf.Echelle==scale].copy()    
@@ -44,7 +44,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
         size_per_scale_dict['max_dx'].append(max_dx)
         size_per_scale_dict['max_dy'].append(max_dy)
 
-    logger.info('Export results')
+    logger.info('Export results...')
     size_per_scale_df = pd.DataFrame(size_per_scale_dict)
 
     filepath = os.path.join(output_dir, 'max_point_size.csv')
