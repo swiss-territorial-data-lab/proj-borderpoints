@@ -9,13 +9,13 @@ globals:
 
 
 pct_to_rgb.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: .
   input_dir: inputs/plans
-  output_dir: outputs/plans_rgb
+  output_dir: outputs/rgb_images
 
 
 prepare_data.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: .
   output_dir_vectors: outputs/formatted_labels
   output_dir_tiles: outputs/clipped_tiles
   tile_dir: outputs/plans_rgb
@@ -29,7 +29,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs
+  working_directory: outputs
   datasets:
     aoi_tiles: formatted_labels/tiles.gpkg
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg

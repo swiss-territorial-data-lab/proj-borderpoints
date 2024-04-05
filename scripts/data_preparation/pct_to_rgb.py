@@ -45,15 +45,17 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
         # Efficient mapping: https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
         mapping_key = np.array(list(colormap.keys()))
         for band_nbr in range(3):
+            # Get colormap corresponding to band 
             mapping_values = np.array([mapping_list[band_nbr] for mapping_list in colormap.values()])
             mapping_array = np.zeros(mapping_key.max()+1, dtype=mapping_values.dtype)
             mapping_array[mapping_key] = mapping_values
-
+            
+            # Translate colormap into corresponding band
             new_band = mapping_array[image]
             converted_image[band_nbr, :, :] = new_band
 
         if meta['crs'] != CRS.from_epsg(2056):
-            logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}.')
+            logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}.')
 
         meta.update(count=3, nodata=nodata_value)
         with rasterio.open(out_path, 'w', **meta) as dst:

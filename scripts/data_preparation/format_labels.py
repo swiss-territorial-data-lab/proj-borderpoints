@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
-    OUTPUT_DIR = cfg['output_dir']
+    OUTPUT_DIR = cfg['output_dir_vectors']
 
     BORDER_POINTS = cfg['border_points']
 
