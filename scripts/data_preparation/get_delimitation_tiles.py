@@ -57,7 +57,7 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, m
         # Only keep tiles that do not overlap too much the nodata zone
         large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=max_nodata_large_tiles)
         large_subtiles_gdf = temp_gdf[temp_gdf.id.isin(large_id_on_image)].copy()
-        large_subtiles_gdf.loc[:, 'id'] = [subtile_id + '_' + str(tile.scale) for subtile_id in large_subtiles_gdf.id] 
+        large_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.scale)})' for subtile_id in large_subtiles_gdf.id] 
         large_subtiles_gdf['initial_tile'] = tile.name
 
         if (tile.max_dx == 0) and (tile.max_dy == 0):
@@ -70,7 +70,7 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, m
                 # Only keep tiles that do not overlap too much the nodata zone
                 small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=max_nodata_small_tiles)
                 small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
-                small_subtiles_gdf.loc[:, 'id'] = [subtile_id + '_' + str(tile.scale) for subtile_id in small_subtiles_gdf.id]
+                small_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.scale)})' for subtile_id in small_subtiles_gdf.id]
                 small_subtiles_gdf['initial_tile'] = tile.name
 
                 subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)

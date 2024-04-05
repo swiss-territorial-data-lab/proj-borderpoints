@@ -31,17 +31,17 @@ generate_tilesets.py:
     nb_tiles_max: 10
   working_directory: outputs
   datasets:
-    aoi_tiles: formatted_labels/tiles.gpkg
+    aoi_tiles: formatted_labels/subtiles.gpkg
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
-    orthophotos_web_service:
+    image_source:
       type: FOLDER
-      url: ../inputs/geofer_images/renamed
+      location: clipped_tiles
       srs: 2056
   output_folder: object_detector
   overwrite: False
   n_jobs: 10
   COCO_metadata:
-    year: 1800-2000
+    year: 1800-1900
     version: 1.0
     description: Points limites des anciens plans cadastraux
     contributor: Canton of Fribourg
