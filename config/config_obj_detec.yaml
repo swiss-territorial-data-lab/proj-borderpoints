@@ -35,7 +35,7 @@ generate_tilesets.py:
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
     image_source:
       type: FOLDER
-      location: clipped_tiles
+      location: clipped_tiles/subtiles
       srs: 2056
   output_folder: object_detector
   overwrite: False
