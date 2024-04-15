@@ -1,5 +1,5 @@
 globals:
-  original_tile_suffix: _geo.tif
+  original_tile_suffix: .tif
   grid_width_large: 512
   grid_width_small: 256
   overwrite: True
@@ -10,8 +10,8 @@ globals:
 
 pct_to_rgb.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  input_dir: inputs/plans
-  output_dir: outputs/plans_rgb
+  input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
+  output_dir: outputs/rgb_oth_images
 
 
 prepare_data.py:
@@ -53,8 +53,8 @@ generate_tilesets.py:
 
 prepare_whole_tiles.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  output_dir: outputs/whole_tiles
-  tile_dir: outputs/plans_rgb
-  plan_scales: inputs/plan_scales.xlsx
-  overlap_info: outputs/formatted_labels/max_point_size.csv
+  output_dir: outputs/whole_oth_tiles
+  tile_dir: outputs/rgb_oth_images
+  # plan_scales: inputs/plan_scales.xlsx
+  # overlap_info: outputs/formatted_labels/max_point_size.csv
 

@@ -103,20 +103,23 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
         
         logger.info('Read info for tiles...')
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
-        plan_scales = pd.read_excel(plan_scales_path)
 
-        if not overlap_info:
-            plan_scales['max_dx'] = 0
-            plan_scales['max_dy'] = 0
-        elif isinstance(overlap_info, str):
-            overlap_info_df = pd.read_csv(overlap_info)
-            plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
-        elif isinstance(overlap_info, pd.DataFrame):
-            overlap_info_df = overlap_info.copy()
-            plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
-        else:
-            logger.error('Unrecognized format for the overlap info!')
-            sys.exit(1)
+        if plan_scales_path:
+            plan_scales = pd.read_excel(plan_scales_path)
+
+            if not overlap_info:
+                plan_scales['max_dx'] = 0
+                plan_scales['max_dy'] = 0
+            elif isinstance(overlap_info, str):
+                overlap_info_df = pd.read_csv(overlap_info)
+                plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
+            elif isinstance(overlap_info, pd.DataFrame):
+                overlap_info_df = overlap_info.copy()
+                plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
+            else:
+                logger.error('Unrecognized format for the overlap info!')
+                sys.exit(1)
+        
 
         logger.info('Create a geodataframe with tile info...')
         tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
@@ -124,51 +127,70 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
         for tile in tqdm(tile_list, desc='Read tile info'):
 
             tile_name = os.path.basename(tile).rstrip(tile_suffix)
-            if tile_name in plan_scales.Num_plan.unique():
-                tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+            if plan_scales_path:
+                if tile_name in plan_scales.Num_plan.unique():
+                    tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+                else:
+                    try:
+                        tile_scale = int(tile_name.split('_')[0])
+                    except:
+                        logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
+                        continue
             else:
-                try:
-                    tile_scale = int(tile_name.split('_')[0])
-                except:
-                    logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
-                    continue
+                tile_scale = 0
 
             # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
-            tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
+            if '_' in tile_name:
+                tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
+            else:
+                tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:].split('.')[0]}, {tile_scale})")
             tiles_dict['scale'].append(tile_scale)
 
             with rio.open(tile) as src:
                 bounds = src.bounds
                 first_band = src.read(1)
                 transform = src.transform
-                nodata_value = 0 # src.nodata
-                tile_size = (src.width, src.height)
-                    
-            # Set tile geometry
-            geom = box(*bounds)
-            tiles_dict['geometry'].append(geom)
-            tiles_dict['dimension'].append(str(tile_size))
-            tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
-
+                meta = src.meta
+            
             # Set pixel size
+            if meta['transform'][1] != 0:
+                new_tranform, new_width, new_heigth = rio.warp.calculate_default_transform(meta['crs'], rio.CRS.from_epsg(2056), meta['width'], meta['height'],
+                                                                    left=bounds[0], bottom=bounds[1], right=bounds[2], top=bounds[3])
+                pixel_size_x = abs(new_tranform[0])
+                pixel_size_y = abs(new_tranform[4])
+                tile_size = (new_width, new_heigth)
+            else:
+                pixel_size_x = abs(meta['transform'][0])
+                pixel_size_y = abs(meta['transform'][4])
+                tile_size = (meta['width'], meta['height'])
+
             try:
-                pixel_size_x = transform[0]
-                pixel_size_y = -transform[4]
                 assert round(pixel_size_x, 5) == round(pixel_size_y, 5), f'The pixels are not square on tile {tile_name}: {round(pixel_size_x, 5)} x {round(pixel_size_y, 5)} m.'
             except AssertionError as e:
                 print()
                 logger.warning(e)
 
+            # Set tile geometry
+            geom = box(*bounds)
+            tiles_dict['geometry'].append(geom)
+            tiles_dict['dimension'].append(str(tile_size))
+            tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
             tiles_dict['pixel_size_x'].append(pixel_size_x)
             tiles_dict['pixel_size_y'].append(pixel_size_y)
-            max_dx = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dx'].iloc[0]/pixel_size_x
-            max_dy = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dy'].iloc[0]/pixel_size_y
+
+            # If no info on the plan scales, leave dx and dy to 0.
+            if plan_scales_path:
+                max_dx = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dx'].iloc[0]/pixel_size_x
+                max_dy = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dy'].iloc[0]/pixel_size_y
+            else:
+                max_dx = 0
+                max_dy = 0
             tiles_dict['max_dx'].append(max_dx)
             tiles_dict['max_dy'].append(max_dy)
 
             # Transform nodata area into polygons
-            temp_gdf = rasters.no_data_to_polygons(first_band, transform, nodata_value)
+            temp_gdf = rasters.no_data_to_polygons(first_band, meta['transform'], meta['nodata'])
             temp_gdf = pad_geodataframe(temp_gdf, bounds, tile_size, max(pixel_size_x, pixel_size_y), grid_width_large, grid_width_large, max_dx, max_dy)
             temp_gdf['tile_name'] = tile_name
             nodata_gdf = pd.concat([nodata_gdf, temp_gdf], ignore_index=True)

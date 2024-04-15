@@ -10,6 +10,7 @@ import numpy as np
 import rasterio
 from glob import glob
 from rasterio.crs import CRS
+from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger
@@ -41,6 +42,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
             colormap = src.colormap(1)
 
         nodata_value = colormap[nodata_key][0]
+        if nodata_value != 0:
+            print()
+            logger.warning(f'The nodata value for the plan {tile_name} is {nodata_value} and not 0.')
         converted_image = np.empty((3, meta['height'], meta['width']))
         # Efficient mapping: https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
         mapping_key = np.array(list(colormap.keys()))
@@ -52,8 +56,20 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
             new_band = mapping_array[image]
             converted_image[band_nbr, :, :] = new_band
 
-        if meta['crs'] != CRS.from_epsg(2056):
-            logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}.')
+        if not meta['crs']:
+            meta.update(crs=CRS.from_epsg(2056))
+            print()
+            logger.warning(f'No crs for the tile {tile_name}. Setting it to EPSG:2056.')
+        elif meta['crs'] != CRS.from_epsg(2056):
+            print()
+            logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}, tile will be reprojected.')
+
+        # if meta['transform'][1] != 0 or meta['crs'] != CRS.from_epsg(2056):
+        #     converted_image, new_tranform = reproject(
+        #         converted_image, src_transform=meta['transform'],
+        #         src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
+        #     )
+        #     meta.update(transform=new_tranform)
 
         meta.update(count=3, nodata=nodata_value)
         with rasterio.open(out_path, 'w', **meta) as dst:
