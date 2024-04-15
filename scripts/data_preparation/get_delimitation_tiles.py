@@ -129,7 +129,7 @@ def get_delimitation_tiles(tile_dir,
                 first_band = src.read(1)
                 meta = src.meta
             
-            # Set pixel size
+            # Set pixel size -> Delete the if-else part if not useful in the final workflow.
             if meta['transform'][1] != 0:
                 new_tranform, new_width, new_heigth = rio.warp.calculate_default_transform(meta['crs'], rio.CRS.from_epsg(2056), meta['width'], meta['height'],
                                                                     left=bounds[0], bottom=bounds[1], right=bounds[2], top=bounds[3])

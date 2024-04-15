@@ -10,8 +10,8 @@ globals:
 
 pct_to_rgb.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  input_dir: inputs/plans
-  output_dir: outputs/rgb_images
+  input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
+  output_dir: outputs/rgb_oth_images
   plan_scales: inputs/plan_scales.xlsx
 
 

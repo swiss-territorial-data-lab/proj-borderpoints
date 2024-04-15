@@ -50,6 +50,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
 
         with rio.open(tile_path) as src:
             image = src.read()
+            bounds = src.bounds
             meta = src.meta
             colormap = src.colormap(1)
 
@@ -77,11 +78,15 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         elif meta['crs'] != CRS.from_epsg(2056):
             print()
             logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}, tile will be reprojected.')
-            converted_image, new_tranform = reproject(
-                converted_image, src_transform=meta['transform'],
-                src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
+
+        if (meta['crs'] != CRS.from_epsg(2056)) or (meta['transform'][1] != 0):
+            new_transform, new_width, new_height = rio.warp.calculate_default_transform(meta['crs'], rio.CRS.from_epsg(2056), meta['width'], meta['height'],
+                                                                    left=bounds[0], bottom=bounds[1], right=bounds[2], top=bounds[3])
+            converted_image, new_transform = reproject(
+                converted_image, np.empty((3, new_height, new_width)), src_transform=meta['transform'],
+                src_crs=meta['crs'], dst_transform=new_transform, dst_crs=CRS.from_epsg(2056)
             )
-            meta.update(transform=new_tranform)
+            meta.update(transform=new_transform, width=new_width, height=new_height)
 
         meta.update(count=3, nodata=nodata_value)
         with rio.open(out_path, 'w', **meta) as dst:
