@@ -16,16 +16,25 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs', overwrite=False, tile_suffix='.tif'):
+def tiles_to_bbox(tile_dir, bboxes, output_dir='outputs', overwrite=False, tile_suffix='.tif'):
 
     written_files = []
 
     logger.info('Read bounding boxes...')
-    bbox_gdf = gpd.read_file(bbox_path)
+    if isinstance(bboxes, str):
+        bboxes_gdf = gpd.read_file(bboxes)
+        bboxes_gdf['tilepath'] = [os.path.join(tile_dir, num_plan + tile_suffix) for num_plan in bboxes_gdf.Num_plan.to_numpy()]
+    elif isinstance(bboxes, gpd.GeoDataFrame):
+        bboxes_gdf = bboxes.copy()
+        bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
+        bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
+    else:
+        logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
+        sys.exit(1)
 
-    for bbox in tqdm(bbox_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox'):
-        tilepath = os.path.join(tile_dir, bbox.Num_plan + tile_suffix)
+    for bbox in tqdm(bboxes_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox', total=bboxes_gdf.shape[0]):
 
+        tilepath = bbox.tilepath
         if os.path.exists(tilepath):
             with rasterio.open(tilepath) as src:
                 out_image, out_transform, = mask(src, [bbox.geometry], crop=True)
@@ -47,7 +56,11 @@ def tiles_to_bbox(tile_dir, bbox_path, output_dir='outputs', overwrite=False, ti
             written_files.append(output_path)
 
         else:
-            logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
+            print()
+            try:
+                logger.warning(f"No tile correponding to plan {bbox.id}")
+            except AttributeError:
+                logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
     return written_files
 

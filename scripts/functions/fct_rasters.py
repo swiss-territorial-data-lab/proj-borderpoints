@@ -54,7 +54,7 @@ def grid_over_tiles(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max
     # Create a GeoDataFrame from the polygons
     grid_gdf = gpd.GeoDataFrame(geometry=polygons, crs=crs)
 
-    grid_gdf['id'] = [f'{round(min_x)}_{round(min_y)}' for min_x, min_y in [get_bbox_origin(poly) for poly in grid_gdf.geometry]]
+    grid_gdf['id'] = [f'{round(min_x)}, {round(min_y)}' for min_x, min_y in [get_bbox_origin(poly) for poly in grid_gdf.geometry]]
 
     return grid_gdf
 
