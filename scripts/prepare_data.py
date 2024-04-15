@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import format_labels, tiles_to_bbox, get_delimitation_tiles, get_point_bbox_size
+from data_preparation import format_labels, tiles_to_box, get_delimitation_tiles, get_point_bbox_size
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -54,7 +54,7 @@ os.chdir(WORKING_DIR)
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
 logger.info('Clip tiles to the digitization bounding boxes...')
-tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
+tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
 written_files.extend(tmp_written_files)
 
 tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES,
@@ -66,7 +66,7 @@ written_files.extend(tmp_written_files)
 logger.info('Clip images to subtiles...')
 subtiles_dir = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
 os.makedirs(subtiles_dir, exist_ok=True)
-tmp_written_files = tiles_to_bbox.tiles_to_bbox(OUTPUT_DIR_TILES, subtiles_gdf, subtiles_dir, overwrite=OVERWRITE)
+tmp_written_files = tiles_to_box.tiles_to_box(OUTPUT_DIR_TILES, subtiles_gdf, subtiles_dir, overwrite=OVERWRITE)
 written_files.extend(tmp_written_files)
 
 print()

@@ -128,18 +128,17 @@ def get_delimitation_tiles(tile_dir,
                 bounds = src.bounds
                 first_band = src.read(1)
                 meta = src.meta
+
+            # Set tile geometry
+            geom = box(*bounds)
+            tiles_dict['geometry'].append(geom)
+            tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
+            tile_size = (meta['width'], meta['height'])
+            tiles_dict['dimension'].append(str(tile_size))
             
-            # Set pixel size -> Delete the if-else part if not useful in the final workflow.
-            if meta['transform'][1] != 0:
-                new_tranform, new_width, new_heigth = rio.warp.calculate_default_transform(meta['crs'], rio.CRS.from_epsg(2056), meta['width'], meta['height'],
-                                                                    left=bounds[0], bottom=bounds[1], right=bounds[2], top=bounds[3])
-                pixel_size_x = abs(new_tranform[0])
-                pixel_size_y = abs(new_tranform[4])
-                tile_size = (new_width, new_heigth)
-            else:
-                pixel_size_x = abs(meta['transform'][0])
-                pixel_size_y = abs(meta['transform'][4])
-                tile_size = (meta['width'], meta['height'])
+            # Set pixel size
+            pixel_size_x = abs(meta['transform'][0])
+            pixel_size_y = abs(meta['transform'][4])
 
             try:
                 assert round(pixel_size_x, 5) == round(pixel_size_y, 5), f'The pixels are not square on tile {tile_name}: {round(pixel_size_x, 5)} x {round(pixel_size_y, 5)} m.'
@@ -147,11 +146,6 @@ def get_delimitation_tiles(tile_dir,
                 print()
                 logger.warning(e)
 
-            # Set tile geometry
-            geom = box(*bounds)
-            tiles_dict['geometry'].append(geom)
-            tiles_dict['dimension'].append(str(tile_size))
-            tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
             tiles_dict['pixel_size_x'].append(pixel_size_x)
             tiles_dict['pixel_size_y'].append(pixel_size_y)
 
