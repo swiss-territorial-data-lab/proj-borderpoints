@@ -38,7 +38,6 @@ OUTPUT_DIR_TILES = cfg['output_dir_tiles']
 BORDER_POINTS = cfg['border_points']
 BBOX = cfg['bbox']
 TILE_DIR = cfg['tile_dir']
-PLAN_SCALES = cfg['plan_scales']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 TILE_SUFFIX = cfg_globals['original_tile_suffix']
@@ -54,18 +53,17 @@ os.chdir(WORKING_DIR)
 
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
-size_per_scale_df, tmp_written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR_VECTORS)
+logger.info('Clip tiles to the digitization bounding boxes...')
+tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE)
 written_files.extend(tmp_written_files)
 
-tmp_written_files = tiles_to_bbox.tiles_to_bbox(TILE_DIR, BBOX, OUTPUT_DIR_TILES, overwrite=OVERWRITE, tile_suffix=TILE_SUFFIX)
-written_files.extend(tmp_written_files)
-
-tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES, PLAN_SCALES,
+tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(OUTPUT_DIR_TILES,
                                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
                                                                                             OVERLAP_INFO, TILE_SUFFIX,
                                                                                             OUTPUT_DIR_VECTORS, overwrite_tiles=OVERWRITE, subtiles=True)
 written_files.extend(tmp_written_files)
 
+logger.info('Clip images to subtiles...')
 subtiles_dir = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
 os.makedirs(subtiles_dir, exist_ok=True)
 tmp_written_files = tiles_to_bbox.tiles_to_bbox(OUTPUT_DIR_TILES, subtiles_gdf, subtiles_dir, overwrite=OVERWRITE)

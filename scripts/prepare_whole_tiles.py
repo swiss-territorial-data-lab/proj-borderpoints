@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import get_delimitation_tiles , rename_with_hard_link
+from data_preparation import get_delimitation_tiles , tiles_to_box
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -34,7 +34,6 @@ WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR = cfg['output_dir']
 
 TILE_DIR = cfg['tile_dir']
-PLAN_SCALES = cfg['plan_scales'] if 'plan_scales' in cfg.keys() else None
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 TILE_SUFFIX = cfg_globals['original_tile_suffix']
@@ -48,12 +47,15 @@ OVERWRITE = cfg_globals['overwrite']
 
 os.chdir(WORKING_DIR)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, PLAN_SCALES,
+tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR,
                                                                             GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
                                                                             OVERLAP_INFO, TILE_SUFFIX,
                                                                             OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
 
-rename_with_hard_link.rename_with_hard_link(tiles_gdf, TILE_DIR, TILE_SUFFIX, OVERWRITE)
+subtiles_dir = os.path.join(TILE_DIR, 'subtiles')
+os.makedirs(subtiles_dir, exist_ok=True)
+tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, subtiles_dir, overwrite=OVERWRITE)
+written_files.extend(tmp_written_files)
 
 print()
 logger.success("The following files were written. Let's check them out!")

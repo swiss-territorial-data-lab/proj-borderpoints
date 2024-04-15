@@ -2,7 +2,7 @@ globals:
   original_tile_suffix: .tif
   grid_width_large: 512
   grid_width_small: 256
-  overwrite: True
+  overwrite: False
   thresholds:
     max_nodata_large_tiles: 0.5
     max_nodata_small_tiles: 0.5
@@ -10,18 +10,18 @@ globals:
 
 pct_to_rgb.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
-  output_dir: outputs/rgb_oth_images
+  input_dir: inputs/plans
+  output_dir: outputs/rgb_images
+  plan_scales: inputs/plan_scales.xlsx
 
 
 prepare_data.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir_vectors: outputs/formatted_labels
   output_dir_tiles: outputs/clipped_tiles
-  tile_dir: outputs/plans_rgb
+  tile_dir: outputs/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
-  plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
 
 
@@ -29,7 +29,6 @@ prepare_whole_tiles.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir: outputs/whole_oth_tiles
   tile_dir: outputs/rgb_oth_images
-  # plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
 
 

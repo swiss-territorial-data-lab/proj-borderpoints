@@ -7,7 +7,8 @@ from tqdm import tqdm
 from yaml import FullLoader, load
 
 import numpy as np
-import rasterio
+import pandas as pd
+import rasterio as rio
 from glob import glob
 from rasterio.crs import CRS
 from rasterio.warp import reproject
@@ -20,7 +21,7 @@ logger = format_logger(logger)
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overwrite=False):
+def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif', overwrite=False):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -29,14 +30,25 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
 
-    for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
-        tile_name = os.path.basename(tile_path)
-        out_path = os.path.join(output_dir, tile_name)
+    if plan_scales_path:
+            plan_scales = pd.read_excel(plan_scales_path)
+    else:
+        logger.info('No info on the scale of each tile, setting the scale to 0.')
 
+    for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
+        tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
+
+        # Get the scale for the new tile name
+        if plan_scales_path and (tile_name in plan_scales.Num_plan.unique()):
+            tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
+        else:
+            tile_scale = 0
+
+        out_path = os.path.join(output_dir, f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif")
         if not overwrite and os.path.isfile(out_path):
             continue
 
-        with rasterio.open(tile_path) as src:
+        with rio.open(tile_path) as src:
             image = src.read()
             meta = src.meta
             colormap = src.colormap(1)
@@ -59,22 +71,20 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, overw
             converted_image[band_nbr, :, :] = new_band
 
         if not meta['crs']:
-            meta.update(crs=CRS.from_epsg(2056))
             print()
             logger.warning(f'No crs for the tile {tile_name}. Setting it to EPSG:2056.')
+            meta.update(crs=CRS.from_epsg(2056))
         elif meta['crs'] != CRS.from_epsg(2056):
             print()
             logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}, tile will be reprojected.')
-
-        # if meta['transform'][1] != 0 or meta['crs'] != CRS.from_epsg(2056):
-        #     converted_image, new_tranform = reproject(
-        #         converted_image, src_transform=meta['transform'],
-        #         src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
-        #     )
-        #     meta.update(transform=new_tranform)
+            converted_image, new_tranform = reproject(
+                converted_image, src_transform=meta['transform'],
+                src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
+            )
+            meta.update(transform=new_tranform)
 
         meta.update(count=3, nodata=nodata_value)
-        with rasterio.open(out_path, 'w', **meta) as dst:
+        with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
 
 
@@ -103,13 +113,15 @@ if __name__ == "__main__":
     INPUT_DIR = cfg['input_dir']
     OUTPUT_DIR = cfg['output_dir']
 
+    PLAN_SCALES = cfg['plan_scales']
     NODATA_KEY = cfg['nodata_key'] if 'nodata_key' in cfg.keys() else 255
 
+    TILE_SUFFIX = cfg_globals['original_tile_suffix']
     OVERWRITE = cfg_globals['overwrite']
 
     os.chdir(WORKING_DIR)
 
-    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, NODATA_KEY, OVERWRITE)
+    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX, OVERWRITE)
 
     print()
     logger.success(f"The files were written in the folder {OUTPUT_DIR}. Let's check them out!")

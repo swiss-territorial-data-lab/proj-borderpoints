@@ -16,14 +16,14 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_bbox(tile_dir, bboxes, output_dir='outputs', overwrite=False, tile_suffix='.tif'):
+def tiles_to_box(tile_dir, bboxes, output_dir='outputs', overwrite=False, tile_suffix='.tif'):
 
     written_files = []
 
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
         bboxes_gdf = gpd.read_file(bboxes)
-        bboxes_gdf['tilepath'] = [os.path.join(tile_dir, num_plan + tile_suffix) for num_plan in bboxes_gdf.Num_plan.to_numpy()]
+        bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{bbox.Echelle}_{bbox.Num_plan[:6]}_{bbox.Num_plan[6:]}' + tile_suffix) for bbox in bboxes_gdf.itertuples()]
     elif isinstance(bboxes, gpd.GeoDataFrame):
         bboxes_gdf = bboxes.copy()
         bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
@@ -87,13 +87,12 @@ if __name__ == "__main__":
     TILE_DIR = cfg['tile_dir']
     BBOX_PATH = cfg['bbox_path']
 
-    TILE_SUFFIX = cfg_globals['original_tile_suffix']
     OVERWRITE = cfg_globals['overwrite']
 
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES, OVERWRITE, TILE_SUFFIX)
+    written_files = tiles_to_bbox(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES, OVERWRITE)
 
     print()
     logger.success("Done! The following files were written. Let's check them out!")

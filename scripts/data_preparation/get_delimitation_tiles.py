@@ -84,7 +84,7 @@ def define_subtiles(tiles_gdf, nodata_gdf, grid_width_large, grid_width_small, m
     return subtiles_gdf, filepath
 
 
-def get_delimitation_tiles(tile_dir, plan_scales_path,
+def get_delimitation_tiles(tile_dir,
                            grid_width_large, grid_width_small, max_nodata_large_tiles=0.5, max_nodata_small_tiles=0.5, 
                            overlap_info=None, tile_suffix='.tif',
                            output_dir='outputs', overwrite_tiles=False, subtiles=False):
@@ -104,40 +104,17 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
         logger.info('Read info for tiles...')
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
 
-        if plan_scales_path:
-            plan_scales = pd.read_excel(plan_scales_path)
-
-            if not overlap_info:
-                plan_scales['max_dx'] = 0
-                plan_scales['max_dy'] = 0
-            elif isinstance(overlap_info, str):
-                overlap_info_df = pd.read_csv(overlap_info)
-                plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
-            elif isinstance(overlap_info, pd.DataFrame):
-                overlap_info_df = overlap_info.copy()
-                plan_scales = plan_scales.merge(overlap_info_df, how='left', left_on='Echelle', right_on='scale')
-            else:
-                logger.error('Unrecognized format for the overlap info!')
-                sys.exit(1)
-        
-
         logger.info('Create a geodataframe with tile info...')
         tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
         nodata_gdf = gpd.GeoDataFrame()
         for tile in tqdm(tile_list, desc='Read tile info'):
 
             tile_name = os.path.basename(tile).rstrip(tile_suffix)
-            if plan_scales_path:
-                if tile_name in plan_scales.Num_plan.unique():
-                    tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
-                else:
-                    try:
-                        tile_scale = int(tile_name.split('_')[0])
-                    except:
-                        logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
-                        continue
-            else:
-                tile_scale = 0
+            try:
+                tile_scale = int(tile_name.split('_')[0])
+            except:
+                logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
+                continue
 
             # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
@@ -150,7 +127,6 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             with rio.open(tile) as src:
                 bounds = src.bounds
                 first_band = src.read(1)
-                transform = src.transform
                 meta = src.meta
             
             # Set pixel size
@@ -180,9 +156,16 @@ def get_delimitation_tiles(tile_dir, plan_scales_path,
             tiles_dict['pixel_size_y'].append(pixel_size_y)
 
             # If no info on the plan scales, leave dx and dy to 0.
-            if plan_scales_path:
-                max_dx = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dx'].iloc[0]/pixel_size_x
-                max_dy = plan_scales.loc[plan_scales.Echelle==tile_scale, 'max_dy'].iloc[0]/pixel_size_y
+            if overlap_info:
+                if isinstance(overlap_info, str):
+                    overlap_info_df = pd.read_csv(overlap_info)
+                elif isinstance(overlap_info, pd.DataFrame):
+                    overlap_info_df = overlap_info
+                else:
+                    logger.error('Unrecognized format for the overlap info!')
+                    sys.exit(1)
+                max_dx = overlap_info_df.loc[overlap_info_df.scale==tile_scale, 'max_dx'].iloc[0]/pixel_size_x
+                max_dy = overlap_info_df.loc[overlap_info_df.scale==tile_scale, 'max_dy'].iloc[0]/pixel_size_y
             else:
                 max_dx = 0
                 max_dy = 0
@@ -284,9 +267,9 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, _, written_files = get_delimitation_tiles(TILE_DIR, PLAN_SCALES, 
+    _, _, written_files = get_delimitation_tiles(TILE_DIR, 
                                                 GRID_LARGE_TILES, GRID_SMALL_TILES, MAX_NODATA_LARGE_TILES, MAX_NODATA_SMALL_TILES, 
-                                                OVERLAP_INFO, TILE_SUFFIX,
+                                                OVERLAP_INFO,
                                                 OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
 
     print()
