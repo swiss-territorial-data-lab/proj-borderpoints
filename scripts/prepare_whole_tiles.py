@@ -37,9 +37,9 @@ os.chdir(WORKING_DIR)
 
 tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, OVERLAP_INFO, OUTPUT_DIR, subtiles=True)
 
-subtiles_dir = os.path.join(TILE_DIR, 'subtiles')
-os.makedirs(subtiles_dir, exist_ok=True)
-tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, subtiles_dir)
+SUBTILE_DIR = os.path.join(TILE_DIR, 'subtiles')
+os.makedirs(SUBTILE_DIR, exist_ok=True)
+tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, SUBTILE_DIR)
 written_files.extend(tmp_written_files)
 
 print()

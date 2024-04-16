@@ -10,7 +10,7 @@ import rasterio
 from rasterio.mask import mask
 
 sys.path.insert(1, 'scripts')
-from constants import OVERWRITE
+import constants as cst
 import functions.fct_misc as misc
 import functions.fct_rasters as rasters
 
@@ -49,7 +49,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
             output_path = os.path.join(output_dir, f"{bbox.Echelle}_{round(min_x)}_{round(min_y)}.tif")
 
-            if not OVERWRITE and os.path.exists(output_path):
+            if not cst.OVERWRITE and os.path.exists(output_path):
                 continue
 
             with rasterio.open(output_path, "w", **out_meta) as dst:

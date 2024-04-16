@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import format_labels, tiles_to_box, get_delimitation_tiles, get_point_bbox_size
+from data_preparation import format_labels, tiles_to_box, get_delimitation_tiles
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -51,9 +51,9 @@ tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimita
 written_files.extend(tmp_written_files)
 
 logger.info('Clip images to subtiles...')
-subtiles_dir = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
-os.makedirs(subtiles_dir, exist_ok=True)
-tmp_written_files = tiles_to_box.tiles_to_box(OUTPUT_DIR_TILES, subtiles_gdf, subtiles_dir)
+SUBTILE_DIR = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
+os.makedirs(SUBTILE_DIR, exist_ok=True)
+tmp_written_files = tiles_to_box.tiles_to_box(OUTPUT_DIR_TILES, subtiles_gdf, SUBTILE_DIR)
 written_files.extend(tmp_written_files)
 
 print()

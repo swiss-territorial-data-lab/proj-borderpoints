@@ -14,7 +14,7 @@ from rasterio.crs import CRS
 from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
-from constants import OVERWRITE
+import constants as cst
 from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
@@ -46,7 +46,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
             tile_scale = 0
 
         out_path = os.path.join(output_dir, f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif")
-        if not OVERWRITE and os.path.isfile(out_path):
+        if not cst.OVERWRITE and os.path.isfile(out_path):
             continue
 
         with rio.open(tile_path) as src:
