@@ -54,7 +54,6 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
-            written_files.append(output_path)
 
         else:
             print()
@@ -63,7 +62,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
-    return written_files
+    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
 
 # ------------------------------------------
 
@@ -91,9 +90,5 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    written_files = tiles_to_box(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
+    tiles_to_box(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
 
-    print()
-    logger.success("Done! The following files were written. Let's check them out!")
-    for written_file in written_files:
-        logger.success(written_file)

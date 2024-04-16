@@ -177,10 +177,11 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
         subtiles_gdf.to_file(filepath)
         written_files.append(filepath)
 
-        return tiles_gdf, subtiles_gdf, written_files
     else:
-        return tiles_gdf, None, written_files
+        subtiles_gdf = None
     
+    logger.success('Done determining the tiling!')
+    return tiles_gdf, subtiles_gdf, written_files
     
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
 

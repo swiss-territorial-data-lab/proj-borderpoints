@@ -91,6 +91,8 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
 
+    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+
 
 # ------------------------------------------
 
@@ -125,6 +127,3 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
 
     pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)
-
-    print()
-    logger.success(f"The files were written in the folder {OUTPUT_DIR}. Let's check them out!")

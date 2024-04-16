@@ -4,24 +4,30 @@ pct_to_rgb.py:
   input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
   output_dir: outputs/rgb_oth_images
   plan_scales: inputs/plan_scales.xlsx
-  tile_suffix: _geo.tif
 
 
 prepare_data.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  output_dir_vectors: outputs/formatted_labels
-  output_dir_tiles: outputs/clipped_tiles
+  output_dir:
+    vectors: outputs/formatted_labels
+    tiles: outputs/clipped_tiles
+  initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
+  plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
+  convert_images: True
+  tile_suffix: _geo.tif
 
 
 prepare_whole_tiles.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir: outputs/whole_oth_tiles
+  initial_image_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
   tile_dir: outputs/rgb_oth_images
   # overlap_info: outputs/formatted_labels/max_point_size.csv
+  convert_images: True
 
 
 generate_tilesets.py:

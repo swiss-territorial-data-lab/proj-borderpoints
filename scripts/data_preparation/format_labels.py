@@ -30,6 +30,8 @@ def format_labels(path_points_poly, output_dir='outputs'):
     pts_gdf.to_file(filepath)
     written_files.append(filepath)
 
+    logger.success('Done formatting the labels!')
+
     return pts_gdf, written_files
 
 

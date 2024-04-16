@@ -5,7 +5,7 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import get_delimitation_tiles , tiles_to_box
+from data_preparation import get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -30,17 +30,22 @@ with open(args.config_file) as fp:
 WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR = cfg['output_dir']
 
+INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
+CONVERT_IMAGES = cfg['convert_images']
+
 os.chdir(WORKING_DIR)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, OVERLAP_INFO, OUTPUT_DIR, subtiles=True)
+if CONVERT_IMAGES:
+    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR)
+
+tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
 
 SUBTILE_DIR = os.path.join(TILE_DIR, 'subtiles')
 os.makedirs(SUBTILE_DIR, exist_ok=True)
-tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, SUBTILE_DIR)
-written_files.extend(tmp_written_files)
+tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, SUBTILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")
