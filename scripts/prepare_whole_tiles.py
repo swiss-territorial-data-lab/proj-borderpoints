@@ -26,9 +26,6 @@ logger.info(f"Using {args.config_file} as config file.")
 with open(args.config_file) as fp:
     cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
 
-with open(args.config_file) as fp:
-    cfg_globals = load(fp, Loader=FullLoader)['globals']
-
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR = cfg['output_dir']
@@ -36,25 +33,13 @@ OUTPUT_DIR = cfg['output_dir']
 TILE_DIR = cfg['tile_dir']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
-TILE_SUFFIX = cfg_globals['original_tile_suffix']
-
-OVERLAP_LARGE_TILES = cfg_globals['thresholds']['max_nodata_large_tiles']
-OVERLAP_SMALL_TILES = cfg_globals['thresholds']['max_nodata_small_tiles']
-GRID_LARGE_TILES = cfg_globals['grid_width_large']
-GRID_SMALL_TILES = cfg_globals['grid_width_large']
-
-OVERWRITE = cfg_globals['overwrite']
-
 os.chdir(WORKING_DIR)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR,
-                                                                            GRID_LARGE_TILES, GRID_SMALL_TILES, OVERLAP_LARGE_TILES, OVERLAP_SMALL_TILES,
-                                                                            OVERLAP_INFO, TILE_SUFFIX,
-                                                                            OUTPUT_DIR, overwrite_tiles=OVERWRITE, subtiles=True)
+tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, OVERLAP_INFO, OUTPUT_DIR, subtiles=True)
 
 subtiles_dir = os.path.join(TILE_DIR, 'subtiles')
 os.makedirs(subtiles_dir, exist_ok=True)
-tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, subtiles_dir, overwrite=OVERWRITE)
+tmp_written_files = tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, subtiles_dir)
 written_files.extend(tmp_written_files)
 
 print()

@@ -1,18 +1,10 @@
-globals:
-  original_tile_suffix: .tif
-  grid_width_large: 512
-  grid_width_small: 256
-  overwrite: True
-  thresholds:
-    max_nodata_large_tiles: 0.5
-    max_nodata_small_tiles: 0.5
-
 
 pct_to_rgb.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
   output_dir: outputs/rgb_oth_images
   plan_scales: inputs/plan_scales.xlsx
+  tile_suffix: _geo.tif
 
 
 prepare_data.py:

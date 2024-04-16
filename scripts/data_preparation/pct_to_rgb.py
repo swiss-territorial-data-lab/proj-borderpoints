@@ -14,6 +14,7 @@ from rasterio.crs import CRS
 from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
+from constants import OVERWRITE
 from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
@@ -21,7 +22,7 @@ logger = format_logger(logger)
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif', overwrite=False):
+def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -45,7 +46,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
             tile_scale = 0
 
         out_path = os.path.join(output_dir, f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif")
-        if not overwrite and os.path.isfile(out_path):
+        if not OVERWRITE and os.path.isfile(out_path):
             continue
 
         with rio.open(tile_path) as src:
@@ -119,12 +120,11 @@ if __name__ == "__main__":
     PLAN_SCALES = cfg['plan_scales']
     NODATA_KEY = cfg['nodata_key'] if 'nodata_key' in cfg.keys() else 255
 
-    TILE_SUFFIX = cfg_globals['original_tile_suffix']
-    OVERWRITE = cfg_globals['overwrite']
+    TILE_SUFFIX = cfg['tile_suffix']
 
     os.chdir(WORKING_DIR)
 
-    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX, OVERWRITE)
+    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)
 
     print()
     logger.success(f"The files were written in the folder {OUTPUT_DIR}. Let's check them out!")
