@@ -110,14 +110,14 @@ if __name__ == "__main__":
     logger.info(f"Using {args.config_file} as config file.")
 
     with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
     with open(args.config_file) as fp:
         cfg_globals = load(fp, Loader=FullLoader)['globals']
 
     WORKING_DIR = cfg['working_dir']
     INPUT_DIR = cfg['input_dir']
-    OUTPUT_DIR = cfg['output_dir']
+    OUTPUT_DIR = cfg['tile_dir']
 
     PLAN_SCALES = cfg['plan_scales']
     NODATA_KEY = cfg['nodata_key'] if 'nodata_key' in cfg.keys() else 255

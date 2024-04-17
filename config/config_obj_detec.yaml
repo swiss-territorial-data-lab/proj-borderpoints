@@ -1,13 +1,5 @@
-
-pct_to_rgb.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  input_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
-  output_dir: outputs/rgb_oth_images
-  plan_scales: inputs/plan_scales.xlsx
-
-
 prepare_data.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: .
   output_dir:
     vectors: outputs/formatted_labels
     tiles: outputs/clipped_tiles
@@ -17,24 +9,25 @@ prepare_data.py:
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
   plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: True
   tile_suffix: _geo.tif
+  convert_images: True
 
 
 prepare_whole_tiles.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  output_dir: outputs/whole_oth_tiles
+  working_dir: .
+  output_dir: 
+    vectors: outputs/gpkg_whole_tiles
+    tiles: outputs/rgb_oth_images
   initial_image_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
-  tile_dir: outputs/rgb_oth_images
   # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: True
+  convert_images: False
 
 
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: outputs
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs
   datasets:
     aoi_tiles: formatted_labels/subtiles.gpkg
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
@@ -59,7 +52,7 @@ generate_tilesets.py:
 
 train_model.py:
   debug_mode: false
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_training_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -72,7 +65,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
