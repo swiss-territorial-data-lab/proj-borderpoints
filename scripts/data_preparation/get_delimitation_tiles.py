@@ -172,6 +172,13 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
                     subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
             
             subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
+        
+        if cst.CLIP_OR_PAD_SUBTILES == 'clip':
+            tiling_zone = tiles_gdf.unary_union
+            subtiles_gdf = gpd.overlay(
+                subtiles_gdf, gpd.GeoDataFrame({'tiling_id': [1], 'geometry': [tiling_zone]}, crs='EPSG:2056'), 
+                how="intersection", keep_geom_type=True
+            )
 
         filepath = os.path.join(output_dir, 'subtiles.gpkg')
         subtiles_gdf.to_file(filepath)
@@ -228,21 +235,16 @@ if __name__ == "__main__":
     with open(args.config_file) as fp:
         cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
-    with open(args.config_file) as fp:
-        cfg_globals = load(fp, Loader=FullLoader)['globals']
-
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
-    OUTPUT_DIR = cfg['output_dir_vectors']
-
-    TILE_DIR = cfg['output_dir_tiles']
-    PLAN_SCALES = cfg['plan_scales']
+    OUTPUT_DIR = cfg['output_dir']['vectors']
+    TILE_DIR = cfg['output_dir']['tiles']
 
     OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
 
-    _, _, written_files = get_delimitation_tiles(TILE_DIR,  OVERLAP_INFO, OUTPUT_DIR, subtiles=True)
+    _, _, written_files = get_delimitation_tiles(TILE_DIR,  OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
 
     print()
     logger.success("The following files were written. Let's check them out!")
