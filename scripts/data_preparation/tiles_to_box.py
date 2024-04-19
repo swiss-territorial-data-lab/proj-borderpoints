@@ -6,6 +6,7 @@ from tqdm import tqdm
 from yaml import load, FullLoader
 
 import geopandas as gpd
+import numpy as np
 import rasterio
 from rasterio.mask import mask
 
@@ -29,9 +30,13 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         bboxes_gdf = bboxes.copy()
         bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
+        if cst.CLIP_OR_PAD_SUBTILES == 'pad':
+            logger.info('Results not entirely covered by the tile will be padded.')
+            PAD_TILES = True
     else:
         logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
         sys.exit(1)
+
 
     for bbox in tqdm(bboxes_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox', total=bboxes_gdf.shape[0]):
 
@@ -41,9 +46,20 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                 out_image, out_transform, = mask(src, [bbox.geometry], crop=True)
                 out_meta = src.meta
 
+            height = out_image.shape[1]
+            width = out_image.shape[2]
+            side_diff = abs(height-width)
+
+            if PAD_TILES and (side_diff > 1):
+                pad_size = side_diff
+                pad_side = ((0, 0), (pad_size, 0), (0, 0)) if height < width else ((0, 0), (0, 0), (0, pad_size))
+                out_image = np.pad(out_image, pad_width=pad_side, constant_values=out_meta['nodata'])
+                height = out_image.shape[1]
+                width = out_image.shape[2]
+
             out_meta.update({"driver": "GTiff",
-                 "height": out_image.shape[1],
-                 "width": out_image.shape[2],
+                 "height": height,
+                 "width": width,
                  "transform": out_transform})
             
             (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)

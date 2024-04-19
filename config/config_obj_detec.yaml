@@ -10,7 +10,7 @@ prepare_data.py:
   plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
-  convert_images: True
+  convert_images: False
 
 
 prepare_whole_tiles.py:
@@ -47,8 +47,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-  seed: 1
-
+seed: 1
 
 train_model.py:
   debug_mode: false
@@ -74,11 +73,11 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0001499.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0001499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
-    epsilon: 0.2       # cf. https://rdp.readthedocs.io/en/latest/
+    epsilon: 0.05       # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
 
 

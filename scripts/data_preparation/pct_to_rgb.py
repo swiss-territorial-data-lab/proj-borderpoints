@@ -78,7 +78,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
             meta.update(crs=CRS.from_epsg(2056))
         elif meta['crs'] != CRS.from_epsg(2056):
             print()
-            logger.warning(f'Wrong crs for the tile {tile_name}: {meta['crs']}, tile will be reprojected.')
+            logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}, tile will be reprojected.')
 
         if (meta['crs'] != CRS.from_epsg(2056)) or (meta['transform'][1] != 0):
             converted_image, new_transform = reproject(

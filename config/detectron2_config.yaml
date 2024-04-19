@@ -183,7 +183,7 @@ MODEL:
     IOU_THRESHOLDS:  # Limit to be considered as background vs foreground 
     - 0.5
     NAME: StandardROIHeads
-    NMS_THRESH_TEST: 0.5   # IoU threshold for NMS 
+    NMS_THRESH_TEST: 0.3   # IoU threshold for NMS 
     NUM_CLASSES: 1
     POSITIVE_FRACTION: 0.25
     PROPOSAL_APPEND_GT: true
@@ -262,7 +262,7 @@ MODEL:
 OUTPUT_DIR: logs
 SEED: 42
 SOLVER:
-  BASE_LR: 0.01
+  BASE_LR: 0.005
   BIAS_LR_FACTOR: 1.0
   CHECKPOINT_PERIOD: 250
   CLIP_GRADIENTS:
@@ -273,13 +273,14 @@ SOLVER:
   GAMMA: 0.8
   IMS_PER_BATCH: 2
   LR_SCHEDULER_NAME: WarmupMultiStepLR
-  MAX_ITER: 3000
+  MAX_ITER: 3500
   MOMENTUM: 0.9
   NESTEROV: false
   STEPS:
-  -  500
+  - 750
   - 1500
   - 2500
+  - 3000
   WARMUP_FACTOR: 0.001
   WARMUP_ITERS: 200
   WARMUP_METHOD: linear

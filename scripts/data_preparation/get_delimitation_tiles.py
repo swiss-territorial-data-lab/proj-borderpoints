@@ -174,6 +174,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
         
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
+            logger.info('The tiles are clipped to the image border.')
             tiling_zone = tiles_gdf.unary_union
             subtiles_gdf = gpd.overlay(
                 subtiles_gdf, gpd.GeoDataFrame({'tiling_id': [1], 'geometry': [tiling_zone]}, crs='EPSG:2056'), 
