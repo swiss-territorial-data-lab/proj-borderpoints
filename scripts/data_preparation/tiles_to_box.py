@@ -21,6 +21,7 @@ logger = misc.format_logger(logger)
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
     written_files = []
+    PAD_TILES = False
 
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
