@@ -23,6 +23,17 @@ logger = format_logger(logger)
 
 
 def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif'):
+    """Convert images with a color palette to RGB images.
+    Reproject the images to EPSG:2056 if the tranform or the CRS is not already corresponding to EPSG:2056.
+
+    Args:
+        input_dir (str): path to the directory containing the tiles
+        output_dir (str, optional): path to the output directory. Defaults to 'outputs/rgb_images'.
+        plan_scales_path (str, optional): path to the excel file indicating the scale corresponding to each tile number. 
+            If None, the scale indicated in the tile id will be 0. Defaults to None.
+        nodata_key (int, optional): number in the color palette correponding to nodata, i.e. to the color definied as (0,0,0,0). Defaults to 255.
+        tile_suffix (str, optional): suffix of the filename, which is the part coming after the tile number or id. Defaults to '.tif'.
+    """
 
     os.makedirs(output_dir, exist_ok=True)
 

@@ -13,6 +13,16 @@ from functions.fct_misc import format_logger
 logger = format_logger(logger)
 
 def get_point_bbox_size(border_pts_path, output_dir='outputs'):
+    """Get the maximum bounding box size of the border points at each scale.
+
+    Args:
+        border_pts_path (sttr): path to the border points
+        output_dir (str, optional): path to the output directory. Defaults to 'outputs'.
+
+    Returns:
+        size_per_scale_df: DataFrame with the maximum size at each scale
+        filepath: list with the filepath of the saved file
+    """
 
     logger.info('Read data...')
     pts_gdf = gpd.read_file(border_pts_path)

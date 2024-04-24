@@ -20,6 +20,17 @@ logger = misc.format_logger(logger)
 
 
 def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
+    """Test the overlap between the geometries of two GeoDataFrames and return the ids of the 1st gdf passing the test.
+
+    Args:
+        gdf1 (GeoDataFrame): first GeoDataFrame
+        gdf2 (GeoDataFrame): second GeoDataFrame
+        threshold (float, optional): limit value. Defaults to 0.5.
+        op (str, optional): operator to use in the test. Possible values are 'larger' and "seq". Defaults to 'larger'.
+
+    Returns:
+        list: ids of the 1st gdf passing the test
+    """
     
     gdf1['total_area'] = gdf1.area
 
@@ -38,6 +49,21 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
 
 
 def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
+    """Get the delimitation of the tiles in a directory
+
+    Args:
+        tile_dir (str): path to the directory containing the tiles
+        overlap_info (str or DataFrame, optional): path to the DataFrame or DataFrame with the information about the overlap between tiles at each scale. 
+            If None, overlap is 0. Defaults to None.
+        tile_suffix (str, optional): suffix of the filename, which is the part coming after the tile number or id. Defaults to '.tif'.
+        output_dir (str, optional): path to the output directory. Defaults to 'outputs'.
+        subtiles (bool, optional): whether to generate the subtiles over each tile or not. Defaults to False.
+
+    Returns:
+        tiles_gdf: GeoDataFrame with the bounding box and the info of each tile
+        subtiles_gdf: GeoDataFrame with the bounding box and the info of each subtiles. If `subtiles`==None, returns None
+        written_files: list of the written files
+    """
 
     os.makedirs(output_dir, exist_ok=True)
     written_files = [] 
@@ -192,6 +218,22 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     return tiles_gdf, subtiles_gdf, written_files
     
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
+    """Pad the bounding box of a tile with the distance necessary to match a grid generated with the passed parameters.
+    Save the result in a GeoDataFrame.
+
+    Args:
+        gdf (GeoDataFrame): GeoDataFrame in which the result is saved
+        tile_bounds (bounds): bounds of the tile
+        tile_size (tuple): dimensions of the tile in pixels
+        pixel_size (float): size of the pixel in cm
+        grid_width (int, optional): number of pixels along the width of one grid cell. Defaults to 256.
+        grid_height (int, optional): number of pixels along the hight of one grid cell. Defaults to 256.
+        max_dx (int, optional): overlap in pixels along the width. Defaults to 0.
+        max_dy (int, optional): overlap in pixels along the height. Defaults to 0.
+
+    Returns:
+        gdf: GeoDataFrame with two additional geometries corresponding to the padding on the top and on the right
+    """
 
     min_x, min_y, max_x, max_y = tile_bounds
     tile_width, tile_height = tile_size

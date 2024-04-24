@@ -19,6 +19,14 @@ logger = misc.format_logger(logger)
 
 
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
+    """Clip the tiles in a directory to the box geometries from a GeoDataFrame
+
+    Args:
+        tile_dir (str): path to the directory containing the tiles
+        bboxes (str or GeoDataFrame): path to the GeoDataFrame or GeoDataFrame with the definition of the boxes
+        output_dir (str, optional): path to the output directory. Defaults to 'outputs'.
+        tile_suffix (str, optional): suffix of the filename, which is the part coming after the tile number or id. Defaults to '.tif'.
+    """
 
     PAD_TILES = False
 

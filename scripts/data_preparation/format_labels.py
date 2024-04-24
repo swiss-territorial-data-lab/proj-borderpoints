@@ -13,6 +13,16 @@ logger = format_logger(logger)
 
 
 def format_labels(path_points_poly, output_dir='outputs'):
+    """Format the labels based on the GT from the experts
+
+    Args:
+        path_points_poly (str): path to the GT file
+        output_dir (str, optional): path to the output dir. Defaults to 'outputs'.
+
+    Returns:
+        pts_gdf: GeoDataFrame with the formatted labels
+        written_files: list with the path of the written files
+    """
 
     written_files =[] 
 

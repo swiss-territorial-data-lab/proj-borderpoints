@@ -24,22 +24,3 @@ def format_logger(logger):
             level="ERROR")
 
     return logger
-
-
-def make_hard_link(img_file, new_img_file):
-        
-        if not os.path.isfile(img_file):
-                raise FileNotFoundError(img_file)
-
-        src_file = img_file
-        dst_file = new_img_file
-
-        dirname = os.path.dirname(dst_file)
-
-        if not os.path.exists(dirname):
-                os.makedirs(dirname)
-
-        if not os.path.exists(dst_file):
-                os.link(src_file, dst_file)
-
-        return None

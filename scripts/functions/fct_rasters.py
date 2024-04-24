@@ -9,6 +9,20 @@ from shapely.geometry import Polygon, shape
 from math import ceil, floor
 
 def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
+    """Determine number of grid cells based on the tile size, the grid dimension and the overlap between tiles.
+    All values are in pixels.
+
+    Args:
+        tile_size (tuple): tile width and height
+        grid_width (int, optional): width of a grid cell. Defaults to 256.
+        grid_height (int, optional): height of a grid cell. Defaults to 256.
+        max_dx (int, optional): overlap on the width. Defaults to 0.
+        max_dy (int, optional): overlap on the height. Defaults to 0.
+
+    Returns:
+        number_cells_x: number of grid cells on the width
+        number_cells_y: number of grid cells on the height
+    """
 
     tile_width, tile_height = tile_size
     number_cells_x = ceil((tile_width - max_dx)/(grid_width - max_dx))
@@ -18,6 +32,14 @@ def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0
 
 
 def get_bbox_origin(bbox_geom):
+    """Get the lower xy coorodinates of a bounding box.
+
+    Args:
+        bbox_geom (geometry): bounding box
+
+    Returns:
+        tuple: lower xy coordinates of the passed geometry
+    """
     coords = bbox_geom.exterior.coords.xy
     min_x = min(coords[0])
     min_y = min(coords[1])
@@ -25,6 +47,22 @@ def get_bbox_origin(bbox_geom):
     return (min_x, min_y)
 
 def grid_over_tiles(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
+    """Create a grid over a tile and saves it in a GeoDataFrame with each row representing a grid cell.
+
+    Args:
+        tile_size (tuple): tile width and height
+        tile_origin (tuple): tile minimum coordinates
+        pixel_size_x (float): size of the pixel in the x direction
+        pixel_size_y (float, optional): size of the pixels in the y drection. If None, equals to pixel_size_x. Defaults to None.
+        max_dx (int, optional): overlap in the x direction. Defaults to 0.
+        max_dy (int, optional): overlap in the y direction. Defaults to 0.
+        grid_width (int, optional): number of pixels in the width of one grid cell. Defaults to 256.
+        grid_height (int, optional): number of pixels in the height of one grid cell. Defaults to 256.
+        crs (str, optional): coordinate reference system. Defaults to 'EPSG:2056'.
+
+    Returns:
+        GeoDataFrame: grid cells and their attributes
+    """
 
     min_x, min_y = tile_origin
 
