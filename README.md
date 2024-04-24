@@ -23,3 +23,5 @@ Data preparation for whole tiles without considering any GT:
 ```
 python scripts/prepare_whole_tiles.py config/config_obj_detec.yaml
 ```
+
+_Warning_: for the script `prepare_whole_tiles.py`, it is necessary to comment and uncomment the proper lines depending if we work with the GT or the other plans.
