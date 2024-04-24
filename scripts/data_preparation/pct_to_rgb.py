@@ -62,7 +62,6 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
 
         with rio.open(tile_path) as src:
             image = src.read()
-            bounds = src.bounds
             meta = src.meta
             colormap = src.colormap(1)
 
@@ -70,6 +69,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         if nodata_value != 0:
             print()
             logger.warning(f'The nodata value for the plan {tile_name} is {nodata_value} and not 0.')
+            logger.warning(f'Setting the nodata value to 0.')
+            colormap[nodata_key] = (0, 0, 0, 0)
+            nodata_value = 0
         converted_image = np.empty((3, meta['height'], meta['width']))
         # Efficient mapping: https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
         mapping_key = np.array(list(colormap.keys()))
@@ -89,7 +91,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
             meta.update(crs=CRS.from_epsg(2056))
         elif meta['crs'] != CRS.from_epsg(2056):
             print()
-            logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}, tile will be reprojected.')
+            logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}, it will be reprojected.')
 
         if (meta['crs'] != CRS.from_epsg(2056)) or (meta['transform'][1] != 0):
             converted_image, new_transform = reproject(
@@ -121,19 +123,16 @@ if __name__ == "__main__":
     logger.info(f"Using {args.config_file} as config file.")
 
     with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
-
-    with open(args.config_file) as fp:
-        cfg_globals = load(fp, Loader=FullLoader)['globals']
+        cfg = load(fp, Loader=FullLoader)['prepare_whole_tiles.py']
 
     WORKING_DIR = cfg['working_dir']
-    INPUT_DIR = cfg['input_dir']
+    INPUT_DIR = cfg['initial_image_dir']
     OUTPUT_DIR = cfg['tile_dir']
 
-    PLAN_SCALES = cfg['plan_scales']
+    PLAN_SCALES = cfg['plan_scales'] if 'plan_scales' in cfg.keys() else None
     NODATA_KEY = cfg['nodata_key'] if 'nodata_key' in cfg.keys() else 255
 
-    TILE_SUFFIX = cfg['tile_suffix']
+    TILE_SUFFIX = cfg['tile_suffix'] if 'tile_suffix' in cfg.keys() else '.tif'
 
     os.chdir(WORKING_DIR)
 
