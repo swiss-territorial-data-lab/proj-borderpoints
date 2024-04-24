@@ -109,7 +109,7 @@ if __name__ == "__main__":
     OUTPUT_DIR_TILES = cfg['output_dir_tiles']
 
     TILE_DIR = cfg['tile_dir']
-    BBOX_PATH = cfg['bbox_path']
+    BBOX_PATH = cfg['bbox']
 
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)

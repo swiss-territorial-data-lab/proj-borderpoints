@@ -46,7 +46,7 @@ def get_bbox_origin(bbox_geom):
 
     return (min_x, min_y)
 
-def grid_over_tiles(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
+def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
     """Create a grid over a tile and saves it in a GeoDataFrame with each row representing a grid cell.
 
     Args:

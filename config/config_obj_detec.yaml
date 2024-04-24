@@ -1,5 +1,5 @@
 prepare_data.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir:
     vectors: outputs/formatted_labels
     tiles: outputs/clipped_tiles
@@ -10,17 +10,25 @@ prepare_data.py:
   plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
-  convert_images: False
+  convert_images: True
 
 
 prepare_whole_tiles.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  # GT plans
+  # output_dir: 
+  #   vectors: outputs/gpkg_whole_tiles
+  # initial_image_dir: inputs/plans
+  # tile_dir: outputs/rgb_images
+  # plan_scales: inputs/plan_scales.xlsx
+  # tile_suffix: _geo.tif
+  # Other plans
   output_dir: 
-    vectors: outputs/gpkg_whole_tiles
-    tiles: outputs/rgb_oth_images
+    vectors: outputs/gpkg_whole_oth_tiles
   initial_image_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
+  tile_dir: outputs/rgb_oth_images
   # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: False
+  convert_images: True
 
 
 generate_tilesets.py:

@@ -173,7 +173,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             nodata_subset_gdf = nodata_gdf[nodata_gdf.tile_name==tile.name].copy()
 
             # Make a large tiling grid to cover the image
-            temp_gdf = rasters.grid_over_tiles(grid_width=cst.GRID_LARGE_TILES, grid_height=cst.GRID_LARGE_TILES, **tile_infos)
+            temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_LARGE_TILES, grid_height=cst.GRID_LARGE_TILES, **tile_infos)
 
             # Only keep tiles that do not overlap too much the nodata zone
             large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_LARGE_TILES)
@@ -183,7 +183,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
 
             if (tile.max_dx == 0) and (tile.max_dy == 0):
                 # Make a smaller tiling grid to not lose too much data
-                temp_gdf = rasters.grid_over_tiles(grid_width=cst.GRID_SMALL_TILES, grid_height=cst.GRID_SMALL_TILES, **tile_infos)
+                temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_SMALL_TILES, grid_height=cst.GRID_SMALL_TILES, **tile_infos)
                 # Only keep smal subtiles not under a large one
                 small_subtiles_gdf = gpd.overlay(temp_gdf, large_subtiles_gdf, how='difference', keep_geom_type=True)
                 small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area > 10].copy()
