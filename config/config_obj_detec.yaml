@@ -104,3 +104,4 @@ post_processing.py:
     val: val_detections_at_0dot05_threshold.gpkg
     tst: tst_detections_at_0dot05_threshold.gpkg  
   score: 0.65
+  keep_datasets: True

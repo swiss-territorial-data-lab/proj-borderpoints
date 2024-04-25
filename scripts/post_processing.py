@@ -36,6 +36,7 @@ OUTPUT_DIR = cfg['output_dir']
 TILES = cfg['tiles']
 DETECTIONS = cfg['detections']
 SCORE = cfg['score']
+KEEP_DATASETS = cfg['keep_datasets']
 
 os.chdir(WORKING_DIR)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -110,7 +111,7 @@ if not duplicated_detections_gdf.empty:
             det_to_remove = duplicate.det_id_right
         else:
             det_to_remove = id_highest_score
-        duplicated_det_ids.append(duplicated_det_ids)
+        duplicated_det_ids.append(det_to_remove)
 
 logger.info(f'{len(duplicated_det_ids)} detections will be removed because they are duplicates of a same object.')
 detections_gdf = detections_gdf[~detections_gdf.det_id.isin(duplicated_det_ids)].copy()
@@ -120,7 +121,12 @@ del dets_one_obj_gdf, dets_on_tile_gdf, duplicated_detections_gdf, intersect_det
 logger.info('Dissolve dets in clusters....')
 clustered_dets_gdf = detections_gdf[~detections_gdf.cluster_id.isnull()].copy()
 clustered_dets_gdf.loc[:, 'geometry'] = clustered_dets_gdf.buffer(0.1)
-dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'geometry']].dissolve('cluster_id', 'median', as_index=False)
+if KEEP_DATASETS:
+    dissolved_dets_gdf = clustered_dets_gdf[['score', 'dataset', 'cluster_id', 'det_class', 'geometry']].dissolve(
+        ['cluster_id', 'dataset'], 'median', as_index=False
+    )
+else:
+    dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'geometry']].dissolve('cluster_id', 'median', as_index=False)
 dissolved_dets_gdf = dissolved_dets_gdf.assign(det_id=dissolved_dets_gdf.cluster_id + detections_gdf.det_id.max(), geometry=dissolved_dets_gdf.buffer(-0.1))
 
 detections_gdf = pd.concat(
