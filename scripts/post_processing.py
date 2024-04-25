@@ -8,6 +8,8 @@ from yaml import load, FullLoader
 import geopandas as gpd
 import pandas as pd
 
+import json
+
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -35,6 +37,7 @@ OUTPUT_DIR = cfg['output_dir']
 
 TILES = cfg['tiles']
 DETECTIONS = cfg['detections']
+CATEGORY_IDS_JSON = cfg['category_ids_json']
 SCORE = cfg['score']
 KEEP_DATASETS = cfg['keep_datasets']
 
@@ -52,6 +55,11 @@ for dataset_acronym in DETECTIONS.keys():
     detections_gdf = pd.concat([detections_gdf, dataset], ignore_index=True)
 
 detections_gdf['det_id'] = detections_gdf.index
+
+filepath = open(os.path.join(INPUT_DIR, CATEGORY_IDS_JSON))
+categories_json = json.load(filepath)
+filepath.close()
+
 
 logger.info('Filter dataframe by score value...')
 detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
@@ -134,5 +142,30 @@ detections_gdf = pd.concat(
     ignore_index=True
 )
 
+
+logger.info('Get the category of each detection...')
+# get corresponding class ids
+categories_info_df = pd.DataFrame()
+
+for key in categories_json.keys():
+    categories_tmp={sub_key: [value] for sub_key, value in categories_json[key].items()}
+    categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
+
+# Attribute a category to each row depending on the class id
+detections_gdf['det_category'] = [
+    categories_info_df.loc[categories_info_df['id']==det_class+1, 'name'].iloc[0]
+    for det_class in detections_gdf.det_class.to_numpy()
+] 
+
+
 logger.info('Save file...')
-detections_gdf.to_file(os.path.join(OUTPUT_DIR, 'detected_points.gpkg'))
+if KEEP_DATASETS:
+    detections_gdf.to_file(os.path.join(OUTPUT_DIR, 'dst_detected_points.gpkg'))
+else:
+    detections_gdf.to_file(os.path.join(OUTPUT_DIR, 'detected_points.gpkg'))
+
+# Stop chronometer
+toc = time()
+logger.success(f"Nothing left to be done: exiting. Elapsed time: {(toc-tic):.2f} seconds")
+
+sys.stderr.flush()

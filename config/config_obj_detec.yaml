@@ -103,5 +103,6 @@ post_processing.py:
     trn: trn_detections_at_0dot05_threshold.gpkg
     val: val_detections_at_0dot05_threshold.gpkg
     tst: tst_detections_at_0dot05_threshold.gpkg  
+  category_ids_json: category_ids.json
   score: 0.65
-  keep_datasets: True
+  keep_datasets: False
