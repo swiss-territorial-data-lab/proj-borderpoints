@@ -83,6 +83,7 @@ make_detections.py:
 
 assess_detections.py:
   working_directory: outputs/object_detector
+  output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
     image_metadata_json: img_metadata.json
@@ -91,4 +92,15 @@ assess_detections.py:
       trn: trn_detections_at_0dot05_threshold.gpkg
       val: val_detections_at_0dot05_threshold.gpkg
       tst: tst_detections_at_0dot05_threshold.gpkg
-  output_folder: .
+
+
+post_processing.py:
+  working_dir: outputs
+  input_dir: object_detector
+  output_dir: post_processing
+  tiles: formatted_labels/subtiles.gpkg
+  detections:
+    trn: trn_detections_at_0dot05_threshold.gpkg
+    val: val_detections_at_0dot05_threshold.gpkg
+    tst: tst_detections_at_0dot05_threshold.gpkg  
+  score: 0.65

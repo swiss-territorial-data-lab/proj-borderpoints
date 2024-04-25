@@ -26,20 +26,19 @@ def format_logger(logger):
     return logger
 
 
-def make_hard_link(img_file, new_img_file):
-        
-        if not os.path.isfile(img_file):
-                raise FileNotFoundError(img_file)
+def intersection_over_union(polygon1_shape, polygon2_shape):
+    """Determine the intersection area over union area (IoU) of two polygons
 
-        src_file = img_file
-        dst_file = new_img_file
+    Args:
+        polygon1_shape (geometry): first polygon
+        polygon2_shape (geometry): second polygon
 
-        dirname = os.path.dirname(dst_file)
+    Returns:
+        int: Unrounded ratio between the intersection and union area
+    """
 
-        if not os.path.exists(dirname):
-                os.makedirs(dirname)
-
-        if not os.path.exists(dst_file):
-                os.link(src_file, dst_file)
-
-        return None
+    # Calculate intersection and union, and the IoU
+    polygon_intersection = polygon1_shape.intersection(polygon2_shape).area
+    polygon_union = polygon1_shape.area + polygon2_shape.area - polygon_intersection
+    
+    return polygon_intersection / polygon_union
