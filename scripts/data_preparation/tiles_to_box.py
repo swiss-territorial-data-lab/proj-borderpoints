@@ -7,6 +7,7 @@ from yaml import load, FullLoader
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import rasterio
 from rasterio.mask import mask
 
@@ -38,7 +39,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
         sys.exit(1)
 
-
+    name_correspondance_list = []
     for bbox in tqdm(bboxes_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox', total=bboxes_gdf.shape[0]):
 
         tilepath = bbox.tilepath
@@ -64,7 +65,8 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                  "transform": out_transform})
             
             (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-            output_path = os.path.join(output_dir, f"{bbox.Echelle}_{round(min_x)}_{round(min_y)}.tif")
+            new_name = f"{bbox.Echelle}_{round(min_x)}_{round(min_y)}.tif"
+            output_path = os.path.join(output_dir, new_name)
 
             if not cst.OVERWRITE and os.path.exists(output_path):
                 continue
@@ -72,12 +74,23 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
 
+            name_correspondance_list.append((os.path.basename(tilepath), new_name))
+
         else:
             print()
             try:
                 logger.warning(f"No tile correponding to plan {bbox.id}")
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
+
+    second_name_corresp_df = pd.DataFrame.from_records(name_correspondance_list, columns=['rgb_name', 'bbox_name'])
+    supposed_path = os.path.join(os.path.dirname(tilepath), 'name_correspondance.csv')
+    if os.path.exists(supposed_path):
+        name_correspondance_df = pd.read_csv(supposed_path)
+        name_correspondance_df = name_correspondance_df.merge(second_name_corresp_df, left_on='new_name', right_on='rgb_name')
+        name_correspondance_df.to_csv(supposed_path)
+    else:
+        second_name_corresp_df.to_csv(supposed_path)
 
     logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
 

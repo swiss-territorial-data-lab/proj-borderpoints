@@ -95,7 +95,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
 
-    name_correspondance_df = pd.DataFrame.from_records(name_correspondance_list)
+    name_correspondance_df = pd.DataFrame.from_records(name_correspondance_list, columns=['original_name', 'new_name'])
     name_correspondance_df.to_csv(os.path.join(OUTPUT_DIR, 'name_correspondance.csv'))
 
     logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
