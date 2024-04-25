@@ -36,6 +36,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
     else:
         logger.info('No info on the scale of each tile, setting the scale to 0.')
 
+    name_correspondance_list = []
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
@@ -45,9 +46,12 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         else:
             tile_scale = 0
 
-        out_path = os.path.join(output_dir, f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif")
+        tile_new_name = f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif"
+        out_path = os.path.join(output_dir, tile_new_name)
         if not cst.OVERWRITE and os.path.isfile(out_path):
             continue
+        
+        name_correspondance_list.append((tile_name, tile_new_name))
 
         with rio.open(tile_path) as src:
             image = src.read()
@@ -90,6 +94,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         meta.update(count=3, nodata=nodata_value)
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
+
+    name_correspondance_df = pd.DataFrame.from_records(name_correspondance_list)
+    name_correspondance_df.to_csv(os.path.join(OUTPUT_DIR, 'name_correspondance.csv'))
 
     logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
 
