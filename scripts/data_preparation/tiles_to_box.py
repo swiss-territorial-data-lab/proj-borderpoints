@@ -22,7 +22,7 @@ logger = misc.format_logger(logger)
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
     written_files = []
-    PAD_TILES = False
+    pad_tiles = False
 
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
@@ -34,7 +34,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         if cst.CLIP_OR_PAD_SUBTILES == 'pad':
             logger.info('Results not entirely covered by the tile will be padded.')
-            PAD_TILES = True
+            pad_tiles = True
     else:
         logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
         sys.exit(1)
@@ -52,7 +52,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             width = out_image.shape[2]
             side_diff = abs(height-width)
 
-            if PAD_TILES and (side_diff > 1):
+            if pad_tiles and (side_diff > 1):
                 pad_size = side_diff
                 pad_side = ((0, 0), (pad_size, 0), (0, 0)) if height < width else ((0, 0), (0, 0), (0, pad_size))
                 out_image = np.pad(out_image, pad_width=pad_side, constant_values=out_meta['nodata'])
@@ -74,7 +74,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
 
-            name_correspondance_list.append((os.path.basename(tilepath), new_name))
+            name_correspondance_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
         else:
             print()

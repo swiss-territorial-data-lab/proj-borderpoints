@@ -51,7 +51,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         if not cst.OVERWRITE and os.path.isfile(out_path):
             continue
         
-        name_correspondance_list.append((tile_name, tile_new_name))
+        name_correspondance_list.append((tile_name, tile_new_name.rstrip('.tif')))
 
         with rio.open(tile_path) as src:
             image = src.read()

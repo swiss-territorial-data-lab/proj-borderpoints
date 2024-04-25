@@ -41,6 +41,7 @@ SUBTILES = cfg['subtiles']
 DETECTIONS = cfg['detections']
 GROUND_TRUTH = cfg['ground_truth']
 CATEGORY_IDS_JSON = cfg['category_ids_json']
+NAME_CORRESPONDANCE = cfg['name_correspondance']
 
 KEEP_DATASETS = cfg['keep_datasets']
 IOU_THRESHOLD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
@@ -64,6 +65,8 @@ filepath = open(CATEGORY_IDS_JSON)
 categories_json = json.load(filepath)
 filepath.close()
 
+name_correspondance_df = pd.read_csv(NAME_CORRESPONDANCE)
+
 logger.info('Format files...')
 
 # Merge tiles according to parameters and put dets in a dict
@@ -75,7 +78,8 @@ if KEEP_DATASETS:
         logger.warning("There is no indication in the name of the dataset for the detections that the partition was retained.")
         logger.warning("Ensure that the proper file is used.")
 
-    for dataset in detections_gdf.dataset.unique():
+    datasets_list = detections_gdf.dataset.unique()
+    for dataset in datasets_list:
         dets_gdf_dict[dataset] = detections_gdf[detections_gdf.dataset == dataset].copy()
 
 else:
@@ -85,15 +89,19 @@ else:
         logger.warning("There is an indication in the name of the dataset for the detections that the partition was retained.")
         logger.warning("Ensure that the proper file is used.")
 
+    datasets_list = ['all']
     dets_gdf_dict['all'] = detections_gdf.copy()
+    tiles_gdf.loc[:, 'dataset'] = 'all'
 
 assert(labels_gdf.crs == tiles_gdf.crs)
 
 # Clip labels to defined tiles
-clipped_labels_gdf = gpd.GeoDataFrame
-for tile_name in tiles_gdf.initial_tile.unique():
-    labels_on_tile_gdf = labels_gdf[labels_gdf.NumPlan == tile_name].copy()
-    selected_tiles_gdf = tiles_gdf[tiles_gdf.intial_tile == tile_name].copy()
+tiles_gdf = tiles_gdf.merge(name_correspondance_df, left_on="initial_tile", right_on="bbox_name")
+
+clipped_labels_gdf = gpd.GeoDataFrame()
+for tile_name in tiles_gdf.original_name.unique():
+    labels_on_tile_gdf = labels_gdf[labels_gdf.Num_plan == tile_name].copy()
+    selected_tiles_gdf = tiles_gdf[tiles_gdf.original_name == tile_name].copy()
 
     tmp_gdf = misc.clip_labels(labels_on_tile_gdf, selected_tiles_gdf, fact=0.999)
     clipped_labels_gdf = pd.concat([clipped_labels_gdf, tmp_gdf], ignore_index=True)
@@ -120,10 +128,13 @@ clipped_labels_w_id_gdf = clipped_labels_gdf.merge(categories_info_df, on='CATEG
 
 logger.info('Tag detections and get metrics...')
 
-tagged_dets_gdf = gpd.GeoDataFrame()
 metrics_dict_by_cl = {}
+for dataset in datasets_list:
+    metrics_dict_by_cl[dataset] = []
 metrics_cl_df_dict = {}
-for dataset in detections_gdf.dataset.unique():
+tagged_dets_gdf = gpd.GeoDataFrame()
+
+for dataset in datasets_list:
 
     tmp_gdf = dets_gdf_dict[dataset].copy()
     tmp_gdf.to_crs(epsg=clipped_labels_w_id_gdf.crs.to_epsg(), inplace=True)
@@ -159,17 +170,16 @@ for dataset in detections_gdf.dataset.unique():
 
     metrics_cl_df_dict[dataset] = pd.DataFrame.from_records(metrics_dict_by_cl[dataset])
 
-file_to_write = os.path.join(OUTPUT_DIR, 'tagged_detections.gpkg')
+file_to_write = os.path.join(OUTPUT_DIR, f'{"dst_" if KEEP_DATASETS else ""}tagged_detections.gpkg')
 tagged_dets_gdf[['geometry', 'score', 'tag', 'dataset', 'label_class', 'CATEGORY', 'det_class', 'det_category']]\
     .to_file(file_to_write, driver='GPKG', index=False)
 written_files.append(file_to_write)
 
 # Save the metrics by class for each dataset
 metrics_by_cl_df = pd.DataFrame()
-for dataset in metrics_cl_df_dict.keys():
+for dataset in datasets_list:
     dataset_df = metrics_cl_df_dict[dataset].copy()
     dataset_df['dataset'] = dataset
-    dataset_df.drop(columns=['threshold'], inplace=True)
 
     metrics_by_cl_df = pd.concat([metrics_by_cl_df, dataset_df], ignore_index=True)
 
@@ -178,7 +188,7 @@ metrics_by_cl_df['category'] = [
     for det_class in metrics_by_cl_df['class'].to_numpy()
 ] 
 
-file_to_write = os.path.join(OUTPUT_DIR, 'metrics_by_class.csv')
+file_to_write = os.path.join(OUTPUT_DIR, f'{"dst_" if KEEP_DATASETS else ""}metrics_by_class.csv')
 metrics_by_cl_df[
     ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'dataset']
 ].sort_values(by=['dataset', 'class']).to_csv(file_to_write, index=False)
@@ -188,7 +198,7 @@ tmp_df = metrics_by_cl_df[['dataset', 'TP_k', 'FP_k', 'FN_k']].groupby(by='datas
 tmp_df2 =  metrics_by_cl_df[['dataset', 'precision_k', 'recall_k']].groupby(by='dataset', as_index=False).mean()
 global_metrics_df = tmp_df.merge(tmp_df2, on='dataset')
 
-file_to_write = os.path.join(OUTPUT_DIR, 'global_metrics.csv')
+file_to_write = os.path.join(OUTPUT_DIR, f'{"dst_" if KEEP_DATASETS else ""}global_metrics.csv')
 global_metrics_df.to_csv(file_to_write, index=False)
 written_files.append(file_to_write)
 
@@ -198,7 +208,7 @@ sorted_classes =  tagged_dets_gdf.loc[~na_value_category, 'CATEGORY'].sort_value
 tagged_dets_gdf.loc[na_value_category, 'CATEGORY'] = 'background'
 tagged_dets_gdf.loc[tagged_dets_gdf.det_category.isna(), 'det_category'] = 'background'
 
-for dataset in tagged_dets_gdf.dataset.unique():
+for dataset in datasets_list:
     tagged_dataset_gdf = tagged_dets_gdf[tagged_dets_gdf.dataset == dataset].copy()
 
     true_class = tagged_dataset_gdf.CATEGORY.to_numpy()
@@ -208,7 +218,7 @@ for dataset in tagged_dets_gdf.dataset.unique():
     confusion_df = pd.DataFrame(confusion_array, index=sorted_classes, columns=sorted_classes, dtype='int64')
     confusion_df.rename(columns={'background': 'missed labels'}, inplace=True)
 
-    file_to_write = f'{dataset}_confusion_matrix.csv'
+    file_to_write = (os.path.join(OUTPUT_DIR, f'{dataset}_confusion_matrix.csv'))
     confusion_df.to_csv(file_to_write)
     written_files.append(file_to_write)
 
@@ -219,7 +229,7 @@ for written_file in written_files:
 
 print()
 
-toc = time.time()
+toc = time()
 logger.success(f"Nothing left to be done: exiting. Elapsed time: {(toc-tic):.2f} seconds")
 
 sys.stderr.flush()
