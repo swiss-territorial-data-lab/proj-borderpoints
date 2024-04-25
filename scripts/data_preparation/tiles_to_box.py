@@ -87,7 +87,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     supposed_path = os.path.join(os.path.dirname(tilepath), 'name_correspondance.csv')
     if os.path.exists(supposed_path):
         name_correspondance_df = pd.read_csv(supposed_path)
-        name_correspondance_df = name_correspondance_df.merge(second_name_corresp_df, left_on='new_name', right_on='rgb_name')
+        name_correspondance_df = name_correspondance_df.merge(second_name_corresp_df, on='rgb_name')
         name_correspondance_df.to_csv(supposed_path)
     else:
         second_name_corresp_df.to_csv(supposed_path)
@@ -107,15 +107,12 @@ if __name__ == "__main__":
     with open(args.config_file) as fp:
         cfg = load(fp, Loader=FullLoader)['prepare_data.py']
 
-    with open(args.config_file) as fp:
-        cfg_globals = load(fp, Loader=FullLoader)['globals']
-
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
-    OUTPUT_DIR_TILES = cfg['output_dir_tiles']
+    OUTPUT_DIR_TILES = cfg['output_dir']['tiles']
 
     TILE_DIR = cfg['tile_dir']
-    BBOX_PATH = cfg['bbox_path']
+    BBOX_PATH = cfg['bbox']
 
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
