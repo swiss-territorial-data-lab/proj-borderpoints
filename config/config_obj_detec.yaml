@@ -55,7 +55,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-seed: 1
+  seed: 2
 
 train_model.py:
   debug_mode: false
