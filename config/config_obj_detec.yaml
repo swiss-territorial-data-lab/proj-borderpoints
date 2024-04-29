@@ -47,7 +47,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-seed: 2
+  seed: 42
 
 train_model.py:
   debug_mode: false
@@ -73,7 +73,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0002249.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0004749.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
@@ -112,9 +112,9 @@ assess_by_tile.py:
   working_dir: outputs
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
-  detections: post_processing/detected_points.gpkg
   ground_truth: formatted_labels/ground_truth_labels.gpkg
   category_ids_json: object_detector/category_ids.json
   name_correspondance: rgb_images/name_correspondance.csv
-  keep_datasets: True
+  keep_datasets: False
+  detections: post_processing/detected_points.gpkg
 
