@@ -1,9 +1,17 @@
+format_surveying_data.py:
+  working_dir: .
+  output_dir:
+    vectors: outputs
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+
+
 prepare_whole_tiles.py:
   working_dir: .
   output_dir: 
     vectors: outputs/gpkg_whole_oth_tiles
-    tiles: outputs/rgb_oth_images
   initial_image_dir: inputs/other_plans/subset
+  tile_dir: outputs/rgb_oth_images
+  cadastral_surveying: outputs/MO_points.gpkg
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   convert_images: False
 

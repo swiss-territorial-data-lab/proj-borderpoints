@@ -13,16 +13,6 @@ prepare_data.py:
   convert_images: False
 
 
-prepare_whole_tiles.py:
-  working_dir: .
-  output_dir: 
-    vectors: outputs/gpkg_whole_tiles
-    tiles: outputs/rgb_oth_images
-  initial_image_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: False
-
-
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles

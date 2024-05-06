@@ -111,7 +111,6 @@ intersect_detections_gdf['iou'] = [
 ]
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.5].copy()
 
-
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
     for duplicate in duplicated_detections_gdf.itertuples():

@@ -28,10 +28,11 @@ with open(args.config_file) as fp:
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR = cfg['output_dir']
+OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
+CADASTRAL_SURVEYING = cfg['cadastral_surveying']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 CONVERT_IMAGES = cfg['convert_images']
@@ -41,7 +42,8 @@ os.chdir(WORKING_DIR)
 if CONVERT_IMAGES:
     pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
+tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, cadastral_surveying=CADASTRAL_SURVEYING, 
+                                                                                       overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
 SUBTILE_DIR = os.path.join(TILE_DIR, 'subtiles')
 os.makedirs(SUBTILE_DIR, exist_ok=True)
