@@ -45,8 +45,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
     if plan_scales_path:
             plan_scales = pd.read_excel(plan_scales_path)
     else:
-        logger.info('No info on the scale of each tile, setting the scale to 0.')
+        logger.info('No info on the scale of each tile, setting the scale to a tile number ranging from 0 to # tiles.')
 
+    tile_nbr = 0
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
@@ -54,10 +55,12 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         if plan_scales_path and (tile_name in plan_scales.Num_plan.unique()):
             tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
         else:
-            tile_scale = 0
+            tile_scale = tile_nbr
+            tile_nbr += 1
 
-        out_path = os.path.join(output_dir, f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif")
-        if not cst.OVERWRITE and os.path.isfile(out_path):
+        end_out_path = f"{tile_name[:6]}_{tile_name[6:]}.tif"
+        out_path = os.path.join(output_dir, str(tile_scale) + '_' + end_out_path)
+        if not cst.OVERWRITE and any(end_out_path in outpath for outpath in glob(os.path.join(output_dir, '*.tif'))):
             continue
 
         with rio.open(tile_path) as src:
