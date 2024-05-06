@@ -64,7 +64,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
+  working_directory: outputs/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -105,7 +105,7 @@ post_processing.py:
     tst: tst_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
   score: 0.65
-  keep_datasets: True
+  keep_datasets: False
 
 
 assess_by_tile.py:

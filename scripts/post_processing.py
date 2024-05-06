@@ -111,8 +111,9 @@ intersect_detections_gdf['iou'] = [
 ]
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.5].copy()
 
+
+duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
-    duplicated_det_ids = []
     for duplicate in duplicated_detections_gdf.itertuples():
         id_highest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
         if (duplicate.det_id_right in clustered_dets) & (duplicate.det_id_left in clustered_dets):
@@ -147,7 +148,7 @@ detections_gdf = pd.concat(
 )
 
 
-logger.info('Get the category of each detection...')
+logger.info('Get the category name of each detection...')
 # get corresponding class ids
 categories_info_df = pd.DataFrame()
 

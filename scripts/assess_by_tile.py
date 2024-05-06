@@ -171,7 +171,7 @@ for dataset in datasets_list:
     metrics_cl_df_dict[dataset] = pd.DataFrame.from_records(metrics_dict_by_cl[dataset])
 
 file_to_write = os.path.join(OUTPUT_DIR, f'{"dst_" if KEEP_DATASETS else ""}tagged_detections.gpkg')
-tagged_dets_gdf[['geometry', 'score', 'tag', 'dataset', 'label_class', 'CATEGORY', 'det_class', 'det_category']]\
+tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'dataset', 'label_class', 'CATEGORY', 'det_class', 'det_category', 'cluster_id']]\
     .to_file(file_to_write, driver='GPKG', index=False)
 written_files.append(file_to_write)
 
