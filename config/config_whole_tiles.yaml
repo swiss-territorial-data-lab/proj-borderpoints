@@ -6,12 +6,12 @@ format_surveying_data.py:
 
 
 prepare_whole_tiles.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: 
     vectors: outputs/gpkg_whole_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  cadastral_surveying: outputs/MO_points.gpkg
+  # cadastral_surveying: outputs/MO_points.gpkg
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   convert_images: False
 

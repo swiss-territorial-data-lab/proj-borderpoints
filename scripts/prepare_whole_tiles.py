@@ -32,7 +32,7 @@ OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
-CADASTRAL_SURVEYING = cfg['cadastral_surveying']
+CADASTRAL_SURVEYING = cfg['cadastral_surveying'] if 'cadastral_surveying' in cfg.keys() else None
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 CONVERT_IMAGES = cfg['convert_images']
