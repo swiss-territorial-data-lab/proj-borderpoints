@@ -1,19 +1,20 @@
-format_surveying_data.py:
-  working_dir: .
-  output_dir:
-    vectors: outputs
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
-
-
 prepare_whole_tiles.py:
   working_dir: .
   output_dir: 
     vectors: outputs/gpkg_whole_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  cadastral_surveying: outputs/MO_points.gpkg
+  cadastral_surveying: outputs/gpkg_whole_tiles/MO_points.gpkg
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   convert_images: False
+
+
+format_surveying_data.py:
+  working_dir: .
+  output_dir:
+    vectors: outputs/gpkg_whole_tiles
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  tiles: outputs/gpkg_whole_tiles/subtiles.gpkg
 
 
 generate_tilesets.py:
@@ -68,3 +69,9 @@ post_processing.py:
   category_ids_json: category_ids.json
   score: 0.65
   keep_datasets: False
+
+point_matching.py:
+  working_dir: outputs
+  output_dir: detections
+  detections: detections/detected_points.gpkg
+  border_points: gpkg_whole_tiles/MO_points.gpkg

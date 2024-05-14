@@ -22,7 +22,7 @@ tic = time()
 logger.info('Starting...')
 
 # Argument and parameter specification
-parser = ArgumentParser(description="The script prepares the initial files for the use of the OD in the detection of border points.")
+parser = ArgumentParser(description="The script performs the post-processing on the detections of border points.")
 parser.add_argument('config_file', type=str, help='Framework configuration file')
 args = parser.parse_args()
 
@@ -109,7 +109,7 @@ intersect_detections_gdf  = joined_detections_gdf[joined_detections_gdf.subtile_
 intersect_detections_gdf['iou'] = [
     intersection_over_union(geom1, geom2) for geom1, geom2 in zip(intersect_detections_gdf.geometry, intersect_detections_gdf.original_geom_right)
 ]
-duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.5].copy()
+duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.75].copy()
 
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
