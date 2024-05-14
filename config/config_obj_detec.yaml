@@ -54,7 +54,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -72,7 +72,7 @@ make_detections.py:
 
 
 assess_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
@@ -88,14 +88,13 @@ post_processing.py:
   working_dir: outputs
   input_dir: object_detector
   output_dir: post_processing
-  subtiles: formatted_labels/subtiles.gpkg
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
     val: val_detections_at_0dot05_threshold.gpkg
     tst: tst_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
   score: 0.65
-  keep_datasets: False
+  keep_datasets: True
 
 
 assess_by_tile.py:
@@ -105,6 +104,6 @@ assess_by_tile.py:
   ground_truth: formatted_labels/ground_truth_labels.gpkg
   category_ids_json: object_detector/category_ids.json
   name_correspondance: rgb_images/name_correspondance.csv
-  keep_datasets: False
-  detections: post_processing/detected_points.gpkg
+  keep_datasets: True
+  detections: post_processing/dst_detected_points.gpkg
 
