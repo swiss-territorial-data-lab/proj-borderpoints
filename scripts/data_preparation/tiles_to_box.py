@@ -13,10 +13,10 @@ from rasterio.mask import mask
 
 sys.path.insert(1, 'scripts')
 import constants as cst
-import functions.fct_misc as misc
 import functions.fct_rasters as rasters
+from functions.fct_misc import format_logger, save_name_correspondence
 
-logger = misc.format_logger(logger)
+logger = format_logger(logger)
 
 
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
@@ -39,7 +39,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
         sys.exit(1)
 
-    name_correspondance_list = []
+    name_correspondence_list = []
     for bbox in tqdm(bboxes_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox', total=bboxes_gdf.shape[0]):
 
         tilepath = bbox.tilepath
@@ -74,7 +74,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
 
-            name_correspondance_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
+            name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
         else:
             print()
@@ -83,16 +83,12 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
-    second_name_corresp_df = pd.DataFrame.from_records(name_correspondance_list, columns=['rgb_name', 'bbox_name'])
-    supposed_path = os.path.join(os.path.dirname(tilepath), 'name_correspondance.csv')
-    if os.path.exists(supposed_path):
-        name_correspondance_df = pd.read_csv(supposed_path)
-        name_correspondance_df = name_correspondance_df.merge(second_name_corresp_df, on='rgb_name')
-        name_correspondance_df.to_csv(supposed_path)
+    if len(name_correspondence_list) > 0:
+        save_name_correspondence(name_correspondence_list, output_dir, 'rgb_name', 'subtile_name')
+        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        second_name_corresp_df.to_csv(supposed_path)
-
-    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+        logger.info(f"All files were already present in folder. Nothing done.")
+        
 
 # ------------------------------------------
 

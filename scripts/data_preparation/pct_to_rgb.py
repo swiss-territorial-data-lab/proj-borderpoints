@@ -15,7 +15,7 @@ from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
 import constants as cst
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, save_name_correspondence
 
 logger = format_logger(logger)
 
@@ -36,7 +36,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
     else:
         logger.info('No info on the scale of each tile, setting the scale to 0.')
 
-    name_correspondance_list = []
+    name_correspondence_list = []
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
@@ -51,7 +51,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         if not cst.OVERWRITE and os.path.isfile(out_path):
             continue
         
-        name_correspondance_list.append((tile_name, tile_new_name.rstrip('.tif')))
+        name_correspondence_list.append((tile_name, tile_new_name.rstrip('.tif')))
 
         with rio.open(tile_path) as src:
             image = src.read()
@@ -95,10 +95,11 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
 
-    name_correspondance_df = pd.DataFrame.from_records(name_correspondance_list, columns=['original_name', 'rgb_name'])
-    name_correspondance_df.to_csv(os.path.join(OUTPUT_DIR, 'name_correspondance.csv'))
-
-    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+    if len(name_correspondence_list) > 0:
+        save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
+        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+    else:
+        logger.info(f"All files were already present in folder. Nothing done.")
 
 
 # ------------------------------------------

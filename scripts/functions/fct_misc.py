@@ -3,6 +3,7 @@ import sys
 from loguru import logger
 
 import geopandas as gpd
+import pandas as pd
 from shapely.affinity import scale
 
 
@@ -71,3 +72,23 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
     polygon_union = polygon1_shape.area + polygon2_shape.area - polygon_intersection
     
     return polygon_intersection / polygon_union
+
+def save_name_correspondence(features_list, output_dir, inital_name_column, new_name_column):
+
+    name_correspondence_df = pd.DataFrame.from_records(features_list, columns=[inital_name_column, new_name_column])
+    if not name_correspondence_df.empty:
+        if output_dir.endswith('subtiles'):
+            output_dir = output_dir.rstrip('subtiles')
+        filepath = os.path.join(output_dir, 'name_correspondence.csv')
+
+        if os.path.isfile(filepath):
+            logger.warning("A file of name correspondences already existed in the output folder. The names for the converted tiles will be appended.")
+            existing_df = pd.read_csv(filepath)
+
+            if len(existing_df.columns) > 2:
+                existing_df = existing_df[['original_name', 'rgb_name']].copy()
+
+            name_correspondence_df = pd.concat([existing_df, name_correspondence_df])
+
+        name_correspondence_df.to_csv(filepath, index=False)
+        logger.success(f'The name correspondence of tiles across tranformations was saved in {filepath}.')
