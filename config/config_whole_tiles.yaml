@@ -4,9 +4,11 @@ prepare_whole_tiles.py:
     vectors: outputs/gpkg_whole_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  cadastral_surveying: outputs/gpkg_whole_tiles/MO_points.gpkg
+  # cadastral_surveying: outputs/gpkg_whole_tiles/MO_points.gpkg
   # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: False
+  plan_scales: inputs/plan_scales.xlsx
+  tile_suffix: _geo.tif
+  convert_images: True
 
 
 format_surveying_data.py:

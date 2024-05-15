@@ -32,15 +32,18 @@ OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
-CADASTRAL_SURVEYING = cfg['cadastral_surveying']
-OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
+CADASTRAL_SURVEYING = cfg['cadastral_surveying'] if 'cadastral_surveying' in cfg.keys() else None
+OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
+PLAN_SCALES = cfg['plan_scales'] if 'plan_scales' in cfg.keys() else None
+
+TILE_SUFFIX = cfg['tile_suffix'] if 'tile_suffix' in cfg.keys() else '.tif'
 CONVERT_IMAGES = cfg['convert_images']
 
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR)
+    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, PLAN_SCALES, tile_suffix=TILE_SUFFIX)
 
 tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, cadastral_surveying=CADASTRAL_SURVEYING, 
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
