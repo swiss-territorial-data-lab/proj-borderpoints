@@ -70,8 +70,20 @@ post_processing.py:
   score: 0.65
   keep_datasets: False
 
+
 point_matching.py:
   working_dir: outputs
   output_dir: detections
   detections: detections/detected_points.gpkg
   border_points: gpkg_whole_tiles/MO_points.gpkg
+
+
+check_with_tlm_data.py:
+  working_dir: .
+  output_dir: outputs/detections
+  matched_points: outputs/detections/matched_points.gpkg
+  TLM_data:
+    file: inputs/TLM_data_FR.gpkg
+    layer_flowing_water: fliessgewaesser
+    layer_water_bodies: stehendes_gewaesser
+    layer_building_footprint: gebaeude_footprint

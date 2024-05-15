@@ -77,3 +77,14 @@ point_matching.py:
   output_dir: detections_oth_maps
   detections: detections_oth_maps/detected_points.gpkg
   border_points: gpkg_whole_oth_tiles/MO_points.gpkg
+
+
+check_with_tlm_data.py:
+  working_dir: .
+  output_dir: outputs/detections
+  matched_points: outputs/detections/matched_points.gpkg
+  TLM_data:
+    file: inputs/TLM_data_FR.gpkg
+    layer_flowing_water: fliessgewaesser
+    layer_water_bodies: stehendes_gewaesser
+    layer_building_footprint: gebaeude_footprint

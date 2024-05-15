@@ -13,6 +13,14 @@ prepare_data.py:
   convert_images: False
 
 
+format_surveying_data.py:
+  working_dir: .
+  output_dir:
+    vectors: outputs/formatted_labels
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  tiles: outputs/formatted_labels/subtiles.gpkg
+
+
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
@@ -106,4 +114,22 @@ assess_by_tile.py:
   name_correspondance: rgb_images/name_correspondance.csv
   keep_datasets: True
   detections: post_processing/dst_detected_points.gpkg
+
+
+point_matching.py:
+  working_dir: outputs
+  output_dir: post_processing
+  detections: post_processing/detected_points.gpkg
+  border_points: formatted_labels/MO_points.gpkg
+
+
+check_with_tlm_data.py:
+  working_dir: .
+  output_dir: outputs/post_processing
+  matched_points: outputs/post_processing/matched_points.gpkg
+  TLM_data:
+    file: inputs/TLM_data_FR.gpkg
+    layer_flowing_water: fliessgewaesser
+    layer_water_bodies: stehendes_gewaesser
+    layer_building_footprint: gebaeude_footprint
 
