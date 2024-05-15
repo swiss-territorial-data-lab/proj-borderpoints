@@ -28,7 +28,8 @@ The workflow can be divided into three parts:
 * Detection of the border points with the STDL's object detector. The necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted after the experts' requirements.
     - `post_processing.py`: the detections are filtered by their confidance score and ...
-    - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet.
+    - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
+    - `check_with_tlm_data.py`: use the TLM data to assign the class "non-materialized point" to undetermined points in building and water bodies.
 
 
 **Dataset with GT**
@@ -50,6 +51,13 @@ python scripts/assess_by_tile.py config/config_obj_detec.yaml
 
 In the configuration file, the parameters `keep_datasets` must be set to `False` to preserve the split of the training, validation and test dataset.
 
+Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessement.
+
+```
+python scripts/point_matching.py config/config_obj_detec.yaml
+python scripts/check_with_tlm_data.py config/config_obj_detec.yaml
+```
+
 **Dataset without GT**
 
 ```
@@ -58,6 +66,7 @@ stdl-objdet generate_tilsets config/config_whole_tiles.yaml
 stdl-objdet make_detections config/config_whole_tiles.yaml
 python scripts/post_processing.py config/config_whole_tiles.yaml
 python scripts/point_matching.py config/config_whole_tiles.yaml
+python scripts/check_with_tlm_data.py config/config_whole_tiles.yaml
 ```
 
 The command lines above use the configuration files for the maps with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for maps on which no point was digitized as par of the ground truth. Only the path to the different folders should change between the two configurations.

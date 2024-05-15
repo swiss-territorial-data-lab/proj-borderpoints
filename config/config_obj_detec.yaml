@@ -13,6 +13,14 @@ prepare_data.py:
   convert_images: False
 
 
+format_surveying_data.py:
+  working_dir: .
+  output_dir:
+    vectors: outputs/formatted_labels
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  tiles: outputs/formatted_labels/subtiles.gpkg
+
+
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
@@ -54,7 +62,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -72,7 +80,7 @@ make_detections.py:
 
 
 assess_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
   output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
@@ -88,14 +96,13 @@ post_processing.py:
   working_dir: outputs
   input_dir: object_detector
   output_dir: post_processing
-  subtiles: formatted_labels/subtiles.gpkg
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
     val: val_detections_at_0dot05_threshold.gpkg
     tst: tst_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
   score: 0.65
-  keep_datasets: False
+  keep_datasets: True
 
 
 assess_by_tile.py:
@@ -105,6 +112,24 @@ assess_by_tile.py:
   ground_truth: formatted_labels/ground_truth_labels.gpkg
   category_ids_json: object_detector/category_ids.json
   name_correspondance: rgb_images/name_correspondance.csv
-  keep_datasets: False
+  keep_datasets: True
+  detections: post_processing/dst_detected_points.gpkg
+
+
+point_matching.py:
+  working_dir: outputs
+  output_dir: post_processing
   detections: post_processing/detected_points.gpkg
+  border_points: formatted_labels/MO_points.gpkg
+
+
+check_with_tlm_data.py:
+  working_dir: .
+  output_dir: outputs/post_processing
+  matched_points: outputs/post_processing/matched_points.gpkg
+  TLM_data:
+    file: inputs/TLM_data_FR.gpkg
+    layer_flowing_water: fliessgewaesser
+    layer_water_bodies: stehendes_gewaesser
+    layer_building_footprint: gebaeude_footprint
 

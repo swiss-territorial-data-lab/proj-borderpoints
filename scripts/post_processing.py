@@ -36,7 +36,6 @@ WORKING_DIR = cfg['working_dir']
 INPUT_DIR = cfg['input_dir']
 OUTPUT_DIR = cfg['output_dir']
 
-SUBTILES = cfg['subtiles']
 DETECTIONS = cfg['detections']
 CATEGORY_IDS_JSON = cfg['category_ids_json']
 SCORE = cfg['score']
@@ -49,8 +48,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Processing  ---------------------------------------
 
 logger.info('Read files...')
-subtiles_gdf = gpd.read_file(SUBTILES)
-subtiles_gdf['geometry'] = subtiles_gdf.buffer(-0.03)
 
 detections_gdf = gpd.GeoDataFrame()
 for dataset_acronym in DETECTIONS.keys():
@@ -65,21 +62,24 @@ categories_json = json.load(filepath)
 filepath.close()
 
 
-logger.info('Filter dataframe by score value...')
-detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
-
-dets_on_tile_gdf = gpd.sjoin(detections_gdf, subtiles_gdf[['id', 'geometry']].rename(columns={'id': 'subtile_id'}), lsuffix='det', rsuffix='tile')
+logger.info('Filter dataframe by score and area...')
+detections_gdf = detections_gdf[
+    (detections_gdf['score'] > SCORE) 
+    & (detections_gdf.area >= 0.1) 
+    & (detections_gdf.area < 60)
+].copy()
 
 logger.info('Find pairs of matching detections across tiles...')
-dets_on_tile_gdf['original_geom'] = dets_on_tile_gdf.geometry
-dets_on_tile_gdf['geometry'] = dets_on_tile_gdf.buffer(0.1)
-joined_detections_gdf = gpd.sjoin(dets_on_tile_gdf, dets_on_tile_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
+detections_gdf['original_geom'] = detections_gdf.geometry
+detections_gdf['geometry'] = detections_gdf.buffer(0.1)
+joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right]
 dets_one_obj_gdf = joined_detections_gdf[
-    (joined_detections_gdf.subtile_id_right != joined_detections_gdf.subtile_id_left)
+    (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
 ].copy()
+detections_gdf.drop(columns='original_geom', inplace=True)
 
 logger.info('Attribute a cluster id...')
 clustered_dets = dets_one_obj_gdf.det_id_left.unique()
@@ -104,8 +104,8 @@ for actual_cluster in dict(sorted(overlap_clusters_dict.items(), reverse=True)):
     for duplicated_cluster in set(overlap_clusters_dict[actual_cluster]):
             detections_gdf.loc[detections_gdf.cluster_id == duplicated_cluster, 'cluster_id'] = actual_cluster
 
-logger.info('Remove det pair with IoU > 0.5 and not in cluster...')
-intersect_detections_gdf  = joined_detections_gdf[joined_detections_gdf.subtile_id_right == joined_detections_gdf.subtile_id_left].copy()
+logger.info('Remove det pair with IoU > 0.75 and not in cluster...')
+intersect_detections_gdf  = joined_detections_gdf[joined_detections_gdf.image_right == joined_detections_gdf.image_left].copy()
 intersect_detections_gdf['iou'] = [
     intersection_over_union(geom1, geom2) for geom1, geom2 in zip(intersect_detections_gdf.geometry, intersect_detections_gdf.original_geom_right)
 ]
@@ -128,7 +128,7 @@ if not duplicated_detections_gdf.empty:
 logger.info(f'{len(duplicated_det_ids)} detections will be removed because they are duplicates of a same object.')
 detections_gdf = detections_gdf[~detections_gdf.det_id.isin(duplicated_det_ids)].copy()
 
-del dets_one_obj_gdf, dets_on_tile_gdf, duplicated_detections_gdf, intersect_detections_gdf, joined_detections_gdf
+del dets_one_obj_gdf, duplicated_detections_gdf, intersect_detections_gdf, joined_detections_gdf
 
 logger.info('Dissolve dets in clusters....')
 clustered_dets_gdf = detections_gdf[~detections_gdf.cluster_id.isnull()].copy()

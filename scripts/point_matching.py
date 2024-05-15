@@ -12,7 +12,7 @@ from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
 
-# Processing ---------------------------------------
+# Function definition ---------------------------------------
 
 def test_intersection(border_pts_gdf, detections_gdf):
 
