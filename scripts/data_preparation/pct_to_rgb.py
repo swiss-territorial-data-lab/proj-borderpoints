@@ -22,7 +22,7 @@ logger = format_logger(logger)
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif'):
+def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -31,27 +31,24 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
 
-    if plan_scales_path:
-            plan_scales = pd.read_excel(plan_scales_path)
     else:
         logger.info('No info on the scale of each tile, setting the scale to 0.')
 
     name_correspondence_list = []
+    tile_nbr = 0
+    existing_tiles = glob(os.path.join(output_dir, '*.tif'))
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
-        # Get the scale for the new tile name
-        if plan_scales_path and (tile_name in plan_scales.Num_plan.unique()):
-            tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
-        else:
-            tile_scale = 0
+        while any(tile_name.startswith(str(tile_nbr)) in existing_tiles):
+            tile_name += 1
 
-        tile_new_name = f"{tile_scale}_{tile_name[:6]}_{tile_name[6:]}.tif"
-        out_path = os.path.join(output_dir, tile_new_name)
-        if not cst.OVERWRITE and os.path.isfile(out_path):
+        end_out_path = f"{tile_name[:6]}_{tile_name[6:]}.tif"
+        out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
+        if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
         
-        name_correspondence_list.append((tile_name, tile_new_name.rstrip('.tif')))
+        name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 
         with rio.open(tile_path) as src:
             image = src.read()
@@ -94,6 +91,8 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         meta.update(count=3, nodata=nodata_value)
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
+        
+        tile_nbr += 1
 
     if len(name_correspondence_list) > 0:
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
