@@ -63,20 +63,11 @@ def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None
         nodata_gdf = gpd.GeoDataFrame()
         for tile in tqdm(tile_list, desc='Read tile info'):
 
+            # Get name and id of the tile
             tile_name = os.path.basename(tile).rstrip(tile_suffix)
-            try:
-                tile_scale = int(tile_name.split('_')[0])
-            except:
-                logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
-                continue
-
-            # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
-            if '_' in tile_name:
-                tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
-            else:
-                tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:].split('.')[0]}, {tile_scale})")
-            tiles_dict['scale'].append(tile_scale)
+            nbr, x, y = tile_name.split('_')
+            tiles_dict['id'].append(f"({x}, {y}, {nbr})")
 
             with rio.open(tile) as src:
                 bounds = src.bounds
@@ -89,6 +80,18 @@ def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None
             tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
             tile_size = (meta['width'], meta['height'])
             tiles_dict['dimension'].append(str(tile_size))
+
+            # Guess tile scale
+            perimeter = geom.length
+            if perimeter <= 2575:
+                tile_scale = 500
+            elif perimeter <= 4450:
+                tile_scale = 1000
+            elif perimeter <= 9680:
+                tile_scale = 2000
+            else:
+                tile_scale = 4000
+            tiles_dict['scale'].append(tile_scale)
             
             # Set pixel size
             pixel_size_x = abs(meta['transform'][0])
