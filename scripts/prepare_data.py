@@ -37,7 +37,6 @@ TILE_DIR = cfg['tile_dir']
 
 BORDER_POINTS = cfg['border_points']
 BBOX = cfg['bbox']
-PLAN_SCALES = cfg['plan_scales']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 CONVERT_IMAGES = cfg['convert_images']
@@ -46,7 +45,7 @@ TILE_SUFFIX = cfg['tile_suffix']
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, PLAN_SCALES, tile_suffix=TILE_SUFFIX)
+    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
