@@ -62,7 +62,7 @@ python scripts/check_with_tlm_data.py config/config_w_gt.yaml
 
 ```
 python scripts/prepare_whole_tiles.py config/config_whole_tiles.yaml
-stdl-objdet generate_tilsets config/config_whole_tiles.yaml
+stdl-objdet generate_tilesets config/config_whole_tiles.yaml
 stdl-objdet make_detections config/config_whole_tiles.yaml
 python scripts/post_processing.py config/config_whole_tiles.yaml
 python scripts/point_matching.py config/config_whole_tiles.yaml
