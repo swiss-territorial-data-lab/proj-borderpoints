@@ -2,7 +2,7 @@ prepare_data.py:
   working_dir: .
   output_dir:
     vectors: outputs/formatted_labels
-    tiles: outputs/clipped_tiles
+    clipped_tiles: outputs/clipped_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
@@ -10,7 +10,7 @@ prepare_data.py:
   plan_scales: inputs/plan_scales.xlsx
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
-  convert_images: False
+  convert_images: True
 
 
 format_surveying_data.py:

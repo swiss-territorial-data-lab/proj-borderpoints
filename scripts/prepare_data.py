@@ -5,6 +5,8 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
+import pandas as pd
+
 from data_preparation import format_labels, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
@@ -30,13 +32,14 @@ with open(args.config_file) as fp:
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR_VECTORS = cfg['output_dir']['vectors']
-OUTPUT_DIR_TILES = cfg['output_dir']['tiles']
+OUTPUT_DIR_CLIPPED_TILES = cfg['output_dir']['clipped_tiles']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
 
 BORDER_POINTS = cfg['border_points']
 BBOX = cfg['bbox']
+PLAN_SCALES = cfg['plan_scales']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 CONVERT_IMAGES = cfg['convert_images']
@@ -50,17 +53,27 @@ if CONVERT_IMAGES:
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
 logger.info('Clip tiles to the digitization bounding boxes...')
-tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_TILES)
+tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_CLIPPED_TILES)
 
 tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(
-    tile_dir=OUTPUT_DIR_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECTORS, subtiles=True
+    tile_dir=OUTPUT_DIR_CLIPPED_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECTORS, subtiles=True
 )
 written_files.extend(tmp_written_files)
 
+logger.info('Correct scale info on tiles...')
+tile_columns = tiles_gdf.columns
+tiles_gdf.drop(columns='scale', inplace=True)
+
+name_correspondence_df = pd.read_csv(os.path.join(TILE_DIR, 'name_correspondence.csv'))
+scales_df = pd.read_excel(PLAN_SCALES)
+tmp_gdf = pd.merge(tiles_gdf, name_correspondence_df, left_on='name', right_on='bbox_name')
+tmp_gdf = pd.merge(tmp_gdf, scales_df, left_on='original_name', right_on='Num_plan').rename(columns={'Echelle': 'scale'})
+tiles_gdf = tmp_gdf[tile_columns].copy()
+
 logger.info('Clip images to subtiles...')
-SUBTILE_DIR = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
+SUBTILE_DIR = os.path.join(OUTPUT_DIR_CLIPPED_TILES, 'subtiles')
 os.makedirs(SUBTILE_DIR, exist_ok=True)
-tiles_to_box.tiles_to_box(OUTPUT_DIR_TILES, subtiles_gdf, SUBTILE_DIR)
+tiles_to_box.tiles_to_box(OUTPUT_DIR_CLIPPED_TILES, subtiles_gdf, SUBTILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")

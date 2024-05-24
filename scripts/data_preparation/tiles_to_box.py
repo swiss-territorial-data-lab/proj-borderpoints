@@ -7,8 +7,8 @@ from yaml import load, FullLoader
 
 import geopandas as gpd
 import numpy as np
-import pandas as pd
 import rasterio
+from glob import glob
 from rasterio.mask import mask
 
 sys.path.insert(1, 'scripts')
@@ -21,19 +21,24 @@ logger = format_logger(logger)
 
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
-    written_files = []
     pad_tiles = False
 
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
         bboxes_gdf = gpd.read_file(bboxes)
-        bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{bbox.Echelle}_{bbox.Num_plan[:6]}_{bbox.Num_plan[6:]}' + tile_suffix) for bbox in bboxes_gdf.itertuples()]
+        # Find tilepath matching initial plan number
+        bboxes_gdf['tilepath'] = [
+            tilepath 
+            for num_plan in bboxes_gdf.Num_plan
+            for tilepath in glob(os.path.join(tile_dir, '*' + tile_suffix)) 
+            if tilepath.endswith(f'{num_plan[:6]}_{num_plan[6:]}' + tile_suffix)
+        ]
     elif isinstance(bboxes, gpd.GeoDataFrame):
         bboxes_gdf = bboxes.copy()
         bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         if cst.CLIP_OR_PAD_SUBTILES == 'pad':
-            logger.info('Results not entirely covered by the tile will be padded.')
+            logger.info('Subtiles not entirely covered by the tile will be padded.')
             pad_tiles = True
     else:
         logger.critical(f'Only the paths and the GeoDataFrames are accepted for the bbox parameter. Passed type: {type(bboxes)}.')
@@ -83,8 +88,10 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
+    if len(name_correspondence_list) > 0 & (not output_dir.endswith('subtiles')):
+        save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
+
     if len(name_correspondence_list) > 0:
-        save_name_correspondence(name_correspondence_list, output_dir, 'rgb_name', 'subtile_name')
         logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
     else:
         logger.info(f"All files were already present in folder. Nothing done.")
