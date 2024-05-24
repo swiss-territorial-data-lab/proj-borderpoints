@@ -21,6 +21,7 @@ logger = format_logger(logger)
 
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
+    os.makedirs(output_dir, exist_ok=True)
     pad_tiles = False
 
     logger.info('Read bounding boxes...')
@@ -70,7 +71,8 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                  "transform": out_transform})
             
             (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-            new_name = f"{bbox.Echelle}_{round(min_x)}_{round(min_y)}.tif"
+            tile_nbr = int(os.path.basename(bbox.tilepath).split('_')[0])
+            new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
             output_path = os.path.join(output_dir, new_name)
 
             if not cst.OVERWRITE and os.path.exists(output_path):

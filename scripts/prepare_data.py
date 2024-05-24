@@ -72,7 +72,6 @@ tiles_gdf = tmp_gdf[tile_columns].copy()
 
 logger.info('Clip images to subtiles...')
 SUBTILE_DIR = os.path.join(OUTPUT_DIR_CLIPPED_TILES, 'subtiles')
-os.makedirs(SUBTILE_DIR, exist_ok=True)
 tiles_to_box.tiles_to_box(OUTPUT_DIR_CLIPPED_TILES, subtiles_gdf, SUBTILE_DIR)
 
 print()
