@@ -1,14 +1,6 @@
 # proj-borderpoints
-Detection and classification of the border points on the cadastral map of the canton of Fribourg
+Classification of the border points from the BDMO2 based on the cadastral map of the canton of Fribourg.
 
-If some overlap between tiles is required:
-
-```
-python scripts/data_preparation/get_point_bbox_size.py
-```
-
-The configuration is the one from `prepare_data.py`.<br>
-It produces a csv file with the info about the max size of border points at each scale.
 
 ## Installation
 
@@ -31,22 +23,30 @@ The workflow can be divided into three parts:
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
     - `check_with_tlm_data.py`: use the TLM data to assign the class "non-materialized point" to undetermined points in building and water bodies.
 
+If some overlap between tiles is required:
+
+```
+python scripts/data_preparation/get_point_bbox_size.py
+```
+
+The configuration is the one from `prepare_data.py`.<br>
+It produces a csv file with the info about the max size of border points at each scale.
 
 **Dataset with GT**
 
 ```
-python scripts/prepare_data.py config/config_obj_detec.yaml
-stdl-objdet generate_tilsets config/config_obj_detec.yaml
-stdl-objdet train_model config/config_obj_detec.yaml
-stdl-objdet make_detections config/config_obj_detec.yaml
-stdl-objdet assess_detections config/config_obj_detec.yaml
+python scripts/prepare_data.py config/config_w_gt.yaml
+stdl-objdet generate_tilesets config/config_w_gt.yaml
+stdl-objdet train_model config/config_w_gt.yaml
+stdl-objdet make_detections config/config_w_gt.yaml
+stdl-objdet assess_detections config/config_w_gt.yaml
 ```
 
 The post-processing can be performed and the detections assessed again with the following commands:
 
 ```
-python scripts/post_processing.py config/config_obj_detec.yaml
-python scripts/assess_by_tile.py config/config_obj_detec.yaml
+python scripts/post_processing.py config/config_w_gt.yaml
+python scripts/assess_by_tile.py config/config_w_gt.yaml
 ```
 
 In the configuration file, the parameters `keep_datasets` must be set to `False` to preserve the split of the training, validation and test dataset.
@@ -54,8 +54,8 @@ In the configuration file, the parameters `keep_datasets` must be set to `False`
 Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessement.
 
 ```
-python scripts/point_matching.py config/config_obj_detec.yaml
-python scripts/check_with_tlm_data.py config/config_obj_detec.yaml
+python scripts/point_matching.py config/config_w_gt.yaml
+python scripts/check_with_tlm_data.py config/config_w_gt.yaml
 ```
 
 **Dataset without GT**
