@@ -53,9 +53,10 @@ tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation
 cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
-logger.info('Limit subtiles to area with data for cadastral survey and overwrite gdf...')
+logger.info('Limit subtiles to area with data for cadastral survey and overwrite the initial file...')
 subtiles_gdf = gpd.sjoin(subtiles_gdf, cs_points_gdf[['pt_id', 'geometry']])
 subtiles_gdf.drop(columns='pt_id', inplace=True)
+subtiles_gdf.drop_duplicates(subset='id', inplace=True, ignore_index=True)
 subtiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECT, 'subtiles.gpkg'))
 
 # Clip images to subtiles

@@ -31,9 +31,6 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
 
-    else:
-        logger.info('No info on the scale of each tile, setting the scale to 0.')
-
     name_correspondence_list = []
     tile_nbr = 0
     existing_tiles = glob(os.path.join(output_dir, '*.tif'))
