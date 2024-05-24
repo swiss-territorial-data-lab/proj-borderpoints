@@ -5,17 +5,9 @@ prepare_whole_tiles.py:
     vectors: outputs/gpkg_whole_oth_tiles
   initial_image_dir: inputs/other_plans/subset
   tile_dir: outputs/rgb_oth_images
-  cadastral_surveying: outputs/gpkg_whole_oth_tiles/MO_points.gpkg
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: False
-
-
-format_surveying_data.py:
-  working_dir: .
-  output_dir:
-    vectors: outputs/gpkg_whole_oth_tiles
   cadastral_surveying: inputs/MO/BDMO2.gpkg
-  tiles: outputs/gpkg_whole_oth_tiles/subtiles.gpkg
+  # overlap_info: outputs/formatted_labels/max_point_size.csv
+  convert_images: True
 
 
 generate_tilesets.py:

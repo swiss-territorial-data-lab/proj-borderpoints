@@ -5,7 +5,9 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
-from data_preparation import get_delimitation_tiles, pct_to_rgb, tiles_to_box
+import geopandas as gpd
+
+from data_preparation import get_delimitation_tiles, format_surveying_data, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -33,7 +35,7 @@ OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
 
-CADASTRAL_SURVEYING = cfg['cadastral_surveying'] if 'cadastral_surveying' in cfg.keys() else None
+CADASTRAL_SURVEYING = cfg['cadastral_surveying']
 OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 TILE_SUFFIX = cfg['tile_suffix'] if 'tile_suffix' in cfg.keys() else '.tif'
@@ -44,9 +46,19 @@ os.chdir(WORKING_DIR)
 if CONVERT_IMAGES:
     pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, cadastral_surveying=CADASTRAL_SURVEYING, 
+tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, 
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
+# Get data for cadastral survey
+cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, OUTPUT_DIR_VECT)
+written_files.extend(tmp_written_files)
+
+logger.info('Limit subtiles to area with data for cadastral survey and overwrite gdf...')
+subtiles_gdf = gpd.sjoin(subtiles_gdf, cs_points_gdf[['pt_id', 'geometry']])
+subtiles_gdf.drop(columns='pt_id', inplace=True)
+subtiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECT, 'subtiles.gpkg'))
+
+# Clip images to subtiles
 SUBTILE_DIR = os.path.join(TILE_DIR, 'subtiles')
 os.makedirs(SUBTILE_DIR, exist_ok=True)
 tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, SUBTILE_DIR)

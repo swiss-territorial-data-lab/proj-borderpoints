@@ -10,19 +10,27 @@ from shapely.geometry import Point
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger
+from constants import OVERWRITE
 
 logger = format_logger(logger)
 
 
-def format_surveying_data(path_surveying, path_tiles, output_dir='outputs'):
+def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
 
     written_files =[] 
 
     os.makedirs(output_dir, exist_ok=True)
+    
+    filepath = os.path.join(output_dir, 'MO_points.gpkg')
+    if os.path.isfile(filepath) and (not OVERWRITE):
+        return gpd.read_file(filepath), []
 
     logger.info('Read file...')
     survey_poly_gdf = gpd.read_file(path_surveying)
-    tiles_gdf = gpd.read_file(path_tiles)
+    if isinstance(tiles, str):
+        tiles_gdf = gpd.read_file(tiles)
+    elif isinstance(tiles, gpd.GeoDataFrame):
+        tiles_gdf = tiles.copy()
 
     logger.info('Get point coordinates...')
     pts_list = [Point(pt) for poly in survey_poly_gdf.geometry for geom in poly.geoms for pt in geom.exterior.coords[:-1]]
@@ -39,12 +47,11 @@ def format_surveying_data(path_surveying, path_tiles, output_dir='outputs'):
     pts_gdf.drop_duplicates('approx_coor', inplace=True, ignore_index=True)
     pts_gdf.drop(columns=['approx_coor'], inplace=True)
 
-    logger.info('Exclude points outside the dataset of tiles...')
+    logger.info('Exclude points outside the tiles...')
     pts_in_tiles_gdf = gpd.overlay(pts_gdf, tiles_gdf[['id', 'geometry']], keep_geom_type=True)
     pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
     pts_in_tiles_gdf.drop(columns=['id'], inplace=True)
 
-    filepath = os.path.join(output_dir, 'MO_points.gpkg')
     pts_in_tiles_gdf.to_file(filepath)
     written_files.append(filepath)
 
@@ -61,7 +68,7 @@ if __name__ == "__main__":
 
     logger.info(f"Using {args.config_file} as config file.")
     with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+        cfg = load(fp, Loader=FullLoader)['prepare_whole_tiles.py']
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']

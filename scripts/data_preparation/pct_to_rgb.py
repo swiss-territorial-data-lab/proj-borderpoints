@@ -40,13 +40,13 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
-        while any(tile_name.startswith(str(tile_nbr)) in existing_tiles):
-            tile_name += 1
-
         end_out_path = f"{tile_name[:6]}_{tile_name[6:]}.tif"
-        out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
+        
+        while any(name.startswith(str(tile_nbr)) for name in existing_tiles):
+            tile_nbr += 1
+        out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         
         name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 

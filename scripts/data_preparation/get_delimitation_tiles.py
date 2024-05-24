@@ -37,7 +37,7 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
     return id_to_keep
 
 
-def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
+def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
 
     os.makedirs(output_dir, exist_ok=True)
     written_files = [] 
@@ -179,12 +179,6 @@ def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None
                     subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
             
             subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
-        
-        if cadastral_surveying:
-            logger.info('Only keep tiles that are intersecting survey points...')
-            survey_pts_gdf = gpd.read_file(cadastral_surveying)
-            subtiles_w_pts = gpd.sjoin(subtiles_gdf, survey_pts_gdf, how="inner").id
-            subtiles_gdf = subtiles_gdf[subtiles_gdf.id.isin(subtiles_w_pts)].copy()
 
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
             logger.info('The tiles are clipped to the image border.')
