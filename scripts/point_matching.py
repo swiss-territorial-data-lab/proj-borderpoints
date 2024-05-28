@@ -57,6 +57,8 @@ OUTPUT_DIR = cfg['output_dir']
 DETECTIONS = cfg['detections']
 BORDER_POINTS = cfg['border_points']
 
+BUFFER_DISTANCE = {500: 0.1, 1000: 0.1, 2000: 0.1, 4000: 0.1}
+
 # Processing  ---------------------------------------
 
 os.chdir(WORKING_DIR)
@@ -75,12 +77,18 @@ intersected_pts_gdf, pts_w_cat_gdf, multiple_matches_gdf = test_intersection(bor
 
 logger.info('Try again with a buffer for points with no intersection if they exists...')
 lonely_points_gdf = intersected_pts_gdf[intersected_pts_gdf.det_category.isna()].copy()
-lonely_points_gdf.loc[:, 'geometry'] = lonely_points_gdf.buffer(0.5)
+lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist())].copy()
+lonely_dets_gdf['buffer_size'] = [BUFFER_DISTANCE[scale] for scale in lonely_dets_gdf['scale']]
+lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
 if lonely_points_gdf.empty:
     tmp_pts_w_cat_gdf = gpd.GeoDataFrame(crs="EPSG:2056", columns=pts_w_cat_gdf.columns)
 else:
-    intersected_pts_gdf, tmp_pts_w_cat_gdf, tmp_multiple_matches_gdf = test_intersection(lonely_points_gdf[border_pts_gdf.columns], detections_gdf)
+    intersected_pts_gdf, tmp_pts_w_cat_gdf, tmp_multiple_matches_gdf = test_intersection(
+        lonely_points_gdf[border_pts_gdf.columns],
+        lonely_dets_gdf
+    )
+    # TODO: deal with the multiple match when doing the buffer, dont't just ignore them
     multiple_matches_gdf = pd.concat([multiple_matches_gdf, tmp_multiple_matches_gdf], ignore_index=True)
 
 logger.info('Deal with points intersecting multiple detections..')

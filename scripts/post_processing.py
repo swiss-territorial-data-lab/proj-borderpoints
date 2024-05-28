@@ -153,7 +153,9 @@ if KEEP_DATASETS:
         ['cluster_id', 'dataset'], 'median', as_index=False
     )
 else:
-    dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'geometry']].dissolve('cluster_id', 'median', as_index=False)
+    dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
+        'cluster_id', {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
+    )
 dissolved_dets_gdf = dissolved_dets_gdf.assign(det_id=dissolved_dets_gdf.cluster_id + detections_gdf.det_id.max(), geometry=dissolved_dets_gdf.buffer(-0.1))
 
 detections_gdf = pd.concat(
