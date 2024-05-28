@@ -37,9 +37,13 @@ INPUT_DIR = cfg['input_dir']
 OUTPUT_DIR = cfg['output_dir']
 
 DETECTIONS = cfg['detections']
+SUBTILES = cfg['subtiles']
+TILES = cfg['tiles']
 CATEGORY_IDS_JSON = cfg['category_ids_json']
 SCORE = cfg['score']
 KEEP_DATASETS = cfg['keep_datasets']
+
+AREA_THRESHOLDS = {500: (0.1, 4.5), 1000: (0.2, 17), 2000: (1.3, 53), 4000: (5, 190)}
 
 os.chdir(WORKING_DIR)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -56,6 +60,10 @@ for dataset_acronym in DETECTIONS.keys():
     detections_gdf = pd.concat([detections_gdf, dataset], ignore_index=True)
 
 detections_gdf['det_id'] = detections_gdf.index
+det_columns = detections_gdf.columns.tolist()
+
+subtiles_gdf = gpd.read_file(SUBTILES)
+tiles_gdf = gpd.read_file(TILES)
 
 filepath = open(os.path.join(INPUT_DIR, CATEGORY_IDS_JSON))
 categories_json = json.load(filepath)
@@ -63,23 +71,30 @@ filepath.close()
 
 
 logger.info('Filter dataframe by score and area...')
-detections_gdf = detections_gdf[
-    (detections_gdf['score'] > SCORE) 
-    & (detections_gdf.area >= 0.1) 
-    & (detections_gdf.area < 60)
-].copy()
+detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
+
+# Get scale from subtile info
+initial_tile_nbr = detections_gdf.shape[0]
+subtiles_gdf['xyz'] = [id.strip('()').split(', ') for id in subtiles_gdf.id]
+subtiles_gdf['tilename'] = [f"{z}_{x}_{y}.tif" for x, y, z in subtiles_gdf.xyz]
+detections_gdf = pd.merge(detections_gdf, subtiles_gdf[['tilename', 'initial_tile']], left_on='image', right_on='tilename')
+detections_gdf = pd.merge(detections_gdf, tiles_gdf[['name', 'scale']], left_on='initial_tile', right_on='name')
+assert initial_tile_nbr == detections_gdf.shape[0], "Some detections disappreard in the join with subtiles and tiles!"
+
+for scale in AREA_THRESHOLDS.keys():
+    min_area, max_area = AREA_THRESHOLDS[scale]
+    detections_gdf = detections_gdf[~((detections_gdf['scale'] == scale) & ((detections_gdf.area < min_area) | (detections_gdf.area > max_area)))].copy()
 
 logger.info('Find pairs of matching detections across tiles...')
 detections_gdf['original_geom'] = detections_gdf.geometry
 detections_gdf['geometry'] = detections_gdf.buffer(0.1)
 joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
 # Remove duplicates of the same tuple and self-intersections
-joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right]
+joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
 dets_one_obj_gdf = joined_detections_gdf[
     (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
 ].copy()
-detections_gdf.drop(columns='original_geom', inplace=True)
 
 logger.info('Attribute a cluster id...')
 clustered_dets = dets_one_obj_gdf.det_id_left.unique()
@@ -146,6 +161,7 @@ detections_gdf = pd.concat(
     ignore_index=True
 )
 
+detections_gdf = detections_gdf[det_columns + ['scale', 'cluster_id']].copy()
 
 logger.info('Get the category name of each detection...')
 # get corresponding class ids
@@ -164,9 +180,13 @@ detections_gdf['det_category'] = [
 
 logger.info('Save file...')
 if KEEP_DATASETS:
-    detections_gdf.to_file(os.path.join(OUTPUT_DIR, 'dst_detected_points.gpkg'))
+    filepath = os.path.join(OUTPUT_DIR, 'dst_detected_points.gpkg')
+    detections_gdf.to_file(filepath)
 else:
-    detections_gdf.to_file(os.path.join(OUTPUT_DIR, 'detected_points.gpkg'))
+    filepath = os.path.join(OUTPUT_DIR, 'detected_points.gpkg')
+    detections_gdf.to_file(filepath)
+
+logger.success(f'Done! One file was written: {filepath}.')
 
 # Stop chronometer
 toc = time()

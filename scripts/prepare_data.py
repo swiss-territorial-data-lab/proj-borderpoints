@@ -72,9 +72,11 @@ if OVERWRITE or (not os.path.exists(output_path_tiles)):
     tiles_gdf.drop(columns='scale', inplace=True)
 
     name_correspondence_df = pd.read_csv(os.path.join(TILE_DIR, 'name_correspondence.csv'))
+    name_correspondence_df.drop_duplicates(subset=name_correspondence_df.columns, inplace=True)
     scales_df = pd.read_excel(PLAN_SCALES)
     tmp_gdf = pd.merge(tiles_gdf, name_correspondence_df, left_on='name', right_on='bbox_name')
     tmp_gdf = pd.merge(tmp_gdf, scales_df, left_on='original_name', right_on='Num_plan').rename(columns={'Echelle': 'scale'})
+    assert len(tmp_gdf) == len(tiles_gdf), "The number of rows changed when determining the bbox scales."
     tiles_gdf = tmp_gdf[tile_columns].copy()
 
     tiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECTORS, 'tiles.gpkg'))

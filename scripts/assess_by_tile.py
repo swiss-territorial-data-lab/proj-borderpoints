@@ -41,7 +41,7 @@ SUBTILES = cfg['subtiles']
 DETECTIONS = cfg['detections']
 GROUND_TRUTH = cfg['ground_truth']
 CATEGORY_IDS_JSON = cfg['category_ids_json']
-NAME_CORRESPONDANCE = cfg['name_correspondance']
+NAME_CORRESPONDENCE = cfg['name_correspondence']
 
 KEEP_DATASETS = cfg['keep_datasets']
 IOU_THRESHOLD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
@@ -65,7 +65,7 @@ filepath = open(CATEGORY_IDS_JSON)
 categories_json = json.load(filepath)
 filepath.close()
 
-name_correspondance_df = pd.read_csv(NAME_CORRESPONDANCE)
+name_correspondence_df = pd.read_csv(NAME_CORRESPONDENCE)
 
 logger.info('Format files...')
 
@@ -96,7 +96,7 @@ else:
 assert(labels_gdf.crs == tiles_gdf.crs)
 
 # Clip labels to defined tiles
-tiles_gdf = tiles_gdf.merge(name_correspondance_df, left_on="initial_tile", right_on="bbox_name")
+tiles_gdf = tiles_gdf.merge(name_correspondence_df, left_on="initial_tile", right_on="bbox_name")
 
 clipped_labels_gdf = gpd.GeoDataFrame()
 for tile_name in tiles_gdf.original_name.unique():
