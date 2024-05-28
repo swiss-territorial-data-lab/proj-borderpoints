@@ -69,7 +69,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             tiles_dict['name'].append(tile_name)
             nbr, x, y = tile_name.split('_')
             tiles_dict['id'].append(f"({x}, {y}, {nbr})")
-            tiles_dict['number'] = nbr
+            tiles_dict['number'].append(nbr)
 
             with rio.open(tile) as src:
                 bounds = src.bounds
