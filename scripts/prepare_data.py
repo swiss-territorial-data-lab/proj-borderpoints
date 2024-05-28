@@ -7,6 +7,7 @@ from yaml import load, FullLoader
 
 import pandas as pd
 
+from constants import OVERWRITE
 from data_preparation import format_labels, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
@@ -64,11 +65,19 @@ logger.info('Correct scale info on tiles...')
 tile_columns = tiles_gdf.columns
 tiles_gdf.drop(columns='scale', inplace=True)
 
-name_correspondence_df = pd.read_csv(os.path.join(TILE_DIR, 'name_correspondence.csv'))
-scales_df = pd.read_excel(PLAN_SCALES)
-tmp_gdf = pd.merge(tiles_gdf, name_correspondence_df, left_on='name', right_on='bbox_name')
-tmp_gdf = pd.merge(tmp_gdf, scales_df, left_on='original_name', right_on='Num_plan').rename(columns={'Echelle': 'scale'})
-tiles_gdf = tmp_gdf[tile_columns].copy()
+output_path_tiles = os.path.join(OUTPUT_DIR_VECTORS, 'tiles.gpkg')
+if OVERWRITE or (not os.path.exists(output_path_tiles)):
+    logger.info('Correct scale info on tiles...')
+    tile_columns = tiles_gdf.columns
+    tiles_gdf.drop(columns='scale', inplace=True)
+
+    name_correspondence_df = pd.read_csv(os.path.join(TILE_DIR, 'name_correspondence.csv'))
+    scales_df = pd.read_excel(PLAN_SCALES)
+    tmp_gdf = pd.merge(tiles_gdf, name_correspondence_df, left_on='name', right_on='bbox_name')
+    tmp_gdf = pd.merge(tmp_gdf, scales_df, left_on='original_name', right_on='Num_plan').rename(columns={'Echelle': 'scale'})
+    tiles_gdf = tmp_gdf[tile_columns].copy()
+
+    tiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECTORS, 'tiles.gpkg'))
 
 logger.info('Clip images to subtiles...')
 SUBTILE_DIR = os.path.join(OUTPUT_DIR_CLIPPED_TILES, 'subtiles')
