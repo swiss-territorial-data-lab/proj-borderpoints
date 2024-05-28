@@ -14,6 +14,26 @@ logger = format_logger(logger)
 
 # Function definition ---------------------------------------
 
+def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
+
+    # Bring back the geometries of the points
+    multi_pts_df = pd.merge(
+        multiple_matches_gdf, detections_gdf[['det_id', 'geometry']], 
+        on='det_id', suffixes=('_pt', '_det')
+    )
+    # Get a weighted score made of the distance and the initial score
+    multi_pts_df.loc[:, 'geometry_det'] = multi_pts_df.geometry_det.centroid
+    multi_pts_df['distance'] = multi_pts_df.geometry_pt.distance(multi_pts_df.geometry_det)
+    multi_pts_df['weighted_score'] = multi_pts_df['distance']/multi_pts_df['score']
+
+    # Keep best match in the gdf in regards to the distance and score
+    multi_pts_df.sort_values('weighted_score', ascending=False, inplace=True)
+    favorite_matches = multi_pts_df.duplicated('pt_id')
+    favorite_matches_gdf = multiple_matches_gdf[~favorite_matches.sort_index()]
+
+    return favorite_matches_gdf
+
+
 def test_intersection(border_pts_gdf, detections_gdf):
 
     intersected_pts_gdf = gpd.sjoin(detections_gdf[['det_id', 'det_category', 'score', 'geometry']], border_pts_gdf, how='right')
@@ -57,7 +77,8 @@ OUTPUT_DIR = cfg['output_dir']
 DETECTIONS = cfg['detections']
 BORDER_POINTS = cfg['border_points']
 
-BUFFER_DISTANCE = {500: 0.1, 1000: 0.1, 2000: 0.1, 4000: 0.1}
+# Based on visual assessment, buffer distance = 1/4 max size of the point bbox
+BUFFER_DISTANCE = {500: 0.6, 1000: 1.1, 2000: 1.7, 4000: 4.3}
 
 # Processing  ---------------------------------------
 
@@ -72,43 +93,31 @@ if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
     logger.critical('Some border points have a duplicated id!')
     sys.exit(1)
 
-logger.info('Test intersection between the border points and detections')
+logger.info('Test intersection between the border points and detections...')
 intersected_pts_gdf, pts_w_cat_gdf, multiple_matches_gdf = test_intersection(border_pts_gdf, detections_gdf)
 
-logger.info('Try again with a buffer for points with no intersection if they exists...')
+logger.info('Deal with points intersecting multiple detections...')
+favorite_matches_gdf = resolve_multiple_matches(multiple_matches_gdf, detections_gdf)
+
+logger.info('Try again with a buffer for points with no intersection...')
 lonely_points_gdf = intersected_pts_gdf[intersected_pts_gdf.det_category.isna()].copy()
-lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist())].copy()
+lonely_dets_gdf = detections_gdf[
+    ~(detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist()) | detections_gdf.det_id.isin(favorite_matches_gdf.det_id.unique().tolist()))
+].copy()
 lonely_dets_gdf['buffer_size'] = [BUFFER_DISTANCE[scale] for scale in lonely_dets_gdf['scale']]
 lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
 if lonely_points_gdf.empty:
     tmp_pts_w_cat_gdf = gpd.GeoDataFrame(crs="EPSG:2056", columns=pts_w_cat_gdf.columns)
 else:
-    intersected_pts_gdf, tmp_pts_w_cat_gdf, tmp_multiple_matches_gdf = test_intersection(
-        lonely_points_gdf[border_pts_gdf.columns],
-        lonely_dets_gdf
-    )
-    # TODO: deal with the multiple match when doing the buffer, dont't just ignore them
-    multiple_matches_gdf = pd.concat([multiple_matches_gdf, tmp_multiple_matches_gdf], ignore_index=True)
+    intersected_pts_gdf, tmp_pts_w_cat_gdf, multiple_matches_gdf = test_intersection(lonely_points_gdf[border_pts_gdf.columns], lonely_dets_gdf)
 
-logger.info('Deal with points intersecting multiple detections..')
-# Bring back the geometries of the points
-multi_pts_df = pd.merge(
-    multiple_matches_gdf, detections_gdf[['det_id', 'geometry']], 
-    on='det_id', suffixes=('_pt', '_det')
-)
-# Get a weighted score made of the distance and the initial score
-multi_pts_df.loc[:, 'geometry_det'] = multi_pts_df.geometry_det.centroid
-multi_pts_df['distance'] = multi_pts_df.geometry_pt.distance(multi_pts_df.geometry_det)
-multi_pts_df['weighted_score'] = multi_pts_df['distance']/multi_pts_df['score']
-
-# Keep best match in the gdf in regards to the distance and score
-multi_pts_df.sort_values('weighted_score', ascending=False, inplace=True)
-favorit_matches = multi_pts_df.duplicated('pt_id')
-multiple_matches_gdf = multiple_matches_gdf[~favorit_matches.sort_index()]
+logger.info('Deal with points intersecting multiple detections...')
+tmp_favorite_matches_gdf = resolve_multiple_matches(multiple_matches_gdf, detections_gdf)
+favorite_matches_gdf = pd.concat([favorite_matches_gdf, tmp_favorite_matches_gdf]) 
 
 logger.info('Attribute a final category to points...')
-final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf, multiple_matches_gdf], ignore_index=True)
+final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf, favorite_matches_gdf], ignore_index=True)
 new_border_pts_gdf = pd.merge(border_pts_gdf, final_pts_w_cat_gdf.drop(columns=['geometry']), how='left', on='pt_id')
 
 # Check if pts without category are matching across methods
