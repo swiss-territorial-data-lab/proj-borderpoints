@@ -77,8 +77,11 @@ OUTPUT_DIR = cfg['output_dir']
 DETECTIONS = cfg['detections']
 BORDER_POINTS = cfg['border_points']
 
-# Based on visual assessment, buffer distance = 1/4 max size of the point bbox
-BUFFER_DISTANCE = {500: 0.6, 1000: 1.1, 2000: 1.7, 4000: 4.3}
+# Point neighborhood = half of max size of the point bbox depending on scale
+PT_NEIGBORHOOD = {500: 2.4/2, 1000: 4.5/2, 2000: 6.8/2, 4000: 17.3/2}
+# Based on visual assessment, buffer distance = 1/8 max size of the point bbox depending on scale
+BUFFER_DISTANCE = {key: value/4 for key, value in PT_NEIGBORHOOD.items()}
+
 
 # Processing  ---------------------------------------
 
@@ -126,11 +129,16 @@ lonely_ids = intersected_pts_gdf.loc[intersected_pts_gdf.det_category.isna(), 'p
 assert (new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'pt_id'].to_list() == lonely_ids).all(), 'Ids for undetermined points not matching!'
 new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'det_category'] = 'undetermined'
 
-logger.info('Add centroid of excess detections to the final result...')
+logger.info('Check if the remaining alone points are in the neighborhood of undetermined ones...')
 lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(new_border_pts_gdf.det_id.unique())].copy()
-lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.geometry.centroid
+lonely_dets_gdf.loc[:, 'buffer_size'] = [PT_NEIGBORHOOD[scale] for scale in lonely_dets_gdf['scale']]
+lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
-all_pts_gdf = pd.concat([new_border_pts_gdf, lonely_dets_gdf], ignore_index=True)
+potential_miss_gdf = lonely_dets_gdf.sjoin(new_border_pts_gdf.loc[new_border_pts_gdf.det_category == 'undetermined', ['pt_id', 'geometry']])
+potential_miss_gdf.drop_duplicates('det_id', inplace=True)
+potential_miss_gdf.loc[:, 'geometry'] = potential_miss_gdf.geometry.centroid
+
+all_pts_gdf = pd.concat([new_border_pts_gdf, potential_miss_gdf[detections_gdf.columns]], ignore_index=True)
 
 logger.info('Save result...')
 filepath = os.path.join(OUTPUT_DIR, 'matched_points.gpkg')
