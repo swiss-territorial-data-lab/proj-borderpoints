@@ -82,3 +82,9 @@ check_with_tlm_data.py:
     layer_flowing_water: fliessgewaesser
     layer_water_bodies: stehendes_gewaesser
     layer_building_footprint: gebaeude_footprint
+
+heatmap.py:
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  output_dir: outputs/detections/images
+  matched_points: outputs/detections/matched_points.gpkg
+  bdmo_poly: inputs/MO/BDMO2.gpkg
