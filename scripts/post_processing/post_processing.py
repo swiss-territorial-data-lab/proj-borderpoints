@@ -10,6 +10,7 @@ import pandas as pd
 
 import json
 
+sys.path.insert(1, 'scripts')
 from functions.fct_metrics import intersection_over_union
 from functions.fct_misc import format_logger
 

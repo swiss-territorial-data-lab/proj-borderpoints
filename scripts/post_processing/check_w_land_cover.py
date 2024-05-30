@@ -8,6 +8,7 @@ from yaml import load, FullLoader
 import geopandas as gpd
 import pandas as pd
 
+sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
@@ -33,10 +34,7 @@ WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR = cfg['output_dir']
 
 MATCHED_POINTS = cfg['matched_points']
-TLM_FILE = cfg['TLM_data']['file']
-FLOWING_WATER = cfg['TLM_data']['layer_flowing_water']
-WATER_BODIES = cfg['TLM_data']['layer_water_bodies']
-BUILDING_FOOTPRINT = cfg['TLM_data']['layer_building_footprint']
+LAND_COVER = cfg['land_cover']
 
 os.chdir(WORKING_DIR)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -44,26 +42,12 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 logger.info('Read data...')
 
 matched_points_gdf = gpd.read_file(MATCHED_POINTS)
-flowing_water_gdf = gpd.read_file(TLM_FILE, layer=FLOWING_WATER)
-water_bodies_gdf = gpd.read_file(TLM_FILE, layer=WATER_BODIES)
-building_footprint_gdf = gpd.read_file(TLM_FILE, layer=BUILDING_FOOTPRINT)
+land_cover_gdf = gpd.read_file(LAND_COVER)
 
-logger.info('Format info for flowing water...')
-rivers_gdf = flowing_water_gdf.loc[(flowing_water_gdf.OBJEKTART==4) & (flowing_water_gdf.STUFE==0), ['TLM_GEWAESSER_NAME_UUID', 'geometry']]
-# Transform line to polygon
-rivers_gdf.loc[:, 'geometry'] = rivers_gdf.buffer(1)
-
-logger.info('Set class for undetermined points in water to "non-materilazied points"...')
-water_gdf = pd.concat([rivers_gdf, water_bodies_gdf[['TLM_GEWAESSER_NAME_UUID', 'geometry']]])
-tmp_affected_points = gpd.sjoin(matched_points_gdf, water_gdf)
-matched_points_gdf.loc[
-    (matched_points_gdf.det_category=='undetermined') & matched_points_gdf.pt_id.isin(tmp_affected_points.pt_id.unique()),
-    ['det_class', 'det_category']
-] = (7, '5n')
-
-logger.info('Set class for undetermined points near buildings to "non-materilazied points"...')
-building_footprint_gdf.loc[:, 'geometry'] = building_footprint_gdf.buffer(0.2)
-tmp_affected_points = gpd.sjoin(matched_points_gdf, building_footprint_gdf)
+logger.info('Set class for undetermined points near buildings and stagnant water to "non-materializied points"...')
+object_footprint_gdf = land_cover_gdf[land_cover_gdf.CH_DESCR_F.isin(['batiment', 'eau_stagnante'])].copy()
+object_footprint_gdf.loc[:, 'geometry'] = object_footprint_gdf.buffer(0.2)
+tmp_affected_points = gpd.sjoin(matched_points_gdf, object_footprint_gdf)
 matched_points_gdf.loc[
     (matched_points_gdf.det_category=='undetermined') & matched_points_gdf.pt_id.isin(tmp_affected_points.pt_id.unique()),
     ['det_class', 'det_category']

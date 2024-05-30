@@ -74,10 +74,13 @@ point_matching.py:
 
 check_with_tlm_data.py:
   working_dir: .
-  output_dir: outputs/detections
-  matched_points: outputs/detections/matched_points.gpkg
-  TLM_data:
-    file: inputs/TLM_data_FR.gpkg
-    layer_flowing_water: fliessgewaesser
-    layer_water_bodies: stehendes_gewaesser
-    layer_building_footprint: gebaeude_footprint
+  output_dir: outputs/detections_oth_maps
+  matched_points: outputs/detections_oth_maps/matched_points.gpkg
+  land_cover: inputs/land_cover/couverture_du_sol.gpkg
+
+
+heatmap.py:
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  output_dir: outputs/detections_oth_maps/heatmap
+  matched_points: outputs/detections_oth_maps/matched_points.gpkg
+  bdmo_poly: inputs/MO/BDMO2.gpkg
