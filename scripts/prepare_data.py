@@ -5,6 +5,9 @@ from loguru import logger
 from time import time
 from yaml import load, FullLoader
 
+import pandas as pd
+
+from constants import OVERWRITE
 from data_preparation import format_labels, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
@@ -30,7 +33,7 @@ with open(args.config_file) as fp:
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR_VECTORS = cfg['output_dir']['vectors']
-OUTPUT_DIR_TILES = cfg['output_dir']['tiles']
+OUTPUT_DIR_CLIPPED_TILES = cfg['output_dir']['clipped_tiles']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
@@ -46,22 +49,41 @@ TILE_SUFFIX = cfg['tile_suffix']
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, PLAN_SCALES, tile_suffix=TILE_SUFFIX)
+    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECTORS)
 
 logger.info('Clip tiles to the digitization bounding boxes...')
-tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_TILES)
+tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_CLIPPED_TILES)
 
 tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(
-    tile_dir=OUTPUT_DIR_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECTORS, subtiles=True
+    tile_dir=OUTPUT_DIR_CLIPPED_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECTORS, subtiles=True
 )
 written_files.extend(tmp_written_files)
 
+logger.info('Correct scale info on tiles...')
+tile_columns = tiles_gdf.columns
+tiles_gdf.drop(columns='scale', inplace=True)
+
+output_path_tiles = os.path.join(OUTPUT_DIR_VECTORS, 'tiles.gpkg')
+if OVERWRITE or (not os.path.exists(output_path_tiles)):
+    logger.info('Correct scale info on tiles...')
+    tile_columns = tiles_gdf.columns
+    tiles_gdf.drop(columns='scale', inplace=True)
+
+    name_correspondence_df = pd.read_csv(os.path.join(TILE_DIR, 'name_correspondence.csv'))
+    name_correspondence_df.drop_duplicates(subset=name_correspondence_df.columns, inplace=True)
+    scales_df = pd.read_excel(PLAN_SCALES)
+    tmp_gdf = pd.merge(tiles_gdf, name_correspondence_df, left_on='name', right_on='bbox_name')
+    tmp_gdf = pd.merge(tmp_gdf, scales_df, left_on='original_name', right_on='Num_plan').rename(columns={'Echelle': 'scale'})
+    assert len(tmp_gdf) == len(tiles_gdf), "The number of rows changed when determining the bbox scales."
+    tiles_gdf = tmp_gdf[tile_columns].copy()
+
+    tiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECTORS, 'tiles.gpkg'))
+
 logger.info('Clip images to subtiles...')
-SUBTILE_DIR = os.path.join(OUTPUT_DIR_TILES, 'subtiles')
-os.makedirs(SUBTILE_DIR, exist_ok=True)
-tiles_to_box.tiles_to_box(OUTPUT_DIR_TILES, subtiles_gdf, SUBTILE_DIR)
+SUBTILE_DIR = os.path.join(OUTPUT_DIR_CLIPPED_TILES, 'subtiles')
+tiles_to_box.tiles_to_box(OUTPUT_DIR_CLIPPED_TILES, subtiles_gdf, SUBTILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")

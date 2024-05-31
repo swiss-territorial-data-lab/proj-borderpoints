@@ -15,26 +15,24 @@ from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
 import constants as cst
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, save_name_correspondence
 
 logger = format_logger(logger)
 
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None, nodata_key=255, tile_suffix='.tif'):
+def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
     """Convert images with a color palette to RGB images.
     Reproject the images to EPSG:2056 if the tranform or the CRS is not already corresponding to EPSG:2056.
 
     Args:
         input_dir (str): path to the directory containing the tiles
         output_dir (str, optional): path to the output directory. Defaults to 'outputs/rgb_images'.
-        plan_scales_path (str, optional): path to the excel file indicating the scale corresponding to each tile number. 
-            If None, the scale indicated in the tile id will be 0. Defaults to None.
         nodata_key (int, optional): number in the color palette correponding to nodata, i.e. to the color definied as (0,0,0,0). Defaults to 255.
         tile_suffix (str, optional): suffix of the filename, which is the part coming after the tile number or id. Defaults to '.tif'.
     """
-
+    
     os.makedirs(output_dir, exist_ok=True)
 
     tiles_list = glob(os.path.join(input_dir, '*.tif'))
@@ -42,26 +40,21 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
 
-    if plan_scales_path:
-            plan_scales = pd.read_excel(plan_scales_path)
-    else:
-        logger.info('No info on the scale of each tile, setting the scale to a tile number ranging from 0 to # tiles.')
-
+    name_correspondence_list = []
     tile_nbr = 0
+    existing_tiles = glob(os.path.join(output_dir, '*.tif'))
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
         tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
 
-        # Get the scale for the new tile name
-        if plan_scales_path and (tile_name in plan_scales.Num_plan.unique()):
-            tile_scale = plan_scales.loc[plan_scales.Num_plan==tile_name, 'Echelle'].iloc[0]
-        else:
-            tile_scale = tile_nbr
-            tile_nbr += 1
-
         end_out_path = f"{tile_name[:6]}_{tile_name[6:]}.tif"
-        out_path = os.path.join(output_dir, str(tile_scale) + '_' + end_out_path)
-        if not cst.OVERWRITE and any(end_out_path in outpath for outpath in glob(os.path.join(output_dir, '*.tif'))):
+        if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
+        
+        while any(name.startswith(str(tile_nbr)) for name in existing_tiles):
+            tile_nbr += 1
+        out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
+        
+        name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 
         with rio.open(tile_path) as src:
             image = src.read()
@@ -106,8 +99,14 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', plan_scales_path=None
         meta.update(count=3, nodata=nodata_value)
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
+        
+        tile_nbr += 1
 
-    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+    if len(name_correspondence_list) > 0:
+        save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
+        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+    else:
+        logger.info(f"All files were already present in folder. Nothing done.")
 
 
 # ------------------------------------------

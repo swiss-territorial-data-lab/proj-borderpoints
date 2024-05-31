@@ -1,0 +1,6 @@
+
+get_tile_size.py:
+  working_dir: .
+  output_dir: outputs/tile_analysis
+  tiles: outputs/gpkg_whole_tiles/tiles.gpkg
+  plan_scales: inputs/plan_scales.xlsx

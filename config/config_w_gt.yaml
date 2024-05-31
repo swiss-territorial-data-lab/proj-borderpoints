@@ -1,8 +1,8 @@
 prepare_data.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir:
     vectors: outputs/formatted_labels
-    tiles: outputs/clipped_tiles
+    clipped_tiles: outputs/clipped_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
@@ -13,22 +13,12 @@ prepare_data.py:
   convert_images: True
 
 
-prepare_whole_tiles.py:
+format_surveying_data.py:
   working_dir: .
-  # GT plans
-  output_dir: 
-    vectors: outputs/gpkg_whole_tiles
-  initial_image_dir: inputs/plans
-  tile_dir: outputs/rgb_images
-  plan_scales: inputs/plan_scales.xlsx
-  tile_suffix: _geo.tif
-  # Other plans
-  # output_dir: 
-  #   vectors: outputs/gpkg_whole_oth_tiles
-  # initial_image_dir: inputs/other_plans/Le_glebe/Estavayer-le-gibloux
-  # tile_dir: outputs/rgb_oth_images
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
-  convert_images: True
+  output_dir:
+    vectors: outputs/formatted_labels
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  tiles: outputs/formatted_labels/subtiles.gpkg
 
 
 generate_tilesets.py:
@@ -44,7 +34,7 @@ generate_tilesets.py:
       location: clipped_tiles/subtiles
       srs: 2056
   output_folder: object_detector
-  overwrite: False
+  overwrite: True
   n_jobs: 10
   COCO_metadata:
     year: 1800-1900
@@ -55,7 +45,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-  seed: 2
+  seed: 42
 
 train_model.py:
   debug_mode: false
@@ -81,7 +71,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0001499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0004749.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
@@ -90,7 +80,8 @@ make_detections.py:
 
 
 assess_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
+  output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
     image_metadata_json: img_metadata.json
@@ -99,4 +90,48 @@ assess_detections.py:
       trn: trn_detections_at_0dot05_threshold.gpkg
       val: val_detections_at_0dot05_threshold.gpkg
       tst: tst_detections_at_0dot05_threshold.gpkg
-  output_folder: .
+
+
+post_processing.py:
+  working_dir: outputs
+  input_dir: object_detector
+  output_dir: post_processing
+  detections:
+    trn: trn_detections_at_0dot05_threshold.gpkg
+    val: val_detections_at_0dot05_threshold.gpkg
+    tst: tst_detections_at_0dot05_threshold.gpkg
+  subtiles: formatted_labels/subtiles.gpkg
+  tiles: formatted_labels/tiles.gpkg
+  category_ids_json: category_ids.json
+  score: 0.75
+  keep_datasets: True
+
+
+assess_by_tile.py:
+  working_dir: outputs
+  output_dir: post_processing
+  subtiles: object_detector/split_aoi_tiles.geojson
+  ground_truth: formatted_labels/ground_truth_labels.gpkg
+  category_ids_json: object_detector/category_ids.json
+  name_correspondence: rgb_images/name_correspondence.csv
+  keep_datasets: True
+  detections: post_processing/dst_detected_points.gpkg
+
+
+point_matching.py:
+  working_dir: outputs
+  output_dir: post_processing
+  detections: post_processing/detected_points.gpkg
+  border_points: formatted_labels/MO_points.gpkg
+
+
+check_with_tlm_data.py:
+  working_dir: .
+  output_dir: outputs/post_processing
+  matched_points: outputs/post_processing/matched_points.gpkg
+  TLM_data:
+    file: inputs/TLM_data_FR.gpkg
+    layer_flowing_water: fliessgewaesser
+    layer_water_bodies: stehendes_gewaesser
+    layer_building_footprint: gebaeude_footprint
+

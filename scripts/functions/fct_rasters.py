@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.features
-from shapely.geometry import Polygon, shape
+from shapely.geometry import Point, Polygon, shape
 
 from math import ceil, floor
 
@@ -46,7 +46,24 @@ def get_bbox_origin(bbox_geom):
 
     return (min_x, min_y)
 
-def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056'):
+
+def get_easting_northing(bbox_geom):
+    """
+    Get the maximum easting and northing coordinates from a bounding box geometry.
+
+    Args:
+        bbox_geom (shapely.geometry.Polygon): The bounding box geometry.
+
+    Returns:
+        tuple: A tuple containing the maximum easting and northing coordinates.
+    """
+    coords = bbox_geom.exterior.coords.xy
+    max_x = max(coords[0])
+    max_y = max(coords[1])
+
+    return (max_x, max_y)
+
+def grid_over_tiles(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056', test_shape = None):
     """Create a grid over a tile and saves it in a GeoDataFrame with each row representing a grid cell.
 
     Args:
@@ -79,8 +96,15 @@ def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_
     polygons = []
     for x in range(number_cells_x):
         for y in range(number_cells_y):
+            
+            down_left = (min_x + x * (grid_x_dim - max_dx_dim), min_y + y * (grid_y_dim - max_dy_dim))
+
+            # Fasten the process by not producing every single polygon
+            if test_shape and not (test_shape.intersects(Point(down_left))):
+                    continue
+
             # Define the coordinates of the polygon vertices
-            vertices = [(min_x + x * (grid_x_dim - max_dx_dim), min_y + y * (grid_y_dim - max_dy_dim)),
+            vertices = [down_left,
                         (min_x + (x + 1) * grid_x_dim - x * max_dx_dim, min_y + y * (grid_y_dim - max_dy_dim)),
                         (min_x + (x + 1) * grid_x_dim - x * max_dx_dim, min_y + (y + 1) * grid_y_dim - y * max_dy_dim),
                         (min_x + x * (grid_x_dim - max_dx_dim), min_y + (y + 1) * grid_y_dim - y * max_dy_dim)]

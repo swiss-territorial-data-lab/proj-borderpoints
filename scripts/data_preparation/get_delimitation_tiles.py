@@ -80,25 +80,22 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
         logger.info('Read info for tiles...')
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
 
+        if len(tile_list) == 0:
+            logger.critical('No tile in the tile directory.')
+            sys.exit(1)
+
         logger.info('Create a geodataframe with tile info...')
-        tiles_dict = {'id': [], 'name': [], 'scale': [], 'geometry': [], 'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
+        tiles_dict = {'id': [], 'name': [], 'number': [], 'scale': [], 'geometry': [],
+                      'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
         nodata_gdf = gpd.GeoDataFrame()
         for tile in tqdm(tile_list, desc='Read tile info'):
 
+            # Get name and id of the tile
             tile_name = os.path.basename(tile).rstrip(tile_suffix)
-            try:
-                tile_scale = int(tile_name.split('_')[0])
-            except:
-                logger.warning(f'Missing info corresponding to the tile {tile_name}. Skipping it.')
-                continue
-
-            # Set attribute of the tiles
             tiles_dict['name'].append(tile_name)
-            if '_' in tile_name:
-                tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
-            else:
-                tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:].split('.')[0]}, {tile_scale})")
-            tiles_dict['scale'].append(tile_scale)
+            nbr, x, y = tile_name.split('_')
+            tiles_dict['id'].append(f"({x}, {y}, {nbr})")
+            tiles_dict['number'].append(nbr)
 
             with rio.open(tile) as src:
                 bounds = src.bounds
@@ -111,6 +108,18 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
             tile_size = (meta['width'], meta['height'])
             tiles_dict['dimension'].append(str(tile_size))
+
+            # Guess tile scale
+            perimeter = geom.length
+            if perimeter <= 2575:
+                tile_scale = 500
+            elif perimeter <= 4450:
+                tile_scale = 1000
+            elif perimeter <= 9680:
+                tile_scale = 2000
+            else:
+                tile_scale = 4000
+            tiles_dict['scale'].append(tile_scale)
             
             # Set pixel size
             pixel_size_x = abs(meta['transform'][0])
@@ -178,7 +187,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             # Only keep tiles that do not overlap too much the nodata zone
             large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_LARGE_TILES)
             large_subtiles_gdf = temp_gdf[temp_gdf.id.isin(large_id_on_image)].copy()
-            large_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.scale)})' for subtile_id in large_subtiles_gdf.id] 
+            large_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.number)})' for subtile_id in large_subtiles_gdf.id] 
             large_subtiles_gdf['initial_tile'] = tile.name
 
             if (tile.max_dx == 0) and (tile.max_dy == 0):
@@ -192,13 +201,13 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
                     # Only keep tiles that do not overlap too much the nodata zone
                     small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_SMALL_TILES)
                     small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
-                    small_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.scale)})' for subtile_id in small_subtiles_gdf.id]
+                    small_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile.number)})' for subtile_id in small_subtiles_gdf.id]
                     small_subtiles_gdf['initial_tile'] = tile.name
 
                     subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
             
             subtiles_gdf = pd.concat([subtiles_gdf, large_subtiles_gdf], ignore_index=True)
-        
+
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
             logger.info('The tiles are clipped to the image border.')
             tiling_zone = tiles_gdf.unary_union
