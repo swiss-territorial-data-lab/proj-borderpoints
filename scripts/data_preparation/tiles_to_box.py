@@ -86,10 +86,11 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             if not cst.OVERWRITE and os.path.exists(output_path):
                 continue
 
+            if not os.path.exsits(output_path):
+                name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
+
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
-
-            name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
         else:
             print()

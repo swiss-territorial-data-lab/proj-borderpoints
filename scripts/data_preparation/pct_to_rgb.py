@@ -54,7 +54,8 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
             tile_nbr += 1
         out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         
-        name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
+        if not os.path.exists(out_path):
+            name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 
         with rio.open(tile_path) as src:
             image = src.read()
