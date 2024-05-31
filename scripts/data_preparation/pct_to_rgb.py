@@ -10,6 +10,8 @@ from glob import glob
 from rasterio.crs import CRS
 from rasterio.warp import reproject
 
+from joblib import Parallel, delayed
+
 sys.path.insert(1, 'scripts')
 import constants as cst
 from functions.fct_misc import format_logger, get_config, save_name_correspondence
@@ -18,6 +20,82 @@ logger = format_logger(logger)
 
 # Functions ------------------------------------------
 
+def format_tiles(tile_path, tile_nbr, out_path, existing_tiles, nodata_key=255, tile_suffix='.tif'):
+    """
+    Formats a tiff image by renaming it, converting the color map, and reprojecting it if necessary.
+    
+    Args:
+        tile_path (str): The path to the image file.
+        output_dir (str): The directory where the formatted image will be saved.
+        plan_scales_path (str, optional): The path to the plan scales file. Defaults to None.
+        plan_scales_df (pandas.DataFrame, optional): The plan scales DataFrame. Defaults to a DataFrame with columns 'Num_plan' and 'Echelle'.
+        nodata_key (int, optional): The key value for the nodata pixel. Defaults to 255.
+        tile_suffix (str, optional): The suffix of the tile image file. Defaults to '.tif'.
+    
+    Returns:
+        tuple: A tuple containing the original tile name and the new tile name (without the file extension).
+    
+    Raises:
+        None
+    """
+
+    if tile_suffix in tile_path:
+        tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
+    else:
+        tile_name = os.path.basename(tile_path).rstrip('.tif')
+
+   
+    name_correspondence = (tile_name, os.path.basename(out_path).rstrip('.tif'))
+
+    with rio.open(tile_path) as src:
+        image = src.read()
+        meta = src.meta
+        colormap = src.colormap(1)
+
+    # Get nodata in color map
+    nodata_value = colormap[nodata_key][0]
+    if nodata_value != 0:
+        print()
+        logger.warning(f'The nodata value for the plan {tile_name} is {nodata_value} and not 0.')
+        logger.warning(f'Setting the nodata value to 0.')
+        colormap[nodata_key] = (0, 0, 0, 0)
+        nodata_value = 0
+
+    converted_image = np.empty((3, meta['height'], meta['width']))
+    # Convert color map to RGB with an efficient mapping
+    # cf. https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
+    mapping_key = np.array(list(colormap.keys()))
+    for band_nbr in range(3):
+        # Get colormap corresponding to band 
+        mapping_values = np.array([mapping_list[band_nbr] for mapping_list in colormap.values()])
+        mapping_array = np.zeros(mapping_key.max()+1, dtype=mapping_values.dtype)
+        mapping_array[mapping_key] = mapping_values
+        
+        # Translate colormap into corresponding band
+        new_band = mapping_array[image]
+        converted_image[band_nbr, :, :] = new_band
+
+    # Ensure the right crs and transform
+    if not meta['crs']:
+        print()
+        logger.warning(f'No crs for the tile {tile_name}. Setting it to EPSG:2056.')
+        meta.update(crs=CRS.from_epsg(2056))
+    elif meta['crs'] != CRS.from_epsg(2056):
+        print()
+        logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}, tile will be reprojected.')
+
+    if (meta['crs'] != CRS.from_epsg(2056)) or (meta['transform'][1] != 0):
+        converted_image, new_transform = reproject(
+            converted_image, src_transform=meta['transform'],
+            src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
+        )
+        meta.update(transform=new_transform, height=converted_image.shape[1], width=converted_image.shape[2])
+
+    meta.update(count=3, nodata=nodata_value)
+    with rio.open(out_path, 'w', **meta) as dst:
+        dst.write(converted_image)
+
+    return name_correspondence
 
 def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
     """Convert images with a color palette to RGB images.
@@ -31,6 +109,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
     """
     
     os.makedirs(output_dir, exist_ok=True)
+    njobs=5
 
     tiles_list = glob(os.path.join(input_dir, '*.tif'))
     if len(tiles_list) == 0:
@@ -38,6 +117,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
         sys.exit(1)
 
     name_correspondence_list = []
+    info_tuples_list =[] 
     tile_nbr = 0
     existing_tiles = glob(os.path.join(output_dir, '*.tif'))
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
@@ -56,57 +136,23 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
         
         name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 
-        with rio.open(tile_path) as src:
-            image = src.read()
-            meta = src.meta
-            colormap = src.colormap(1)
+        info_tuples_list.append(tile_path, tile_nbr, out_path)
 
-        nodata_value = colormap[nodata_key][0]
-        if nodata_value != 0:
-            print()
-            logger.warning(f'The nodata value for the plan {tile_name} is {nodata_value} and not 0.')
-            logger.warning(f'Setting the nodata value to 0.')
-            colormap[nodata_key] = (0, 0, 0, 0)
-            nodata_value = 0
-        converted_image = np.empty((3, meta['height'], meta['width']))
-        # Efficient mapping: https://stackoverflow.com/questions/55949809/efficiently-replace-elements-in-array-based-on-dictionary-numpy-python
-        mapping_key = np.array(list(colormap.keys()))
-        for band_nbr in range(3):
-            # Get colormap corresponding to band 
-            mapping_values = np.array([mapping_list[band_nbr] for mapping_list in colormap.values()])
-            mapping_array = np.zeros(mapping_key.max()+1, dtype=mapping_values.dtype)
-            mapping_array[mapping_key] = mapping_values
-            
-            # Translate colormap into corresponding band
-            new_band = mapping_array[image]
-            converted_image[band_nbr, :, :] = new_band
-
-        if not meta['crs']:
-            print()
-            logger.warning(f'No crs for the tile {tile_name}. Setting it to EPSG:2056.')
-            meta.update(crs=CRS.from_epsg(2056))
-        elif meta['crs'] != CRS.from_epsg(2056):
-            print()
-            logger.warning(f'Wrong crs for the tile {tile_name}: {meta["crs"]}, it will be reprojected.')
-
-        if (meta['crs'] != CRS.from_epsg(2056)) or (meta['transform'][1] != 0):
-            converted_image, new_transform = reproject(
-                converted_image, src_transform=meta['transform'],
-                src_crs=meta['crs'], dst_crs=CRS.from_epsg(2056)
-            )
-            meta.update(transform=new_transform, height=converted_image.shape[1], width=converted_image.shape[2])
-
-        meta.update(count=3, nodata=nodata_value)
-        with rio.open(out_path, 'w', **meta) as dst:
-            dst.write(converted_image)
-        
         tile_nbr += 1
+    
+
+    job_outputs = Parallel(n_jobs=njobs, backend="loky")(
+        delayed(format_tiles)(tile_path, output_dir, nodata_key, tile_suffix) 
+        for tile_path, tile_nbr, out_path in tqdm(info_tuples_list, desc=f'Convert images from colormap to RGB, {njobs} at a time')
+    )
 
     if len(name_correspondence_list) > 0:
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
         logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
     else:
         logger.success(f"All files were already present in folder. Nothing done.")
+
+    logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
 
 
 # ------------------------------------------
