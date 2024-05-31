@@ -16,7 +16,17 @@ logger = format_logger(logger)
 
 
 def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
-
+    """
+    Formats the surveying data by extracting points from the survey polygons and saving them in a GeoDataFrame.
+    
+    Parameters:
+        path_surveying (str): The path to the survey polygons file.
+        tiles (str or GeoDataFrame): The path to the tiles file or the tiles GeoDataFrame.
+        output_dir (str, optional): The directory where the output file will be saved. Defaults to 'outputs'.
+    
+    Returns:
+        tuple: A tuple containing the inferred points GeoDataFrame and a list of written files.
+    """
     written_files =[] 
 
     os.makedirs(output_dir, exist_ok=True)

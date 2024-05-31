@@ -16,7 +16,18 @@ logger = format_logger(logger)
 # Function definition ---------------------------------------
 
 def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
-
+    """
+    Resolves multiple matches in the given GeoDataFrame of multiple matches and detections by spatial intersection.
+    Ambiguous cases ares resolved based on the distance between centroids and the score.
+    
+    Args:
+        multiple_matches_gdf (GeoDataFrame): A GeoDataFrame containing multiple matches.
+        detections_gdf (GeoDataFrame): A GeoDataFrame containing detections.
+    
+    Returns:
+        GeoDataFrame: A GeoDataFrame with the best match for each point in regards to the distance and score.
+    """
+    
     # Bring back the geometries of the points
     multi_pts_df = pd.merge(
         multiple_matches_gdf, detections_gdf[['det_id', 'geometry']], 
@@ -36,7 +47,19 @@ def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
 
 
 def test_intersection(border_pts_gdf, detections_gdf):
-
+    """
+    Test the intersection between the given border points and detections.
+    
+    Parameters:
+    - border_pts_gdf (GeoDataFrame): The GeoDataFrame containing the border points.
+    - detections_gdf (GeoDataFrame): The GeoDataFrame containing the detections.
+    
+    Returns:
+    - intersected_pts_gdf (GeoDataFrame): The GeoDataFrame containing the intersected points with additional columns: det_id, det_category, score, and geometry.
+    - pts_w_cat_gdf (GeoDataFrame): The GeoDataFrame containing the points with a single intersection.
+    - multiple_matches_gdf (GeoDataFrame): The GeoDataFrame containing the points with multiple intersections.
+    """
+    
     intersected_pts_gdf = gpd.sjoin(detections_gdf[['det_id', 'det_category', 'score', 'geometry']], border_pts_gdf, how='right')
     intersected_pts_gdf.drop(columns=['index_left'], inplace=True)
 

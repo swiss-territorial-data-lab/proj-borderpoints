@@ -59,7 +59,7 @@ python scripts/point_matching.py config/config_w_gt.yaml
 python scripts/check_with_tlm_data.py config/config_w_gt.yaml
 ```
 
-**Dataset without GT**
+**Whole tiles**
 
 ```
 python scripts/prepare_whole_tiles.py config/config_whole_tiles.yaml
