@@ -72,7 +72,7 @@ point_matching.py:
   border_points: gpkg_whole_oth_tiles/MO_points.gpkg
 
 
-check_with_tlm_data.py:
+check_w_land_cover.py:
   working_dir: .
   output_dir: outputs/detections_oth_maps
   matched_points: outputs/detections_oth_maps/matched_points.gpkg
@@ -82,5 +82,5 @@ check_with_tlm_data.py:
 heatmap.py:
   working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: outputs/detections_oth_maps/heatmap
-  matched_points: outputs/detections_oth_maps/matched_points.gpkg
+  matched_points: outputs/detections_oth_maps/matched_points_2.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg

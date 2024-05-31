@@ -83,5 +83,5 @@ check_w_land_cover.py:
 heatmap.py:
   working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: outputs/detections/heatmap
-  matched_points: outputs/detections/matched_points.gpkg
+  matched_points: outputs/detections/matched_points_2.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg
