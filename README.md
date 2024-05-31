@@ -55,8 +55,8 @@ In the configuration file, the parameters `keep_datasets` must be set to `False`
 Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessement.
 
 ```
-python scripts/point_matching.py config/config_w_gt.yaml
-python scripts/check_with_tlm_data.py config/config_w_gt.yaml
+python scripts/post_processing/point_matching.py config/config_w_gt.yaml
+python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
 ```
 
 **Whole tiles**
@@ -67,7 +67,7 @@ stdl-objdet generate_tilesets config/config_whole_tiles.yaml
 stdl-objdet make_detections config/config_whole_tiles.yaml
 python scripts/post_processing/post_processing.py config/config_whole_tiles.yaml
 python scripts/post_processing/point_matching.py config/config_whole_tiles.yaml
-python scripts/post_processing/check_with_tlm_data.py config/config_whole_tiles.yaml
+python scripts/post_processing/check_w_land_cover.py config/config_whole_tiles.yaml
 python scripts/post_processing/heatmap.py config/config_whole_tiles.yaml
 ```
 

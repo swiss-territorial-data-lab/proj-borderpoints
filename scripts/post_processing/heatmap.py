@@ -7,15 +7,13 @@ from tqdm import tqdm
 from yaml import load, FullLoader
 
 import geopandas as gpd
-import geoplot as gplt
-import geoplot.crs as gcrs
 import pandas as pd
 from folium import Map, plugins
 from matplotlib import pyplot as plt
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger
-from functions.fct_rasters import get_bbox_origin, get_easting_northing, grid_over_tiles
+from functions.fct_rasters import get_bbox_origin, get_easting_northing, grid_over_tile
 
 logger = format_logger(logger)
 
@@ -64,10 +62,8 @@ logger.info('Intersect points with zones...')
 fp_points_gdf = matched_points_gdf[matched_points_gdf.pt_id.isna()].copy()
 fp_points_with_zones_gdf = fp_points_gdf.sjoin(cs_zones_gdf, predicate='within')
 
-logger.info('Create heatmaps...')
 total_grid_gdf = gpd.GeoDataFrame()
-for zone in tqdm(fp_points_with_zones_gdf.zone.unique(), desc='Produce heatmap for zones of missing cadastral survey'):
-    # Determine a fictive grid of 10 x 10 m to calculate point density
+for zone in tqdm(fp_points_with_zones_gdf.zone.unique(), desc='Create a grid to calculate the FP density'):
     zone_geom = cs_zones_gdf.loc[cs_zones_gdf.zone==zone, 'geometry'].iloc[0]
     tile_origin = get_bbox_origin(zone_geom)
     tile_n_e = get_easting_northing(zone_geom)
@@ -76,26 +72,13 @@ for zone in tqdm(fp_points_with_zones_gdf.zone.unique(), desc='Produce heatmap f
          (tile_n_e[1] - tile_origin[1])/(GRID_SIZE*PIXEL_SIZE))
     )
 
-    heatgrid = grid_over_tiles(tile_size, tile_origin, pixel_size_x=PIXEL_SIZE, grid_width=GRID_SIZE, grid_height=GRID_SIZE, test_shape=zone_geom)
+    heatgrid = grid_over_tile(tile_size, tile_origin, pixel_size_x=PIXEL_SIZE, grid_width=GRID_SIZE, grid_height=GRID_SIZE, test_shape=zone_geom)
     total_grid_gdf = pd.concat([total_grid_gdf, heatgrid], ignore_index=True)
 
-    # Get density of points in the grid
+    # Get number of points in the grid
     fp_points_in_zone_gdf = fp_points_with_zones_gdf[fp_points_with_zones_gdf.zone==zone].copy()
 
-    # Plot heatmap
-    
-    # https://residentmario.github.io/geoplot/plot_references/plot_reference.html#kdeplot
-    reprojected_cs_zone = cs_zones_gdf[cs_zones_gdf.zone==zone].to_crs(4326)
-    tile_origin_4326 = get_bbox_origin(reprojected_cs_zone.geometry.iloc[0])
-    tile_n_e_4326 = get_easting_northing(reprojected_cs_zone.geometry.iloc[0])
-
-    ax = gplt.polyplot(reprojected_cs_zone, projection=gcrs.Mercator())
-    gplt.kdeplot(
-        fp_points_in_zone_gdf.to_crs(4326), cmap='Reds', 
-        extent=(tile_origin_4326[0]-0.01, tile_origin_4326[1]-0.01, tile_n_e_4326[0]+0.01, tile_n_e_4326[1]+0.01), ax=ax
-    )
-    plt.savefig(os.path.join(OUTPUT_DIR, f'heatmap_1_{zone}.png'))
-
+# Plot heatmap
 # https://geopandas.org/en/stable/gallery/plotting_with_folium.html#Folium-Heatmaps
 map = Map(location=[46.7, 7.1], zoom_start=11, control_scale=True,)
 heat_data = [[point.xy[1][0], point.xy[0][0]] for point in fp_points_gdf.geometry.to_crs(4326)]
@@ -104,11 +87,11 @@ map.save(os.path.join(OUTPUT_DIR, f'heatmap.html'))
 
 # Get density of points in the grid
 fp_points_on_grid_gdf = total_grid_gdf.sjoin(fp_points_gdf[['pt_id', 'geometry']])
-point_count_gdf = fp_points_on_grid_gdf.groupby(['id', 'geometry']).size().reset_index(name='count')
-point_count_gdf = point_count_gdf[point_count_gdf['count']>0].copy()
+point_count_df = fp_points_on_grid_gdf.groupby('id').size().reset_index(name='count')
+point_count_gdf = total_grid_gdf.merge(point_count_df, how='right', on='id')
 
 logger.info('Save result...')
 filepath = os.path.join(OUTPUT_DIR, 'heatmap.gpkg')
-gpd.GeoDataFrame(point_count_gdf).to_file(filepath)
+point_count_gdf.to_file(filepath)
 
 logger.success(f'Done! One file was written: {filepath}.')

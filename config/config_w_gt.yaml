@@ -1,5 +1,5 @@
 prepare_data.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir:
     vectors: outputs/formatted_labels
     clipped_tiles: outputs/clipped_tiles
@@ -25,7 +25,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs
+  working_directory: .
   datasets:
     aoi_tiles: formatted_labels/subtiles.gpkg
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
@@ -49,7 +49,7 @@ generate_tilesets.py:
 
 train_model.py:
   debug_mode: false
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
+  working_directory: .
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_training_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -62,7 +62,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
+  working_directory: .
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -80,7 +80,7 @@ make_detections.py:
 
 
 assess_detections.py:
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs/object_detector
+  working_directory: .
   output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
@@ -121,7 +121,7 @@ assess_by_tile.py:
 point_matching.py:
   working_dir: outputs
   output_dir: post_processing
-  detections: post_processing/detected_points.gpkg
+  detections: post_processing/dst_detected_points.gpkg
   border_points: formatted_labels/MO_points.gpkg
 
 

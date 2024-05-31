@@ -1,5 +1,5 @@
 prepare_whole_tiles.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir: 
     vectors: outputs/gpkg_whole_tiles
   initial_image_dir: inputs/plans
@@ -15,7 +15,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: /home/gsalamin/Documents/GitHub/proj-borderpoints/outputs
+  working_directory: .
   datasets:
     aoi_tiles: gpkg_whole_tiles/subtiles.gpkg
     image_source:
@@ -74,14 +74,14 @@ point_matching.py:
 
 
 check_w_land_cover.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir: outputs/detections
   matched_points: outputs/detections/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
 
 heatmap.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir: outputs/detections/heatmap
   matched_points: outputs/detections/matched_points_2.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg
