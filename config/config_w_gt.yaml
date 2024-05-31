@@ -126,13 +126,9 @@ point_matching.py:
   border_points: formatted_labels/MO_points.gpkg
 
 
-check_with_tlm_data.py:
+check_w_land_cover.py:
   working_dir: .
   output_dir: outputs/post_processing
   matched_points: outputs/post_processing/matched_points.gpkg
-  TLM_data:
-    file: inputs/TLM_data_FR.gpkg
-    layer_flowing_water: fliessgewaesser
-    layer_water_bodies: stehendes_gewaesser
-    layer_building_footprint: gebaeude_footprint
+  land_cover: inputs/land_cover/couverture_du_sol.gpkg
 

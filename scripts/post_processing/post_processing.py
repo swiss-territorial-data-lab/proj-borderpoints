@@ -150,8 +150,8 @@ logger.info('Dissolve dets in clusters....')
 clustered_dets_gdf = detections_gdf[~detections_gdf.cluster_id.isnull()].copy()
 clustered_dets_gdf.loc[:, 'geometry'] = clustered_dets_gdf.buffer(0.1)
 if KEEP_DATASETS:
-    dissolved_dets_gdf = clustered_dets_gdf[['score', 'dataset', 'cluster_id', 'det_class', 'geometry']].dissolve(
-        ['cluster_id', 'dataset'], 'median', as_index=False
+    dissolved_dets_gdf = clustered_dets_gdf[['dataset', 'score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
+        ['cluster_id', 'dataset'], {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
     )
 else:
     dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
