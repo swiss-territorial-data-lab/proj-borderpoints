@@ -7,7 +7,7 @@ from yaml import load, FullLoader
 
 import geopandas as gpd
 
-from data_preparation import get_delimitation_tiles, format_surveying_data, pct_to_rgb, tiles_to_box
+from data_preparation import format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -50,7 +50,7 @@ if CONVERT_IMAGES:
 tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, 
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
-# Get data for cadastral survey
+logger.info('Format cadastral surveying data...')
 cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
