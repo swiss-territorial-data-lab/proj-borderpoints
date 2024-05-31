@@ -1,6 +1,5 @@
 folium
 geopandas
-geoplot
 loguru
 openpyxl
 PyYAML
