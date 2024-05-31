@@ -50,12 +50,12 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
         return (None, None)
 
     # Set attribute of the tiles
-    tiles_dict['name'].append(tile_name)
+    tiles_dict['name'] = tile_name
     if '_' in tile_name:
-        tiles_dict['id'].append(f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})")
+        tiles_dict['id'] = f"({tile_name.split('_')[1]}, {tile_name.split('_')[2]}, {tile_scale})"
     else:
-        tiles_dict['id'].append(f"({tile_name[:6]}, {tile_name[6:].split('.')[0]}, {tile_scale})")
-    tiles_dict['scale'].append(tile_scale)
+        tiles_dict['id'] = f"({tile_name[:6]}, {tile_name[6:].split('.')[0]}, {tile_scale})"
+    tiles_dict['scale'] = tile_scale
 
     with rio.open(tile) as src:
         bounds = src.bounds
@@ -64,10 +64,10 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
 
     # Set tile geometry
     geom = box(*bounds)
-    tiles_dict['geometry'].append(geom)
-    tiles_dict['origin'].append(str(rasters.get_bbox_origin(geom)))
+    tiles_dict['geometry'] = geom
+    tiles_dict['origin'] = str(rasters.get_bbox_origin(geom))
     tile_size = (meta['width'], meta['height'])
-    tiles_dict['dimension'].append(str(tile_size))
+    tiles_dict['dimension'] = str(tile_size)
     
     # Set pixel size
     pixel_size_x = abs(meta['transform'][0])
@@ -79,8 +79,8 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
         print()
         logger.warning(e)
 
-    tiles_dict['pixel_size_x'].append(pixel_size_x)
-    tiles_dict['pixel_size_y'].append(pixel_size_y)
+    tiles_dict['pixel_size_x'] = pixel_size_x
+    tiles_dict['pixel_size_y'] = pixel_size_y
 
     # If no info on the plan scales, leave dx and dy to 0.
     if overlap_info:
@@ -96,8 +96,8 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
     else:
         max_dx = 0
         max_dy = 0
-    tiles_dict['max_dx'].append(max_dx)
-    tiles_dict['max_dy'].append(max_dy)
+    tiles_dict['max_dx'] = max_dx
+    tiles_dict['max_dy'] = max_dy
 
     # Transform nodata area into polygons
     nodata_gdf = rasters.no_data_to_polygons(first_band, meta['transform'], meta['nodata'])
@@ -110,6 +110,7 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
 def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
 
     os.makedirs(output_dir, exist_ok=True)
+    njobs = 5
     written_files = [] 
 
     output_path_tiles = os.path.join(output_dir, 'tiles.gpkg')
@@ -130,13 +131,13 @@ def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None
 
         logger.info('Create a geodataframe with tile info...')
 
-        tile_tuples_list = Parallel(n_jobs=10, backend="loky")(
+        tile_tuples_list = Parallel(n_jobs=njobs, backend="loky")(
             delayed(extract_tile_info)(tile, overlap_info, tile_suffix) for tile in tqdm(tile_list, desc='Read tile info')
             )
         tiles_dict_list = [tile_tuple[0] for tile_tuple in tile_tuples_list if tile_tuple[0]]
-        nodata_gdf_list = [tile_tuple[1] for tile_tuple in tile_tuples_list if tile_tuple[1]]
+        nodata_gdf_list = [tile_tuple[1] for tile_tuple in tile_tuples_list if tile_tuple[0]]
 
-        tiles_gdf = gpd.GeoDataFrame.from_features(tiles_dict_list, crs='EPSG:2056')
+        tiles_gdf = gpd.GeoDataFrame(pd.DataFrame.from_records(tiles_dict_list), crs="EPSG:2056")
 
         tiles_gdf.to_file(output_path_tiles)
         written_files.append(output_path_tiles)
@@ -148,18 +149,12 @@ def get_delimitation_tiles(tile_dir, cadastral_surveying=None, overlap_info=None
 
     if subtiles:
        
-        job_outcome = Parallel(n_jobs=7, backend="loky")(
+        job_outcome = Parallel(n_jobs=njobs, backend="loky")(
             delayed(get_subtiles)(nodata_gdf, tile_row) for tile_row in tqdm(tiles_gdf.itertuples(), desc='Determine subtiles', total=len(tiles_gdf))
             )
         
         logger.info('Concatenate the result...')
         subtiles_gdf = pd.concat(job_outcome, ignore_index=True)
-        
-        if cadastral_surveying:
-            logger.info('Only keep tiles that are intersecting survey points...')
-            survey_pts_gdf = gpd.read_file(cadastral_surveying)
-            subtiles_w_pts = gpd.sjoin(subtiles_gdf, survey_pts_gdf, how="inner").id
-            subtiles_gdf = subtiles_gdf[subtiles_gdf.id.isin(subtiles_w_pts)].copy()
 
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
             logger.info('The tiles are clipped to the image border.')
