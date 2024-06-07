@@ -75,12 +75,12 @@ logger.info('Filter dataframe by score and area...')
 detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
 
 # Get scale from subtile info
-initial_tile_nbr = detections_gdf.shape[0]
+initial_det_nbr = detections_gdf.shape[0]
 subtiles_gdf['xyz'] = [id.strip('()').split(', ') for id in subtiles_gdf.id]
 subtiles_gdf['tilename'] = [f"{z}_{x}_{y}.tif" for x, y, z in subtiles_gdf.xyz]
 detections_gdf = pd.merge(detections_gdf, subtiles_gdf[['tilename', 'initial_tile']], left_on='image', right_on='tilename')
 detections_gdf = pd.merge(detections_gdf, tiles_gdf[['name', 'scale']], left_on='initial_tile', right_on='name')
-assert initial_tile_nbr == detections_gdf.shape[0], "Some detections disappreard in the join with subtiles and tiles!"
+assert initial_det_nbr == detections_gdf.shape[0], "Some detections disappreard in the join with subtiles and tiles!"
 
 for scale in AREA_THRESHOLDS.keys():
     min_area, max_area = AREA_THRESHOLDS[scale]
@@ -150,14 +150,15 @@ logger.info('Dissolve dets in clusters....')
 clustered_dets_gdf = detections_gdf[~detections_gdf.cluster_id.isnull()].copy()
 clustered_dets_gdf.loc[:, 'geometry'] = clustered_dets_gdf.buffer(0.1)
 if KEEP_DATASETS:
-    dissolved_dets_gdf = clustered_dets_gdf[['dataset', 'score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
-        ['cluster_id', 'dataset'], {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
+    dissolved_dets_gdf = clustered_dets_gdf[['dataset', 'score', 'det_id', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
+        ['cluster_id', 'dataset'], {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max', 'det_id': 'first'}, as_index=False
     )
+    dissolved_dets_gdf = dissolved_dets_gdf.assign(geometry=dissolved_dets_gdf.buffer(-0.1))
 else:
     dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
         'cluster_id', {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
     )
-dissolved_dets_gdf = dissolved_dets_gdf.assign(det_id=dissolved_dets_gdf.cluster_id + detections_gdf.det_id.max(), geometry=dissolved_dets_gdf.buffer(-0.1))
+    dissolved_dets_gdf = dissolved_dets_gdf.assign(det_id=dissolved_dets_gdf.cluster_id + detections_gdf.det_id.max(), geometry=dissolved_dets_gdf.buffer(-0.1))
 
 detections_gdf = pd.concat(
     [detections_gdf[detections_gdf.cluster_id.isnull()], dissolved_dets_gdf],
