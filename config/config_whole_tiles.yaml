@@ -15,7 +15,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: .
+  working_directory: outputs
   datasets:
     aoi_tiles: gpkg_whole_tiles/subtiles.gpkg
     image_source:

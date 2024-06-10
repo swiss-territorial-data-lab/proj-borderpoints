@@ -27,21 +27,27 @@ def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
     Returns:
         GeoDataFrame: A GeoDataFrame with the best match for each point in regards to the distance and score.
     """
+
+    if any(multiple_matches_gdf.duplicated(['pt_id', 'det_id'])):
+        logger.critical('Duplicates are present in the point-det matches.')
+        sys.exit(1)
+
+    # TODO: Only resolve those with different detected category. For the other, keep the median score
     
     # Bring back the geometries of the points
     multi_pts_df = pd.merge(
-        multiple_matches_gdf, detections_gdf[['det_id', 'geometry']], 
+        multiple_matches_gdf.reset_index(), detections_gdf[['det_id', 'geometry']], 
         on='det_id', suffixes=('_pt', '_det')
-    )
+    ).set_index('index')
     # Get a weighted score made of the distance and the initial score
     multi_pts_df.loc[:, 'geometry_det'] = multi_pts_df.geometry_det.centroid
     multi_pts_df['distance'] = multi_pts_df.geometry_pt.distance(multi_pts_df.geometry_det)
     multi_pts_df['weighted_score'] = multi_pts_df['distance']/multi_pts_df['score']
 
     # Keep best match in the gdf in regards to the distance and score
-    multi_pts_df.sort_values('weighted_score', ascending=False, inplace=True)
+    multi_pts_df.sort_values('weighted_score', ascending=True, inplace=True)
     favorite_matches = multi_pts_df.duplicated('pt_id')
-    favorite_matches_gdf = multiple_matches_gdf[~favorite_matches.sort_index()]
+    favorite_matches_gdf = multiple_matches_gdf[favorite_matches.sort_index()]
 
     return favorite_matches_gdf
 
@@ -101,10 +107,10 @@ OUTPUT_DIR = cfg['output_dir']
 DETECTIONS = cfg['detections']
 BORDER_POINTS = cfg['border_points']
 
-# Point neighborhood = half of max size of the point bbox depending on scale
-PT_NEIGBORHOOD = {500: 2.4/2, 1000: 4.5/2, 2000: 6.8/2, 4000: 17.3/2}
+# Point neighborhood = max size of the point bbox depending on scale
+PT_NEIGBORHOOD = {500: 2.4, 1000: 4.5, 2000: 6.8, 4000: 17.3}
 # Based on visual assessment, buffer distance = 1/8 max size of the point bbox depending on scale
-BUFFER_DISTANCE = {key: value/4 for key, value in PT_NEIGBORHOOD.items()}
+BUFFER_DISTANCE = {key: value/8 for key, value in PT_NEIGBORHOOD.items()}
 
 
 # Processing  ---------------------------------------
