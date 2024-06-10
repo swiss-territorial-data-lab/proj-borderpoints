@@ -27,11 +27,10 @@ The workflow can be divided into three parts:
 If some overlap between tiles is required:
 
 ```
-python scripts/data_preparation/get_point_bbox_size.py
+python scripts/sandbox/get_point_bbox_size.py config/config_sandbox.yaml
 ```
 
-The configuration is the one from `prepare_data.py`.<br>
-It produces a csv file with the info about the max size of border points at each scale.
+It produces a csv file with the info about the maximum size of border points at each scale. The file must then be passed as parameter in the data preparation.
 
 **Dataset with GT**
 

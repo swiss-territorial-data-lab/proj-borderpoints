@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     logger.info(f"Using {args.config_file} as config file.")
     with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+        cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
