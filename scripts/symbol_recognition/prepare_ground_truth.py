@@ -41,7 +41,6 @@ TILE_DIR = cfg['tile_dir']
 
 BORDER_POINTS_PT = cfg['border_points_pt']
 BORDER_POINTS_POLY = cfg['border_points_poly']
-CADASTRAL_SURVEYING = cfg['cadastral_surveying']
 
 CONVERT_IMAGES = cfg['convert_images']
 TILE_SUFFIX = cfg['tile_suffix']
@@ -56,7 +55,7 @@ pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS_PT, os.path.j
 logger.info('Get the maximum size of border points by scale...')
 pt_sizes_gdf, written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
 
-tiles_gdf, nodata_gdf, _, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, output_dir=OUTPUT_DIR_VECT, subtiles=False)
+tiles_gdf, _, _, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, output_dir=OUTPUT_DIR_VECT, subtiles=False)
 written_files.extend(tmp_written_files)
 
 logger.info('Format cadastral surveying data...')
