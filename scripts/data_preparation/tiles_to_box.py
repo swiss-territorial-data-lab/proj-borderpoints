@@ -58,6 +58,17 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
         tilepath = bbox.tilepath
         if os.path.exists(tilepath):
+
+            # Determine the name of the new tile and check if it exists
+            (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
+            tile_nbr = int(os.path.basename(bbox.tilepath).split('_')[0])
+            new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
+            output_path = os.path.join(output_dir, new_name)
+
+            if not cst.OVERWRITE and os.path.exists(output_path):
+                continue
+
+            # Clip the tile
             with rasterio.open(tilepath) as src:
                 out_image, out_transform, = mask(src, [bbox.geometry], crop=True)
                 out_meta = src.meta
@@ -77,15 +88,8 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                  "height": height,
                  "width": width,
                  "transform": out_transform})
-            
-            (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-            tile_nbr = int(os.path.basename(bbox.tilepath).split('_')[0])
-            new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
-            output_path = os.path.join(output_dir, new_name)
 
-            if not cst.OVERWRITE and os.path.exists(output_path):
-                continue
-
+            # Save the clipped tile in correspondence list and to file
             if not os.path.exists(output_path):
                 name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
