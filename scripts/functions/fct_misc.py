@@ -7,6 +7,18 @@ import pandas as pd
 from shapely.affinity import scale
 
 
+def buffer_by_max_size(gdf, pt_sizes_gdf, factor=1, cap_style=1):
+    """
+    Generate a buffer around each geometry of the passed Geodataframe depending on the scale with the size indicated in the second dataframe
+    and multiplied by the factor (default is 1).
+    """
+     
+    gdf['buffer_size'] = [pt_sizes_gdf.loc[pt_sizes_gdf['scale'] == int(scale), 'max_dx'].iloc[0] for scale in gdf['scale'].to_numpy()]
+    gdf.loc[:, 'geometry'] = gdf.buffer(gdf['buffer_size']*factor, cap_style=cap_style)
+
+    return gdf
+
+
 def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
     """
     Clips the labels in the `labels_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
@@ -45,6 +57,23 @@ def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
     clipped_labels_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
 
     return clipped_labels_gdf
+
+
+def find_intersecting_polygons(poly_gdf, output_dir='ouputs'):
+    written_files = []
+
+    poly_gdf['ini_geom'] = poly_gdf['geometry']
+    joined_gdf = gpd.sjoin(poly_gdf[['pt_id', 'geometry']], poly_gdf[['pt_id', 'geometry', 'ini_geom']])
+    joined_gdf = joined_gdf[joined_gdf.pt_id_left > joined_gdf.pt_id_right].copy()
+    joined_gdf['iou'] = joined_gdf.apply(lambda x: intersection_over_union(x['geometry'], x['ini_geom']), axis=1)
+    intersecting_gdf = joined_gdf[joined_gdf['iou'] > 0.5].copy()
+
+    intersecting_gdf.sort_values(by=['pt_id_left', 'pt_id_right'], inplace=True)
+    filepath = os.path.join(output_dir, 'overlapping_images.gpkg')
+    intersecting_gdf[['pt_id_left', 'pt_id_right', 'geometry', 'iou']].to_file(filepath)
+    written_files.append(filepath)
+
+    return intersecting_gdf, written_files
 
 
 def format_logger(logger):

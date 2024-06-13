@@ -8,6 +8,7 @@ import geopandas as gpd
 import pandas as pd
 
 sys.path.insert(1, 'scripts')
+from constants import OVERWRITE
 from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
@@ -23,6 +24,14 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
         size_per_scale_df: DataFrame with the maximum size at each scale
         filepath: list with the filepath of the saved file
     """
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    filepath = os.path.join(output_dir, 'max_point_size.csv')
+    if os.path.exists(filepath) and not OVERWRITE:
+        logger.info("The file for the point size at each scale already exists. Reading from disk...")
+        size_per_scale_df = pd.read_csv(filepath)
+        return size_per_scale_df, []
 
     logger.info('Read data...')
     pts_gdf = gpd.read_file(border_pts_path)
@@ -57,7 +66,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
     logger.info('Export results...')
     size_per_scale_df = pd.DataFrame(size_per_scale_dict)
 
-    filepath = os.path.join(output_dir, 'max_point_size.csv')
+
     size_per_scale_df.to_csv(filepath, index=False)
 
     return size_per_scale_df, [filepath]

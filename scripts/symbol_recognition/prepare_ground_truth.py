@@ -6,10 +6,11 @@ from time import time
 from yaml import load, FullLoader
 
 import geopandas as gpd
+import pandas as pd
 
 sys.path.insert(1,'scripts')
 from constants import OVERWRITE
-from data_preparation import format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box
+from data_preparation import format_labels, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 from sandbox import get_point_bbox_size
 import functions.fct_misc as misc
 
@@ -38,6 +39,7 @@ OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
 
+BORDER_POINTS_PT = cfg['border_points_pt']
 BORDER_POINTS_POLY = cfg['border_points_poly']
 CADASTRAL_SURVEYING = cfg['cadastral_surveying']
 
@@ -49,6 +51,8 @@ os.chdir(WORKING_DIR)
 if CONVERT_IMAGES:
     pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
+pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS_PT, os.path.join(OUTPUT_DIR_VECT, 'GT'))
+
 logger.info('Get the maximum size of border points by scale...')
 pt_sizes_gdf, written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
 
@@ -56,15 +60,13 @@ tiles_gdf, nodata_gdf, _, tmp_written_files = get_delimitation_tiles.get_delimit
 written_files.extend(tmp_written_files)
 
 logger.info('Format cadastral surveying data...')
-filepath = os.path.join(OUTPUT_DIR_VECT, 'MO_pt_polys.gpkg')
+filepath = os.path.join(OUTPUT_DIR_VECT, 'GT', 'GT_pt_polys.gpkg')
 if not os.path.isfile(filepath) or OVERWRITE:
-    nodata_gdf = misc.buffer_by_max_size(nodata_gdf, pt_sizes_gdf, factor=0.25)
-    cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, tiles_gdf, nodata_gdf, output_dir=OUTPUT_DIR_VECT)
-    written_files.extend(tmp_written_files)
-
+    
     logger.info('Transform points to polygons...')
-    cs_points_poly_gdf = misc.buffer_by_max_size(cs_points_gdf, pt_sizes_gdf, factor=0.5, cap_style=3)
-    cs_points_poly_gdf.to_file(filepath)
+    pts_gdf.rename(columns={'Echelle': 'scale'}, inplace=True)
+    cs_points_poly_gdf = misc.buffer_by_max_size(pts_gdf, pt_sizes_gdf, factor=0.5, cap_style=3)
+    cs_points_poly_gdf[['pt_id', 'scale', 'Num_plan', 'CATEGORY', 'SUPERCATEGORY', 'geometry']].to_file(filepath)
     written_files.append(filepath)
 
 else:
@@ -72,11 +74,15 @@ else:
     cs_points_poly_gdf = gpd.read_file(filepath)
 
 logger.info('Clip image for each border point...')
-SYMBOL_IM_DIR = os.path.join(TILE_DIR, 'symbol_images')
+tiles_gdf['initial_tile'] = [x + y for z, x, y in tiles_gdf.name.str.split('_')]
+cs_points_poly_gdf = pd.merge(
+    cs_points_poly_gdf, tiles_gdf[['initial_tile', 'name']], left_on='Num_plan', right_on='initial_tile'
+).drop(columns='initial_tile').rename(columns={'name': 'initial_tile'})
+SYMBOL_IM_DIR = os.path.join(TILE_DIR, 'symbol_images_GT')
 tiles_to_box.tiles_to_box(TILE_DIR, cs_points_poly_gdf, SYMBOL_IM_DIR)
 
 logger.info('Test if images intersect...')
-_, tmp_written_files = misc.find_intersecting_polygons(cs_points_poly_gdf, OUTPUT_DIR_VECT)
+_, tmp_written_files = misc.find_intersecting_polygons(cs_points_poly_gdf, os.path.join(OUTPUT_DIR_VECT, 'GT'))
 
 print()
 logger.success("The following files were written. Let's check them out!")

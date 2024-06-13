@@ -1,3 +1,16 @@
+prepare_ground_truth.py:
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  output_dir:
+    vectors: outputs/labels_symbol_matching
+  initial_image_dir: inputs/plans
+  tile_dir: outputs/rgb_images
+  border_points_pt: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_points.shp
+  border_points_poly: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  tile_suffix: _geo.tif
+  convert_images: True
+
+
 prepare_symbol_classif.py:
   working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir:
