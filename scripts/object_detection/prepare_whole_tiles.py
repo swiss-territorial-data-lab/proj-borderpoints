@@ -7,6 +7,7 @@ from yaml import load, FullLoader
 
 import geopandas as gpd
 
+sys.path.insert(1,'scripts')
 from data_preparation import format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 
