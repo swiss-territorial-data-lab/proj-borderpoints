@@ -57,7 +57,7 @@ pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_V
 logger.info('Clip tiles to the digitization bounding boxes...')
 tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_CLIPPED_TILES)
 
-tiles_gdf, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(
+tiles_gdf, _, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(
     tile_dir=OUTPUT_DIR_CLIPPED_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True
 )
 written_files.extend(tmp_written_files)

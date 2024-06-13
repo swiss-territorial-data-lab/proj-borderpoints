@@ -61,6 +61,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
 
     Returns:
         tiles_gdf: GeoDataFrame with the bounding box and the info of each tile
+        nodata_gdf: GeoDataFrame with the nodata areas in the tile bounding boxes
         subtiles_gdf: GeoDataFrame with the bounding box and the info of each subtiles. If `subtiles`==None, returns None
         written_files: list of the written files
     """
@@ -74,6 +75,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     if not cst.OVERWRITE and os.path.exists(output_path_tiles) and os.path.exists(output_path_nodata):
         tiles_gdf = gpd.read_file(output_path_tiles)
         nodata_gdf=gpd.read_file(output_path_nodata)
+        logger.info('Files for tiles already exist. Reading from disk...')
 
     else:
         
@@ -154,7 +156,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
             # Transform nodata area into polygons
             temp_gdf = rasters.no_data_to_polygons(first_band, meta['transform'], meta['nodata'])
             temp_gdf = pad_geodataframe(temp_gdf, bounds, tile_size, max(pixel_size_x, pixel_size_y), cst.GRID_LARGE_TILES, cst.GRID_LARGE_TILES, max_dx, max_dy)
-            temp_gdf['tile_name'] = tile_name
+            temp_gdf = temp_gdf.assign(tile_name=tile_name, scale=tile_scale)
             nodata_gdf = pd.concat([nodata_gdf, temp_gdf], ignore_index=True)
 
         tiles_gdf = gpd.GeoDataFrame(tiles_dict, crs='EPSG:2056')
@@ -224,7 +226,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
         subtiles_gdf = None
     
     logger.success('Done determining the tiling!')
-    return tiles_gdf, subtiles_gdf, written_files
+    return tiles_gdf, nodata_gdf, subtiles_gdf, written_files
     
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
     """Pad the bounding box of a tile with the distance necessary to match a grid generated with the passed parameters.

@@ -86,7 +86,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             if not cst.OVERWRITE and os.path.exists(output_path):
                 continue
 
-            if not os.path.exsits(output_path):
+            if not os.path.exists(output_path):
                 name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
             with rasterio.open(output_path, "w", **out_meta) as dst:
@@ -105,7 +105,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     if len(name_correspondence_list) > 0:
         logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.info(f"All files were already present in folder. Nothing done.")
+        logger.success(f"All files were already present in folder. Nothing done.")
         
 
 # ------------------------------------------

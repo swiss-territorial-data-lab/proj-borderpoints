@@ -16,7 +16,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
     """Get the maximum bounding box size of the border points at each scale.
 
     Args:
-        border_pts_path (sttr): path to the border points
+        border_pts_path (str): path to the border points
         output_dir (str, optional): path to the output directory. Defaults to 'outputs'.
 
     Returns:
@@ -50,7 +50,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
             if dy > max_dy:
                 max_dy = dy
         
-        size_per_scale_dict['scale'].append(scale)
+        size_per_scale_dict['scale'].append(int(scale))
         size_per_scale_dict['max_dx'].append(max_dx)
         size_per_scale_dict['max_dy'].append(max_dy)
 

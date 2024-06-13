@@ -32,7 +32,7 @@ def format_labels(path_points_poly, output_dir='outputs'):
     pts_gdf = gpd.read_file(path_points_poly)
 
     pts_gdf.drop(columns=['Shape_Leng', 'Shape_Area'], inplace=True)
-    pts_gdf['CATEGORY'] = [str(code) + color for code, color in zip(pts_gdf.Code_type_, pts_gdf.Couleur)] 
+    pts_gdf['CATEGORY'] = [str(code) + color if color else 'undetermined' for code, color in zip(pts_gdf.Code_type_, pts_gdf.Couleur)] 
     pts_gdf['SUPERCATEGORY'] = 'border points'
 
     logger.info('Export the labels...')

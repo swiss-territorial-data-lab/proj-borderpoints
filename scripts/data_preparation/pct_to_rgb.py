@@ -107,7 +107,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
         logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.info(f"All files were already present in folder. Nothing done.")
+        logger.success(f"All files were already present in folder. Nothing done.")
 
 
 # ------------------------------------------

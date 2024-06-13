@@ -47,7 +47,7 @@ os.chdir(WORKING_DIR)
 if CONVERT_IMAGES:
     pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
-tiles_gdf, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, 
+tiles_gdf, _, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, 
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
 logger.info('Format cadastral surveying data...')

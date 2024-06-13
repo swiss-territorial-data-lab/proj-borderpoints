@@ -15,13 +15,14 @@ from constants import OVERWRITE
 logger = format_logger(logger)
 
 
-def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
+def format_surveying_data(path_surveying, tiles, nodata_gdf=None, output_dir='outputs'):
     """
     Formats the surveying data by extracting points from the survey polygons and saving them in a GeoDataFrame.
     
     Parameters:
         path_surveying (str): The path to the survey polygons file.
         tiles (str or GeoDataFrame): The path to the tiles file or the tiles GeoDataFrame.
+        nodata_gdf (GeoDataFrame): The Geodataframe with the area not covered by tiles.
         output_dir (str, optional): The directory where the output file will be saved. Defaults to 'outputs'.
     
     Returns:
@@ -33,6 +34,7 @@ def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
     
     filepath = os.path.join(output_dir, 'MO_points.gpkg')
     if os.path.isfile(filepath) and (not OVERWRITE):
+        logger.info('File already exists, reading from disk...')
         return gpd.read_file(filepath), []
 
     logger.info('Read file...')
@@ -58,14 +60,20 @@ def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
     pts_gdf.drop(columns=['approx_coor'], inplace=True)
 
     logger.info('Exclude points outside the tiles...')
-    pts_in_tiles_gdf = gpd.overlay(pts_gdf, tiles_gdf[['id', 'geometry']], keep_geom_type=True)
+    pts_in_tiles_gdf = gpd.overlay(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], keep_geom_type=True)
     pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
-    pts_in_tiles_gdf.drop(columns=['id'], inplace=True)
+
+    if isinstance(nodata_gdf, gpd.GeoDataFrame):
+        pts_in_tiles_gdf = gpd.overlay(pts_in_tiles_gdf, nodata_gdf, how='difference', keep_geom_type=True)
+        pts_in_tiles_gdf.rename(columns={'name': 'initial_tile'}, inplace=True)
+    else:
+        pts_in_tiles_gdf.drop(columns=['name'], inplace=True)
 
     pts_in_tiles_gdf.to_file(filepath)
     written_files.append(filepath)
 
-    return pts_gdf, written_files
+    logger.success('Done formatting surveying data!')
+    return pts_in_tiles_gdf, written_files
 
 
 # ------------------------------------------
