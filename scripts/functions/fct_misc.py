@@ -63,14 +63,16 @@ def find_intersecting_polygons(poly_gdf, output_dir='ouputs'):
     written_files = []
 
     poly_gdf['ini_geom'] = poly_gdf['geometry']
-    joined_gdf = gpd.sjoin(poly_gdf[['pt_id', 'initial_tile', 'geometry']], poly_gdf[['pt_id', 'initial_tile', 'geometry', 'ini_geom']])
+    poly_gdf['combo_id'] = poly_gdf['pt_id'].astype(str) + ' - ' + poly_gdf['initial_tile'].astype(str)
+    joined_gdf = gpd.sjoin(poly_gdf[['pt_id', 'initial_tile', 'combo_id', 'geometry']], poly_gdf[['pt_id', 'initial_tile', 'combo_id', 'geometry', 'ini_geom']])
     joined_gdf = joined_gdf[(joined_gdf.pt_id_left > joined_gdf.pt_id_right) & (joined_gdf.initial_tile_left == joined_gdf.initial_tile_right)].copy()
     joined_gdf['iou'] = joined_gdf.apply(lambda x: intersection_over_union(x['geometry'], x['ini_geom']), axis=1)
-    intersecting_gdf = joined_gdf[joined_gdf['iou'] > 0.5].copy()
+    intersecting_pts = joined_gdf.loc[joined_gdf['iou'] > 0.5, 'combo_id_left'].unique().tolist()\
+          + joined_gdf.loc[joined_gdf['iou'] > 0.5, 'combo_id_right'].unique().tolist()
 
-    intersecting_gdf.sort_values(by=['pt_id_left', 'pt_id_right'], inplace=True)
+    intersecting_gdf = poly_gdf[poly_gdf['combo_id'].isin(intersecting_pts)].copy()
     filepath = os.path.join(output_dir, 'overlapping_images.gpkg')
-    intersecting_gdf[['pt_id_left', 'pt_id_right', 'geometry', 'iou']].to_file(filepath)
+    intersecting_gdf[['pt_id', 'scale', 'combo_id', 'geometry']].to_file(filepath)
     written_files.append(filepath)
 
     return intersecting_gdf, written_files
