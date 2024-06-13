@@ -15,7 +15,7 @@ from constants import OVERWRITE
 logger = format_logger(logger)
 
 
-def format_surveying_data(path_surveying, tiles, nodata_gdf=None, output_dir='outputs'):
+def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplicates=True, output_dir='outputs'):
     """
     Formats the surveying data by extracting points from the survey polygons and saving them in a GeoDataFrame.
     
@@ -23,6 +23,7 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, output_dir='ou
         path_surveying (str): The path to the survey polygons file.
         tiles (str or GeoDataFrame): The path to the tiles file or the tiles GeoDataFrame.
         nodata_gdf (GeoDataFrame): The Geodataframe with the area not covered by tiles.
+        remove_duplicates (bool, optional): Whether to remove duplicate points due to the intersection with several tiles. Defaults to False.
         output_dir (str, optional): The directory where the output file will be saved. Defaults to 'outputs'.
     
     Returns:
@@ -60,11 +61,14 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, output_dir='ou
     pts_gdf.drop(columns=['approx_coor'], inplace=True)
 
     logger.info('Exclude points outside the tiles...')
-    pts_in_tiles_gdf = gpd.overlay(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], keep_geom_type=True)
-    pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
+    pts_in_tiles_gdf = gpd.sjoin(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], how='inner').drop(columns=['index_right'])
+    if remove_duplicates:
+        pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
 
     if isinstance(nodata_gdf, gpd.GeoDataFrame):
-        pts_in_tiles_gdf = gpd.overlay(pts_in_tiles_gdf, nodata_gdf, how='difference', keep_geom_type=True)
+        pts_on_nodata_gdf = gpd.sjoin(pts_in_tiles_gdf, nodata_gdf)
+        pts_to_remove = pts_on_nodata_gdf.loc[pts_on_nodata_gdf.name==pts_on_nodata_gdf.tile_name, 'pt_id'].tolist()
+        pts_in_tiles_gdf = pts_in_tiles_gdf[~pts_in_tiles_gdf['pt_id'].isin(pts_to_remove)].copy()
         pts_in_tiles_gdf.rename(columns={'name': 'initial_tile'}, inplace=True)
     else:
         pts_in_tiles_gdf.drop(columns=['name'], inplace=True)

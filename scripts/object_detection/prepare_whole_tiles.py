@@ -52,7 +52,7 @@ tiles_gdf, _, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitat
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
 logger.info('Format cadastral surveying data...')
-cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, OUTPUT_DIR_VECT)
+cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
 logger.info('Limit subtiles to area with data for cadastral survey and overwrite the initial file...')

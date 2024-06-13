@@ -80,7 +80,7 @@ if OVERWRITE or (not os.path.exists(output_path_tiles)):
     tiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECT, 'tiles.gpkg'))
 
 logger.info('Format cadastral surveying data...')
-cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, OUTPUT_DIR_VECT)
+cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
 logger.info('Clip images to subtiles...')
