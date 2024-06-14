@@ -1,7 +1,3 @@
 folium
-geopandas
-loguru
 openpyxl
 PyYAML
-rasterio
-tqdm

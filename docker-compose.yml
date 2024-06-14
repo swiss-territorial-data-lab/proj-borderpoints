@@ -1,0 +1,18 @@
+
+services:
+  borderpoints-dev:
+    build: .
+    volumes:
+      - ./object-detector:/docker_dev_mount/object-detector
+      - ./config:/docker_dev_mount/proj-borderpoints/config
+      - ./inputs:/docker_dev_mount/proj-borderpoints/inputs
+      - ./outputs:/docker_dev_mount/proj-borderpoints/outputs
+      - ./scripts:/docker_dev_mount/proj-borderpoints/scripts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: /bin/bash

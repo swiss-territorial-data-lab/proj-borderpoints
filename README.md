@@ -4,8 +4,28 @@ Classification of the border points from the BDMO2 based on the cadastral map of
 
 ## Installation
 
-Use the installation of the STDL's OD.
+The installation is performed with the follwing steps:
 
+* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector)
+* Switch to my branch
+* Build docker
+* Run docker
+* Get into to `proj-borderpoints` directory
+
+
+The corresponding command lines are
+
+```
+git clone https://github.com/swiss-territorial-data-lab/object-detector.git
+cd object-detector
+git checkout gs/code_improvement
+cd -
+docker compose build
+docker compose run --rm borderpoints-dev
+cd proj-borderpoints
+```
+
+**All commands in the workflows are supposed to be launched in docker from the proj-borderpoint directory.**
 
 ## General workflow
 
