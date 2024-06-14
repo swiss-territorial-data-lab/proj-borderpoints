@@ -137,6 +137,8 @@ def no_data_to_polygons(image_band, transform, nodata_value, crs="EPSG:2056"):
     shapes = list(rasterio.features.shapes(image_band, transform=transform))
     nodata_polygons.extend([shape(geom) for geom, value in shapes if value == nodata_value])
 
-    nodata_df = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs=crs)
+    nodata_gdf = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs=crs)
+    # Remove isolated pixels with the same value as nodata
+    nodata_gdf = nodata_gdf[nodata_gdf.area > 10].copy()
 
-    return nodata_df
+    return nodata_gdf

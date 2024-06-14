@@ -55,20 +55,21 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
         for i, pt in zip(range(len(pts_list)), pts_list)
     ]
 
-    logger.info('Save infered points in a GeoDataFrame...')
+    logger.info('Put infered points in a GeoDataFrame...')
     pts_gdf = gpd.GeoDataFrame({'pt_id': pt_ids_list, 'approx_coor': coor_list, 'geometry': pts_list}, crs='EPSG:2056')
     pts_gdf.drop_duplicates('approx_coor', inplace=True, ignore_index=True)
     pts_gdf.drop(columns=['approx_coor'], inplace=True)
 
     logger.info('Exclude points outside the tiles...')
     pts_in_tiles_gdf = gpd.sjoin(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], how='inner').drop(columns=['index_right'])
+    pts_in_tiles_gdf['combo_id'] = pts_in_tiles_gdf['pt_id'] + ' - ' + pts_in_tiles_gdf['name']
     if remove_duplicates:
         pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
-
+ 
     if isinstance(nodata_gdf, gpd.GeoDataFrame):
         pts_on_nodata_gdf = gpd.sjoin(pts_in_tiles_gdf, nodata_gdf)
-        pts_to_remove = pts_on_nodata_gdf.loc[pts_on_nodata_gdf.name==pts_on_nodata_gdf.tile_name, 'pt_id'].tolist()
-        pts_in_tiles_gdf = pts_in_tiles_gdf[~pts_in_tiles_gdf['pt_id'].isin(pts_to_remove)].copy()
+        pts_to_remove = pts_on_nodata_gdf.loc[pts_on_nodata_gdf.name==pts_on_nodata_gdf.tile_name, 'combo_id'].tolist()
+        pts_in_tiles_gdf = pts_in_tiles_gdf[~pts_in_tiles_gdf['combo_id'].isin(pts_to_remove)].copy()
         pts_in_tiles_gdf.rename(columns={'name': 'initial_tile'}, inplace=True)
     else:
         pts_in_tiles_gdf.drop(columns=['name'], inplace=True)

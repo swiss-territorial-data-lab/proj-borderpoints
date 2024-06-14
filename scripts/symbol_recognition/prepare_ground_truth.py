@@ -51,6 +51,7 @@ if CONVERT_IMAGES:
     pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
 pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS_PT, os.path.join(OUTPUT_DIR_VECT, 'GT'))
+pts_gdf['combo_id'] = pts_gdf['pt_id'] + ' - ' + pts_gdf['Num_plan']
 
 logger.info('Get the maximum size of border points by scale...')
 pt_sizes_gdf, written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
