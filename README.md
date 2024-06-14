@@ -6,11 +6,15 @@ Classification of the border points from the BDMO2 based on the cadastral map of
 
 The installation is performed with the follwing steps:
 
-* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector)
-* Switch to my branch
-* Build docker
-* Run docker
-* Get into to `proj-borderpoints` directory
+* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
+* Get into the `object-detector folder`,
+* Switch to my branch,
+* The dockerfile of this project suppose the existence on the machine of an image called `object-detector-stdl-objdet`. If it is not available, build it from the folder of the object detector with `docker compose build`.
+    * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
+* Get back to the folder `proj-boderpoints`,
+* Build docker,
+* Run docker,
+* Get into to `proj-borderpoints` directory in docker.
 
 
 The corresponding command lines are
@@ -32,14 +36,14 @@ cd proj-borderpoints
 
 The workflow can be divided into three parts:
 
-* Data preparation: call of the right script for the preprocessing, _i.e._ `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are perfomed:
-    - Tranform the maps from a color map to RGB images,
+* Data preparation: call of the right script for the preprocessing, _i.e._ `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
+    - Transform the maps from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
     - Clip the map to the subtiles.
 * Detection of the border points with the STDL's object detector. The necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted after the experts' requirements.
-    - `post_processing.py`: the detections are filtered by their confidance score and ...
+    - `post_processing.py`: the detections are filtered by their confidence score and ...
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
     - `check_w_land_cover.py`: use the data on land cover to assign the class "non-materialized point" to undetermined points in building and stagnant waters.
     - `heatmap.py`: highlight areas with a high concentration of false positive points.
@@ -71,7 +75,7 @@ python scripts/assess_by_tile.py config/config_w_gt.yaml
 
 In the configuration file, the parameters `keep_datasets` must be set to `False` to preserve the split of the training, validation and test dataset.
 
-Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessement.
+Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessment.
 
 ```
 python scripts/post_processing/point_matching.py config/config_w_gt.yaml
