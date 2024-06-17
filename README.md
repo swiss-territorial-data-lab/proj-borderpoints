@@ -4,14 +4,16 @@ Classification of the border points from the BDMO2 based on the cadastral map of
 
 ## Installation
 
-The installation is performed with the follwing steps:
+The installation is performed from this folder with the following steps:
 
 * Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
-* Get into the `object-detector folder`,
+* Get into the `object-detector` folder,
 * Switch to my branch,
-* The dockerfile of this project suppose the existence on the machine of an image called `object-detector-stdl-objdet`. If it is not available, build it from the folder of the object detector with `docker compose build`.
+* The dockerfile of this project suppose the existence on the machine of an image called `object-detector-stdl-objdet`. 
+    * You can control the image existence by listing the available images with `docker images ls`.
+    * If it is not available, build it from the folder of the object detector with `docker compose build`.
     * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
-* Get back to the folder `proj-boderpoints`,
+* Get back to the folder `proj-borderpoints`,
 * Build docker,
 * Run docker,
 * Get into to `proj-borderpoints` directory in docker.
@@ -73,7 +75,7 @@ python scripts/post_processing/post_processing.py config/config_w_gt.yaml
 python scripts/assess_by_tile.py config/config_w_gt.yaml
 ```
 
-In the configuration file, the parameters `keep_datasets` must be set to `False` to preserve the split of the training, validation and test dataset.
+In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test dataset.
 
 Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessment.
 
