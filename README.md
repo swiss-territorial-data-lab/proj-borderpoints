@@ -28,7 +28,7 @@ git checkout gs/code_improvement
 cd -
 docker compose build
 docker compose run --rm borderpoints-dev
-cd proj-borderpoints
+cd proj-borderpoints            # Command to run in the docker bash
 ```
 
 **All commands in the workflows are supposed to be launched in docker from the proj-borderpoint directory.**

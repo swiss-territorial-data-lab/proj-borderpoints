@@ -29,11 +29,12 @@ def format_labels(path_points_poly, output_dir='outputs'):
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info('Format the labels...')
-    pts_gdf = gpd.read_file(path_points_poly)
+    all_pts_gdf = gpd.read_file(path_points_poly)
 
-    pts_gdf.drop(columns=['Shape_Leng', 'Shape_Area'], inplace=True)
-    pts_gdf['CATEGORY'] = [str(code) + color for code, color in zip(pts_gdf.Code_type_, pts_gdf.Couleur)] 
-    pts_gdf['SUPERCATEGORY'] = 'border points'
+    all_pts_gdf.drop(columns=['Shape_Leng', 'Shape_Area'], inplace=True)
+    all_pts_gdf['CATEGORY'] = [str(code) + color for code, color in zip(all_pts_gdf.Code_type_, all_pts_gdf.Couleur)] 
+    all_pts_gdf['SUPERCATEGORY'] = 'border points'
+    pts_gdf = all_pts_gdf[all_pts_gdf.CATEGORY!='3n'].copy()
 
     logger.info('Export the labels...')
     filepath = os.path.join(output_dir, 'ground_truth_labels.gpkg')
