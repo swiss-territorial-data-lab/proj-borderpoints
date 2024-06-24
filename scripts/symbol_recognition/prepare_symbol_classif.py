@@ -58,8 +58,9 @@ written_files.extend(tmp_written_files)
 logger.info('Format cadastral surveying data...')
 filepath = os.path.join(OUTPUT_DIR_VECT, 'MO_pt_polys.gpkg')
 if not os.path.isfile(filepath) or OVERWRITE:
-    logger.info('Buffer nodata areas...')
-    nodata_gdf = misc.buffer_by_max_size(nodata_gdf, pt_sizes_gdf, factor=0.25)
+    nodata_gdf = nodata_gdf.dissolve(by='tile_name', as_index=False)
+    # logger.info('Buffer nodata areas...')
+    # nodata_gdf = misc.buffer_by_max_size(nodata_gdf, pt_sizes_gdf, factor=0.25)
     cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, tiles_gdf, nodata_gdf, remove_duplicates=False, output_dir=OUTPUT_DIR_VECT)
     written_files.extend(tmp_written_files)
 

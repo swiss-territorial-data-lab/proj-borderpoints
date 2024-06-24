@@ -103,7 +103,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
-    if len(name_correspondence_list) > 0 & (not output_dir.endswith('subtiles') or output_dir.endswith('symbol_images') or output_dir.endswith('symbol_images_GT')):
+    if len(name_correspondence_list) > 0 & ~(output_dir.endswith('subtiles') or output_dir.endswith('symbol_images') or output_dir.endswith('symbol_images_GT')):
         save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
 
     if len(name_correspondence_list) > 0:
