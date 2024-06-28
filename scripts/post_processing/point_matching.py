@@ -32,8 +32,6 @@ def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
         logger.critical('Duplicates are present in the point-det matches.')
         sys.exit(1)
 
-    # TODO: Only resolve those with different detected category. For the other, keep the median score
-    
     # Bring back the geometries of the points
     multi_pts_df = pd.merge(
         multiple_matches_gdf.reset_index(), detections_gdf[['det_id', 'geometry']], 
@@ -61,27 +59,34 @@ def test_intersection(border_pts_gdf, detections_gdf):
     - detections_gdf (GeoDataFrame): The GeoDataFrame containing the detections.
     
     Returns:
-    - intersected_pts_gdf (GeoDataFrame): The GeoDataFrame containing the intersected points with additional columns: det_id, det_category, score, and geometry.
-    - pts_w_cat_gdf (GeoDataFrame): The GeoDataFrame containing the points with a single intersection.
-    - multiple_matches_gdf (GeoDataFrame): The GeoDataFrame containing the points with multiple intersections.
+    - lonely_points_gdf (GeoDataFrame): The GeoDataFrame containing the points without any intersection to the detections
+    - pts_w_cat_gdf (GeoDataFrame): The GeoDataFrame containing the points with a category deducted from the intersecting detections.
     """
     
     intersected_pts_gdf = gpd.sjoin(detections_gdf[['det_id', 'det_category', 'score', 'geometry']], border_pts_gdf, how='right')
     intersected_pts_gdf.drop(columns=['index_left'], inplace=True)
+    intersected_pts_gdf.sort_values('score', inplace=True)
 
     intersection_count_df = intersected_pts_gdf.groupby(['pt_id', 'det_category'], as_index=False).size()
 
     logger.info("   Isolate points properly intersected...")
-    intersected_id = intersection_count_df.loc[intersection_count_df['size']==1, 'pt_id']
+    multiple_intersections = intersection_count_df.duplicated('pt_id')
+    intersected_id = intersection_count_df.loc[~multiple_intersections, 'pt_id']
     pts_w_cat_gdf = intersected_pts_gdf[
         intersected_pts_gdf.pt_id.isin(intersected_id) & ~intersected_pts_gdf.det_category.isna() 
     ].copy()
+    lonely_points_gdf = intersected_pts_gdf.loc[intersected_pts_gdf.det_category.isna(), border_pts_gdf.columns]
 
     logger.info("   Isolate points with multiple intersections")
-    multiplied_id = intersection_count_df.loc[intersection_count_df['size']>1, 'pt_id']
+    multiplied_id = intersection_count_df.loc[multiple_intersections, 'pt_id']
     multiple_matches_gdf = intersected_pts_gdf[intersected_pts_gdf.pt_id.isin(multiplied_id)].reset_index(drop=True)
 
-    return intersected_pts_gdf, pts_w_cat_gdf, multiple_matches_gdf
+    logger.info('Deal with points intersecting multiple detections...')
+    favorite_matches_gdf = resolve_multiple_matches(multiple_matches_gdf, detections_gdf)
+
+    pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, favorite_matches_gdf], ignore_index=True)
+
+    return lonely_points_gdf, pts_w_cat_gdf
 
 
 # Processing ---------------------------------------
@@ -129,15 +134,11 @@ if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
     sys.exit(1)
 
 logger.info('Test intersection between the border points and detections...')
-intersected_pts_gdf, pts_w_cat_gdf, multiple_matches_gdf = test_intersection(border_pts_gdf, detections_gdf)
-
-logger.info('Deal with points intersecting multiple detections...')
-favorite_matches_gdf = resolve_multiple_matches(multiple_matches_gdf, detections_gdf)
+lonely_points_gdf, pts_w_cat_gdf = test_intersection(border_pts_gdf, detections_gdf)
 
 logger.info('Try again with a buffer for points with no intersection...')
-lonely_points_gdf = intersected_pts_gdf[intersected_pts_gdf.det_category.isna()].copy()
 lonely_dets_gdf = detections_gdf[
-    ~(detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist()) | detections_gdf.det_id.isin(favorite_matches_gdf.det_id.unique().tolist()))
+    ~detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist())
 ].copy()
 lonely_dets_gdf['buffer_size'] = [BUFFER_DISTANCE[scale] for scale in lonely_dets_gdf['scale']]
 lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
@@ -145,18 +146,14 @@ lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buff
 if lonely_points_gdf.empty:
     tmp_pts_w_cat_gdf = gpd.GeoDataFrame(crs="EPSG:2056", columns=pts_w_cat_gdf.columns)
 else:
-    intersected_pts_gdf, tmp_pts_w_cat_gdf, multiple_matches_gdf = test_intersection(lonely_points_gdf[border_pts_gdf.columns], lonely_dets_gdf)
+    lonely_points_gdf, tmp_pts_w_cat_gdf = test_intersection(lonely_points_gdf, lonely_dets_gdf)
 
-logger.info('Deal with points intersecting multiple detections...')
-tmp_favorite_matches_gdf = resolve_multiple_matches(multiple_matches_gdf, detections_gdf)
-favorite_matches_gdf = pd.concat([favorite_matches_gdf, tmp_favorite_matches_gdf]) 
-
-logger.info('Attribute a final category to points...')
-final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf, favorite_matches_gdf], ignore_index=True)
+logger.info('Merge results...')
+final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf], ignore_index=True)
 new_border_pts_gdf = pd.merge(border_pts_gdf, final_pts_w_cat_gdf.drop(columns=['geometry']), how='left', on='pt_id')
 
 # Check if pts without category are matching across methods
-lonely_ids = intersected_pts_gdf.loc[intersected_pts_gdf.det_category.isna(), 'pt_id']
+lonely_ids = lonely_points_gdf.loc[:, 'pt_id']
 
 assert (new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'pt_id'].to_list() == lonely_ids).all(), 'Ids for undetermined points not matching!'
 new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'det_category'] = 'undetermined'
