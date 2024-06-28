@@ -130,15 +130,15 @@ duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.io
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
     for duplicate in duplicated_detections_gdf.itertuples():
-        id_highest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
+        id_lowest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
         if (duplicate.det_id_right in clustered_dets) & (duplicate.det_id_left in clustered_dets):
-            det_to_remove = id_highest_score
+            det_to_remove = id_lowest_score
         elif duplicate.det_id_right in clustered_dets:
             det_to_remove = duplicate.det_id_left
         elif duplicate.det_id_left in clustered_dets:
             det_to_remove = duplicate.det_id_right
         else:
-            det_to_remove = id_highest_score
+            det_to_remove = id_lowest_score
         duplicated_det_ids.append(det_to_remove)
 
 logger.info(f'{len(duplicated_det_ids)} detections will be removed because they are duplicates of a same object.')
