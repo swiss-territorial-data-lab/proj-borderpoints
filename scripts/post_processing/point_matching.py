@@ -120,6 +120,8 @@ os.chdir(WORKING_DIR)
 logger.info('Read data...')
 
 detections_gdf = gpd.read_file(DETECTIONS)
+detections_gdf = detections_gdf[detections_gdf.det_category!='0s'].copy()
+
 border_pts_gdf = gpd.read_file(BORDER_POINTS)
 
 if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
