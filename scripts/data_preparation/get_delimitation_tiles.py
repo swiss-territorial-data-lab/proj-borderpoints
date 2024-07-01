@@ -217,6 +217,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
                 subtiles_gdf, gpd.GeoDataFrame({'tiling_id': [1], 'geometry': [tiling_zone]}, crs='EPSG:2056'), 
                 how="intersection", keep_geom_type=True
             )
+            subtiles_gdf = subtiles_gdf[['id', 'initial_tile', 'geometry']]
 
         filepath = os.path.join(output_dir, 'subtiles.gpkg')
         subtiles_gdf.to_file(filepath)

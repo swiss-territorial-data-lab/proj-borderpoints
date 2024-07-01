@@ -4,4 +4,6 @@ loguru
 openpyxl
 PyYAML
 rasterio
+rasterstats
+scikit-image
 tqdm

@@ -1,5 +1,5 @@
 prepare_ground_truth.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir:
     vectors: outputs/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -11,19 +11,24 @@ prepare_ground_truth.py:
 
 
 prepare_symbol_classif.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir:
     vectors: outputs/labels_symbol_matching
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
   border_points_poly: inputs/ground_truth/PL_realite_terrain_20240318/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   tile_suffix: _geo.tif
   convert_images: True
 
-feature_engineering.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+boxplots.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir: outputs/feature_engineering
   tile_dir: outputs/rgb_images
   image_delimitation: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
   tiles: outputs/labels_symbol_matching/tiles.gpkg
+
+hog.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  output_dir: outputs/feature_engineering
+  tile_dir: outputs/rgb_images/symbol_images_GT
