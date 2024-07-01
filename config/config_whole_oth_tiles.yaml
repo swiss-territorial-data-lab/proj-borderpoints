@@ -1,11 +1,11 @@
 
 prepare_whole_tiles.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: 
     vectors: outputs/gpkg_whole_oth_tiles
   initial_image_dir: inputs/other_plans/subset
   tile_dir: outputs/rgb_oth_images
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   convert_images: True
 

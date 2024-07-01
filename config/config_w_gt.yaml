@@ -1,5 +1,5 @@
 prepare_data.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir:
     vectors: outputs/formatted_labels
     clipped_tiles: outputs/clipped_tiles
@@ -8,18 +8,10 @@ prepare_data.py:
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp
   bbox: inputs/ground_truth/PL_realite_terrain_box_20240318/PL_realite_ter_ExportFeature_box.shp
   plan_scales: inputs/plan_scales.xlsx
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
+  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   # overlap_info: outputs/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
   convert_images: True
-
-
-format_surveying_data.py:
-  working_dir: .
-  output_dir:
-    vectors: outputs/formatted_labels
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
-  tiles: outputs/formatted_labels/subtiles.gpkg
 
 
 generate_tilesets.py:

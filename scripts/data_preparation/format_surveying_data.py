@@ -46,8 +46,21 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
         tiles_gdf = tiles.copy()
 
     logger.info('Get point coordinates...')
-    pts_list = [Point(pt) for poly in survey_poly_gdf.geometry for geom in poly.geoms for pt in geom.exterior.coords[:-1]]
-    coor_list = [str(pt.coords[0][0])[2:].replace('.', '')[:10] + str(pt.coords[0][1])[2:].replace('.', '')[:10] for pt in pts_list]
+    if (survey_poly_gdf.geom_type == 'Polygon').all():
+        pts_list = [
+            Point(pt) for poly in survey_poly_gdf.geometry 
+            for geom in poly.geoms 
+            for pt in geom.exterior.coords[:-1]
+        ]
+    elif (survey_poly_gdf.geom_type == 'Point').all():
+        pts_list = survey_poly_gdf.geometry
+    else:
+        raise ValueError('The geometry type of the survey data is not supported.')
+    
+    coor_list = [
+            str(pt.coords[0][0])[2:].replace('.', '')[:10] + str(pt.coords[0][1])[2:].replace('.', '')[:10] 
+            for pt in pts_list
+        ]
 
     logger.info('Get point ids...')
     pt_ids_list = [
@@ -61,8 +74,12 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
     pts_gdf.drop(columns=['approx_coor'], inplace=True)
 
     logger.info('Exclude points outside the tiles...')
-    pts_in_tiles_gdf = gpd.sjoin(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], how='inner').drop(columns=['index_right'])
-    pts_in_tiles_gdf['combo_id'] = pts_in_tiles_gdf['pt_id'] + ' - ' + pts_in_tiles_gdf['name']
+    try:                # Working with tile attributes
+        pts_in_tiles_gdf = gpd.sjoin(pts_gdf, tiles_gdf[['name', 'geometry', 'scale']], how='inner').drop(columns=['index_right'])
+        pts_in_tiles_gdf['combo_id'] = pts_in_tiles_gdf['pt_id'] + ' - ' + pts_in_tiles_gdf['name']
+    except KeyError:    # Working with subtile attributes
+        pts_in_tiles_gdf = gpd.overlay(pts_gdf, tiles_gdf[['id', 'initial_tile', 'geometry']], keep_geom_type=True)
+        pts_in_tiles_gdf['combo_id'] = pts_in_tiles_gdf['pt_id'] + ' - ' + pts_in_tiles_gdf['initial_tile']
     if remove_duplicates:
         pts_in_tiles_gdf.drop_duplicates('pt_id', inplace=True)
  
@@ -72,7 +89,7 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
         pts_in_tiles_gdf = pts_in_tiles_gdf[~pts_in_tiles_gdf['combo_id'].isin(pts_to_remove)].copy()
         pts_in_tiles_gdf.rename(columns={'name': 'initial_tile'}, inplace=True)
     else:
-        pts_in_tiles_gdf.drop(columns=['name'], inplace=True)
+        pts_in_tiles_gdf.drop(columns=['name'], inplace=True, errors='ignore')
 
     pts_in_tiles_gdf.to_file(filepath)
     written_files.append(filepath)
