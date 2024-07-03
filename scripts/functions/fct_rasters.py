@@ -1,12 +1,9 @@
-from tqdm import tqdm
-
 import geopandas as gpd
-import numpy as np
 import rasterio
 import rasterio.features
 from shapely.geometry import Point, Polygon, shape
 
-from math import ceil, floor
+from math import ceil
 
 def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
     """Determine number of grid cells based on the tile size, the grid dimension and the overlap between tiles.

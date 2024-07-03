@@ -2,7 +2,6 @@ import os
 import sys
 from argparse import ArgumentParser
 from loguru import logger
-from tqdm import tqdm
 from yaml import load, FullLoader
 
 import geopandas as gpd
@@ -27,6 +26,7 @@ def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
     Returns:
         tuple: A tuple containing the inferred points GeoDataFrame and a list of written files.
     """
+
     written_files =[] 
 
     os.makedirs(output_dir, exist_ok=True)
@@ -72,7 +72,7 @@ def format_surveying_data(path_surveying, tiles, output_dir='outputs'):
 
 if __name__ == "__main__":
     # Argument and parameter specification
-    parser = ArgumentParser(description="The script formats the cadastral surveying to limit the produced tiles.")
+    parser = ArgumentParser(description="The script formats the cadastral survey to limit the number of produced tiles.")
     parser.add_argument('config_file', type=str, help='Framework configuration file')
     args = parser.parse_args()
 

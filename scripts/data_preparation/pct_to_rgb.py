@@ -7,7 +7,6 @@ from tqdm import tqdm
 from yaml import FullLoader, load
 
 import numpy as np
-import pandas as pd
 import rasterio as rio
 from glob import glob
 from rasterio.crs import CRS

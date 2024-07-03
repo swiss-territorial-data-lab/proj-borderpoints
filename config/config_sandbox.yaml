@@ -7,7 +7,7 @@ get_tile_size.py:
 
 
 get_point_bbox_size.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir:
     vectors: outputs/formatted_labels
   border_points: inputs/ground_truth/PL_realite_terrain_20240318/PL_realite_ter_ExportFeature_final.shp

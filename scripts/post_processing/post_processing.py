@@ -23,7 +23,7 @@ tic = time()
 logger.info('Starting...')
 
 # Argument and parameter specification
-parser = ArgumentParser(description="The script performs the post-processing on the detections of border points.")
+parser = ArgumentParser(description="The script performs the post-processing of the border point detection.")
 parser.add_argument('config_file', type=str, help='Framework configuration file')
 args = parser.parse_args()
 
@@ -92,6 +92,8 @@ detections_gdf['geometry'] = detections_gdf.buffer(0.1)
 joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
+
+
 dets_one_obj_gdf = joined_detections_gdf[
     (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
@@ -106,9 +108,9 @@ for det_id in clustered_dets:
     concerned_dets = [det_id] + dets_one_obj_gdf.loc[dets_one_obj_gdf.det_id_left == det_id, 'det_id_right'].tolist()
     cluster_id += 1
     for det in concerned_dets:
-        current_cluster = detections_gdf.loc[detections_gdf.det_id == det, 'cluster_id'].iloc[0]
+        current_cluster = detections_gdf.loc[detections_gdf.det_id==det, 'cluster_id'].iloc[0]
         if not current_cluster:
-            detections_gdf.loc[detections_gdf.det_id == det, 'cluster_id'] = cluster_id
+            detections_gdf.loc[detections_gdf.det_id==det, 'cluster_id'] = cluster_id
         else:
             # Save number of overlapping clusters
             if not current_cluster in overlap_clusters_dict.keys():
@@ -126,9 +128,9 @@ intersect_detections_gdf['iou'] = [
     intersection_over_union(geom1, geom2) for geom1, geom2 in zip(intersect_detections_gdf.geometry, intersect_detections_gdf.original_geom_right)
 ]
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.75].copy()
-
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
+    print(duplicated_detections_gdf.keys())
     for duplicate in duplicated_detections_gdf.itertuples():
         id_lowest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
         if (duplicate.det_id_right in clustered_dets) & (duplicate.det_id_left in clustered_dets):
