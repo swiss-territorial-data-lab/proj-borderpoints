@@ -6,6 +6,9 @@ import geopandas as gpd
 import pandas as pd
 from shapely.affinity import scale
 
+sys.path.insert(1, 'scripts')
+import functions.fct_rasters as rasters
+
 
 def buffer_by_max_size(gdf, pt_sizes_gdf, factor=1, cap_style=1):
     """
@@ -101,6 +104,15 @@ def format_logger(logger):
     return logger
 
 
+def get_tile_name(path, geom):
+    # Determine the name of the new tile
+    (min_x, min_y) = rasters.get_bbox_origin(geom)
+    tile_nbr = int(os.path.basename(path).split('_')[0])
+    new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
+
+    return new_name
+
+
 def intersection_over_union(polygon1_shape, polygon2_shape):
     """
     Determine the intersection area over union area (IoU) of two polygons
@@ -141,12 +153,19 @@ def save_name_correspondence(features_list, output_dir, initial_name_column, new
         existing_df = pd.read_csv(filepath)
 
         if len(existing_df.columns) > 2:
-            existing_df = existing_df[['original_name', 'rgb_name']].copy()
+            existing_df = existing_df[['original_name', 'rgb_name']].drop_duplicates(['original_name', 'rgb_name'])
 
-        if (initial_name_column in existing_df.columns) and (new_name_column in existing_df.columns):
-            name_correspondence_df = pd.concat([existing_df, name_correspondence_df], ignore_index=True)
+        if new_name_column in existing_df.columns:
+            # Check that the table in not a duplicate due to OVERWRITE = True
+            if name_correspondence_df[new_name_column].isin(existing_df[new_name_column]).all():
+                return
+            elif initial_name_column in existing_df.columns:
+                name_correspondence_df = pd.concat([
+                    existing_df, 
+                    name_correspondence_df[~name_correspondence_df[new_name_column].isin(existing_df[new_name_column])]
+                ], ignore_index=True)
         else:
-            name_correspondence_df = pd.merge(existing_df, name_correspondence_df, on=initial_name_column)
+            name_correspondence_df = pd.merge(existing_df, name_correspondence_df, on=initial_name_column, how='left')
 
     name_correspondence_df.to_csv(filepath, index=False)
     logger.success(f'The name correspondence of tiles across tranformations was saved in {filepath}.')

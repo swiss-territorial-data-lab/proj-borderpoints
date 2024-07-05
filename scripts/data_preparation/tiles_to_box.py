@@ -13,10 +13,9 @@ from rasterio.mask import mask
 
 sys.path.insert(1, 'scripts')
 import constants as cst
-import functions.fct_rasters as rasters
-from functions.fct_misc import format_logger, save_name_correspondence
+import functions.fct_misc as misc
 
-logger = format_logger(logger)
+logger = misc.format_logger(logger)
 
 
 def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
@@ -60,9 +59,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         if os.path.exists(tilepath):
 
             # Determine the name of the new tile and check if it exists
-            (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-            tile_nbr = int(os.path.basename(bbox.tilepath).split('_')[0])
-            new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
+            new_name = misc.get_tile_name(bbox.tilepath, bbox.geometry)
             output_path = os.path.join(output_dir, new_name)
 
             if not cst.OVERWRITE and os.path.exists(output_path):
@@ -90,8 +87,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                  "transform": out_transform})
 
             # Save the clipped tile in correspondence list and to file
-            if not os.path.exists(output_path):
-                name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
+            name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 
             with rasterio.open(output_path, "w", **out_meta) as dst:
                 dst.write(out_image)
@@ -103,8 +99,8 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             except AttributeError:
                 logger.warning(f"No tile correponding to plan {bbox.Num_plan}")
 
-    if len(name_correspondence_list) > 0 & ~(output_dir.endswith('subtiles') or output_dir.endswith('symbol_images') or output_dir.endswith('symbol_images_GT')):
-        save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
+    if (len(name_correspondence_list) > 0) & output_dir.endswith('clipped_tiles'):
+        misc.save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
 
     if len(name_correspondence_list) > 0:
         logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
