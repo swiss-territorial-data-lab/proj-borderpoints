@@ -66,7 +66,12 @@ if not os.path.isfile(filepath) or OVERWRITE:
     logger.info('Transform points to polygons...')
     pts_gdf.rename(columns={'Echelle': 'scale'}, inplace=True)
     cs_points_poly_gdf = misc.buffer_by_max_size(pts_gdf, pt_sizes_gdf, factor=0.5, cap_style=3)
-    cs_points_poly_gdf[['pt_id', 'scale', 'Num_plan', 'CATEGORY', 'SUPERCATEGORY', 'geometry']].to_file(filepath)
+    tiles_gdf['initial_tile'] = [x + y for z, x, y in tiles_gdf.name.str.split('_')]
+    cs_points_poly_gdf = pd.merge(
+        cs_points_poly_gdf, tiles_gdf[['initial_tile', 'name']], left_on='Num_plan', right_on='initial_tile'
+    ).drop(columns='initial_tile').rename(columns={'name': 'initial_tile'})
+    cs_points_poly_gdf['image_name'] = cs_points_poly_gdf.apply(lambda x: misc.get_tile_name(x.initial_tile.split('_')[0], x.geometry), axis=1)
+    cs_points_poly_gdf[['pt_id', 'scale', 'initial_tile', 'image_name', 'CATEGORY', 'SUPERCATEGORY', 'geometry']].to_file(filepath)
     written_files.append(filepath)
 
 else:
@@ -74,10 +79,6 @@ else:
     cs_points_poly_gdf = gpd.read_file(filepath)
 
 logger.info('Clip image for each border point...')
-tiles_gdf['initial_tile'] = [x + y for z, x, y in tiles_gdf.name.str.split('_')]
-cs_points_poly_gdf = pd.merge(
-    cs_points_poly_gdf, tiles_gdf[['initial_tile', 'name']], left_on='Num_plan', right_on='initial_tile'
-).drop(columns='initial_tile').rename(columns={'name': 'initial_tile'})
 SYMBOL_IM_DIR = os.path.join(TILE_DIR, 'symbol_images_GT')
 tiles_to_box.tiles_to_box(TILE_DIR, cs_points_poly_gdf, SYMBOL_IM_DIR)
 
