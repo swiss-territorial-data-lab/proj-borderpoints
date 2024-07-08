@@ -9,14 +9,14 @@ The installation is performed from this folder with the following steps:
 * Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
 * Get into the `object-detector` folder,
 * Switch to my branch,
-* The dockerfile of this project suppose the existence on the machine of an image called `object-detector-stdl-objdet`. 
+* The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
     * You can control the image existence by listing the available images with `docker images ls`.
     * If it is not available, build it from the folder of the object detector with `docker compose build`.
     * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
-* Get back to the folder `proj-borderpoints`,
+* Go to the folder `proj-borderpoints`,
 * Build docker,
 * Run docker,
-* Get into to `proj-borderpoints` directory in docker.
+* Go to `proj-borderpoints` directory in docker.
 
 
 The corresponding command lines are
@@ -31,19 +31,19 @@ docker compose run --rm borderpoints-dev
 cd proj-borderpoints            # Command to run in the docker bash
 ```
 
-**All commands in the workflows are supposed to be launched in docker from the proj-borderpoint directory.**
+**All workflow commands are supposed to be launched in Docker from the proj-borderpoint directory.**
 
 ## General workflow
 
 
 The workflow can be divided into three parts:
 
-* Data preparation: call of the right script for the preprocessing, _i.e._ `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
+* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
     - Transform the maps from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
     - Clip the map to the subtiles.
-* Detection of the border points with the STDL's object detector. The necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
+* Detect the border points with the STDL's object detector. The necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted after the experts' requirements.
     - `post_processing.py`: the detections are filtered by their confidence score and ...
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
@@ -75,9 +75,9 @@ python scripts/post_processing/post_processing.py config/config_w_gt.yaml
 python scripts/assess_by_tile.py config/config_w_gt.yaml
 ```
 
-In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test dataset.
+In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test datasets.
 
-Performing the point matching is possible with the ground truth. However, the polygons are then transformed to point and a new script would be needed for the assessment.
+Performing the point matching is possible with the ground truth. However, the polygons are then transformed to points and a new script would be needed for the assessment.
 
 ```
 python scripts/post_processing/point_matching.py config/config_w_gt.yaml
