@@ -26,7 +26,7 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
         gdf1 (GeoDataFrame): first GeoDataFrame
         gdf2 (GeoDataFrame): second GeoDataFrame
         threshold (float, optional): limit value. Defaults to 0.5.
-        op (str, optional): operator to use in the test. Possible values are 'larger' and "seq". Defaults to 'larger'.
+        op (str, optional): operator to use in the test. Possible values are 'larger' and 'seq'. Defaults to 'larger'.
 
     Returns:
         list: ids of the 1st gdf passing the test
@@ -165,7 +165,6 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
         nodata_gdf.to_file(output_path_nodata)
         written_files.append(output_path_nodata)
 
-
     if subtiles:
        
         logger.info('Determine subtiles...')
@@ -226,6 +225,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     logger.success('Done determining the tiling!')
     return tiles_gdf, subtiles_gdf, written_files
     
+
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
     """Pad the bounding box of a tile with the distance necessary to match a grid generated with the passed parameters.
     Save the result in a GeoDataFrame.

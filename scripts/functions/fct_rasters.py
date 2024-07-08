@@ -6,7 +6,7 @@ from shapely.geometry import Point, Polygon, shape
 from math import ceil
 
 def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
-    """Determine number of grid cells based on the tile size, the grid dimension and the overlap between tiles.
+    """Determine the number of grid cells based on the tile size, grid dimension and overlap between tiles.
     All values are in pixels.
 
     Args:
