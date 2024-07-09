@@ -142,3 +142,29 @@ def no_data_to_polygons(image_band, transform, nodata_value, crs="EPSG:2056"):
     nodata_gdf = nodata_gdf[nodata_gdf.area > 10].copy()
 
     return nodata_gdf
+
+
+def remove_black_border(image):
+    """
+	Removes a black border from the input image.
+
+	Args:
+	    image (numpy array): The input image to remove the black border from.
+
+	Returns:
+	    numpy array: The image with the black border removed.
+	"""
+
+    coords = np.argwhere(image)
+    if len(image.shape) == 2:
+        x_min, y_min = coords.min(axis=0)
+        x_max, y_max = coords.max(axis=0)
+        resized_image = image[x_min:x_max+1, y_min:y_max+1]
+    elif len(image.shape) == 3:
+        x_min, y_min, z_min = coords.min(axis=0)
+        x_max, y_max, z_max = coords.max(axis=0)
+        resized_image = image[x_min:x_max+1, y_min:y_max+1, z_min:z_max+1]
+    else:
+        raise ValueError('Image must be 2D or 3D')
+
+    return resized_image
