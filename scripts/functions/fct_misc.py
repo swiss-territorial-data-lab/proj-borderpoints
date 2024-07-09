@@ -67,7 +67,9 @@ def find_intersecting_polygons(poly_gdf, output_dir='ouputs'):
 
     poly_gdf['ini_geom'] = poly_gdf['geometry']
     joined_gdf = gpd.sjoin(poly_gdf[['pt_id', 'initial_tile', 'combo_id', 'geometry']], poly_gdf[['pt_id', 'initial_tile', 'combo_id', 'geometry', 'ini_geom']])
+    # Remove self-intersections and duplicated pairs
     joined_gdf = joined_gdf[(joined_gdf.pt_id_left > joined_gdf.pt_id_right) & (joined_gdf.initial_tile_left == joined_gdf.initial_tile_right)].copy()
+    # Test overlap
     joined_gdf['iou'] = joined_gdf.apply(lambda x: intersection_over_union(x['geometry'], x['ini_geom']), axis=1)
     intersecting_pts = joined_gdf.loc[joined_gdf['iou'] > 0.5, 'combo_id_left'].unique().tolist()\
           + joined_gdf.loc[joined_gdf['iou'] > 0.5, 'combo_id_right'].unique().tolist()
