@@ -115,11 +115,11 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_dir']['vectors']
 
     CADASTRAL_SURVEYING = cfg['cadastral_surveying']
-    TILES = cfg['tiles']
+    TILES = os.path.join(OUTPUT_DIR, 'subtiles.gpkg')
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = format_surveying_data(CADASTRAL_SURVEYING, TILES, OUTPUT_DIR)
+    _, written_files = format_surveying_data(CADASTRAL_SURVEYING, TILES, output_dir=OUTPUT_DIR)
 
     print()
     logger.success("The following files were written. Let's check them out!")

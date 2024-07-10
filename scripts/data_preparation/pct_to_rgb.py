@@ -118,7 +118,7 @@ if __name__ == "__main__":
     logger.info('Starting...')
 
     # Argument and parameter specification
-    parser = ArgumentParser(description="The script prepares the initial files for the use of the OD in the detection of border points.")
+    parser = ArgumentParser(description="The script convertes the images from colormap to RGB.")
     parser.add_argument('config_file', type=str, help='Framework configuration file')
     args = parser.parse_args()
 

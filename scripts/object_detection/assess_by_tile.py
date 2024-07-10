@@ -25,7 +25,7 @@ tic = time()
 logger.info('Starting...')
 
 # Argument and parameter specification
-parser = ArgumentParser(description="The script prepares the initial files for the use of the OD in the detection of border points.")
+parser = ArgumentParser(description="The script assess the result of the instance segmentation after the post-processing.")
 parser.add_argument('config_file', type=str, help='Framework configuration file')
 args = parser.parse_args()
 

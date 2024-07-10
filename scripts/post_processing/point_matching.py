@@ -91,7 +91,7 @@ tic = time()
 logger.info('Starting...')
 
 # Argument and parameter specification
-parser = ArgumentParser(description="The script performs the post-processing on the detections of border points.")
+parser = ArgumentParser(description="The script matches the surveyed border points with the segmented instances.")
 parser.add_argument('config_file', type=str, help='Framework configuration file')
 args = parser.parse_args()
 

@@ -26,7 +26,7 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
         gdf1 (GeoDataFrame): first GeoDataFrame
         gdf2 (GeoDataFrame): second GeoDataFrame
         threshold (float, optional): limit value. Defaults to 0.5.
-        op (str, optional): operator to use in the test. Possible values are 'larger' and "seq". Defaults to 'larger'.
+        op (str, optional): operator to use in the test. Possible values are "larger" and "seq" for smaller or equal. Defaults to "larger".
 
     Returns:
         list: ids of the 1st gdf passing the test
