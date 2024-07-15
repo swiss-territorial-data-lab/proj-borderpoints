@@ -12,7 +12,7 @@ import json
 
 sys.path.insert(1, 'scripts')
 from functions.fct_metrics import intersection_over_union
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, get_config
 
 logger = format_logger(logger)
 
@@ -22,15 +22,7 @@ logger = format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script performs the post-processing on the detections of border points.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
-
-logger.info(f"Using {args.config_file} as config file.")
-
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+cfg = get_config(os.path.basename(__file__), desc="The script performs the post-processing on the detections of border points.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']

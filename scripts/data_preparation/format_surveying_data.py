@@ -1,15 +1,12 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
-from tqdm import tqdm
-from yaml import load, FullLoader
 
 import geopandas as gpd
 from shapely.geometry import Point
 
 sys.path.insert(1, 'scripts')
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, get_config
 from constants import OVERWRITE
 
 logger = format_logger(logger)
@@ -101,14 +98,8 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
 # ------------------------------------------
 
 if __name__ == "__main__":
-    # Argument and parameter specification
-    parser = ArgumentParser(description="The script formats the cadastral surveying to limit the produced tiles.")
-    parser.add_argument('config_file', type=str, help='Framework configuration file')
-    args = parser.parse_args()
 
-    logger.info(f"Using {args.config_file} as config file.")
-    with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_whole_tiles.py']
+    cfg = get_config('prepare_data.py', 'The script formats the cadastral surveying to limit the produced tiles.')
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']

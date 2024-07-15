@@ -1,6 +1,8 @@
 import os
 import sys
+from argparse import ArgumentParser
 from loguru import logger
+from yaml import load, FullLoader
 
 import geopandas as gpd
 import pandas as pd
@@ -104,6 +106,21 @@ def format_logger(logger):
             level="ERROR")
 
     return logger
+
+
+def get_config(config_key, desc=""):
+
+    # Argument and parameter specification
+    parser = ArgumentParser(description=desc)
+    parser.add_argument('config_file', type=str, help='Framework configuration file')
+    args = parser.parse_args()
+
+    logger.info(f"Using {args.config_file} as config file.")
+
+    with open(args.config_file) as fp:
+        cfg = load(fp, Loader=FullLoader)[config_key]
+
+    return cfg
 
 
 def get_tile_name(path, geom):

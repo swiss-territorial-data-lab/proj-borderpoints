@@ -1,13 +1,11 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
-from yaml import load, FullLoader
 
 import geopandas as gpd
 
 sys.path.insert(1, 'scripts')
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, get_config
 
 logger = format_logger(logger)
 
@@ -49,14 +47,8 @@ def format_labels(path_points_poly, output_dir='outputs'):
 # ------------------------------------------
 
 if __name__ == "__main__":
-    # Argument and parameter specification
-    parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
-    parser.add_argument('config_file', type=str, help='Framework configuration file')
-    args = parser.parse_args()
 
-    logger.info(f"Using {args.config_file} as config file.")
-    with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+    cfg = get_config('prepare_data.py', 'The script formats the labels for the use of the OD in the detection of border points.')
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']

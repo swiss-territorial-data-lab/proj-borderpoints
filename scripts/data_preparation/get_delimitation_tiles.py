@@ -1,9 +1,7 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from tqdm import tqdm
-from yaml import load, FullLoader
 
 import geopandas as gpd
 import pandas as pd
@@ -281,14 +279,7 @@ def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, gr
 
 if __name__ == "__main__":
 
-    # Argument and parameter specification
-    parser = ArgumentParser(description="The script formats the labels for the use of the OD in the detection of border points.")
-    parser.add_argument('config_file', type=str, help='Framework configuration file')
-    args = parser.parse_args()
-
-    logger.info(f"Using {args.config_file} as config file.")
-    with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_data.py']
+    cfg = misc.get_config('prepare_data.py', "The script produce vector files with the delimitation of tiles and subtiles.")
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']

@@ -1,9 +1,7 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from time import time
-from yaml import load, FullLoader
 
 import geopandas as gpd
 import pandas as pd
@@ -22,15 +20,7 @@ logger = misc.format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script prepares the initial files for the use of the OD in the detection of border points.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
-
-logger.info(f"Using {args.config_file} as config file.")
-
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+cfg = misc.get_config(os.path.basename(__file__), "The script prepares the initial files for the classification of symbol images.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']

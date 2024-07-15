@@ -1,18 +1,15 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from time import time
 from tqdm import tqdm
-from yaml import load, FullLoader
 
 import geopandas as gpd
 import pandas as pd
 from folium import Map, plugins
-from matplotlib import pyplot as plt
 
 sys.path.insert(1, 'scripts')
-from functions.fct_misc import format_logger
+from functions.fct_misc import format_logger, get_config
 from functions.fct_rasters import get_bbox_origin, get_easting_northing, grid_over_tile
 
 logger = format_logger(logger)
@@ -23,15 +20,7 @@ logger = format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script creates a heatmap of the false positive points.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
-
-logger.info(f"Using {args.config_file} as config file.")
-
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+cfg = get_config(os.path.basename, desc="The script creates a heatmap of the false positive points.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']

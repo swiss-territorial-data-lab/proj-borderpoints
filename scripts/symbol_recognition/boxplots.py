@@ -1,10 +1,8 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from time import time
 from tqdm import tqdm
-from yaml import load, FullLoader
 
 import geopandas as gpd
 import numpy as np
@@ -14,7 +12,6 @@ import rasterstats as rst
 from rasterio.mask import mask
 
 from matplotlib import pyplot as plt
-import plotly.express as px
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
@@ -27,15 +24,7 @@ logger = misc.format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script makes boxplots with the pixel values of the image for each GT symbol.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
-
-logger.info(f"Using {args.config_file} as config file.")
-
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+cfg = misc.get_config(os.path.basename(__file__), desc="The script makes boxplots with the pixel values of the image for each GT symbol.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']

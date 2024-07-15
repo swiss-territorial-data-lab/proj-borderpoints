@@ -1,10 +1,8 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from time import time
 from tqdm import tqdm
-from yaml import FullLoader, load
 
 import numpy as np
 import pandas as pd
@@ -15,7 +13,7 @@ from rasterio.warp import reproject
 
 sys.path.insert(1, 'scripts')
 import constants as cst
-from functions.fct_misc import format_logger, save_name_correspondence
+from functions.fct_misc import format_logger, get_config, save_name_correspondence
 
 logger = format_logger(logger)
 
@@ -117,15 +115,7 @@ if __name__ == "__main__":
     tic = time()
     logger.info('Starting...')
 
-    # Argument and parameter specification
-    parser = ArgumentParser(description="The script convertes the images from colormap to RGB.")
-    parser.add_argument('config_file', type=str, help='Framework configuration file')
-    args = parser.parse_args()
-
-    logger.info(f"Using {args.config_file} as config file.")
-
-    with open(args.config_file) as fp:
-        cfg = load(fp, Loader=FullLoader)['prepare_whole_tiles.py']
+    cfg = get_config('prepare_data.py', 'The script converts the images from colormap to RGB.')
 
     WORKING_DIR = cfg['working_dir']
     INPUT_DIR = cfg['initial_image_dir']

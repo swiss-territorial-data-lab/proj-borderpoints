@@ -1,9 +1,7 @@
 import os
 import sys
-from argparse import ArgumentParser
 from loguru import logger
 from time import time
-from yaml import load, FullLoader
 
 import geopandas as gpd
 import numpy as np
@@ -24,15 +22,7 @@ logger = misc.format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-# Argument and parameter specification
-parser = ArgumentParser(description="The script assess the result of the instance segmentation after the post-processing.")
-parser.add_argument('config_file', type=str, help='Framework configuration file')
-args = parser.parse_args()
-
-logger.info(f"Using {args.config_file} as config file.")
-
-with open(args.config_file) as fp:
-    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
+cfg = misc.get_config(os.path.basename(__file__), "The script assess the result of the instance segmentation after the post-processing.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
