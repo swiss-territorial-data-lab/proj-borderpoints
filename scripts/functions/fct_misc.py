@@ -119,7 +119,7 @@ def get_config(config_key, desc=""):
 
     with open(args.config_file) as fp:
         cfg = load(fp, Loader=FullLoader)[config_key]
-
+        
     return cfg
 
 
