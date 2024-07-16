@@ -121,4 +121,4 @@ def save_name_correspondence(features_list, output_dir, initial_name_column, new
             name_correspondence_df = pd.merge(existing_df, name_correspondence_df, on=initial_name_column)
 
     name_correspondence_df.to_csv(filepath, index=False)
-    logger.success(f'The name correspondence of tiles across tranformations was saved in {filepath}.')
+    logger.success(f'The correspondence of tile names between the tranformations was saved in {filepath}.')

@@ -70,7 +70,6 @@ filepath = open(os.path.join(INPUT_DIR, CATEGORY_IDS_JSON))
 categories_json = json.load(filepath)
 filepath.close()
 
-
 logger.info('Filter dataframe by score and area...')
 detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
 
@@ -92,7 +91,6 @@ detections_gdf['geometry'] = detections_gdf.buffer(0.1)
 joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
-
 
 dets_one_obj_gdf = joined_detections_gdf[
     (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
@@ -130,7 +128,6 @@ intersect_detections_gdf['iou'] = [
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.75].copy()
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
-    print(duplicated_detections_gdf.keys())
     for duplicate in duplicated_detections_gdf.itertuples():
         id_lowest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
         if (duplicate.det_id_right in clustered_dets) & (duplicate.det_id_left in clustered_dets):

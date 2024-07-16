@@ -73,10 +73,8 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
 
     if not cst.OVERWRITE and os.path.exists(output_path_tiles) and os.path.exists(output_path_nodata):
         tiles_gdf = gpd.read_file(output_path_tiles)
-        nodata_gdf=gpd.read_file(output_path_nodata)
-
+        nodata_gdf = gpd.read_file(output_path_nodata)
     else:
-        
         logger.info('Read info for tiles...')
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
 
