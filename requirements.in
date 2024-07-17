@@ -1,7 +1,9 @@
-folium
+folium              # To remove eventually
 geopandas
+kaleido             # Unnecessary for the main workflow
 loguru
 openpyxl
+optuna              # Unnecessary for the main workflow
 PyYAML
 rasterio
 rasterstats

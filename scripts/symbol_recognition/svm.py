@@ -11,6 +11,8 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 
+from pickle import dump
+
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 
@@ -25,14 +27,18 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         images_gdf = images.copy()
     else:
         images_gdf = gpd.read_file(images)
-    if isinstance(features_stats, gpd.GeoDataFrame):
+    if isinstance(features_stats, pd.DataFrame):
         band_stats_df = features_stats.copy()
     else:
         band_stats_df = pd.read_csv(features_stats)
-    if isinstance(features_hog, gpd.GeoDataFrame):
+    if isinstance(features_hog, pd.DataFrame):
         hog_features_df = features_hog.copy()
+        hog_features_df['image_name'] = hog_features_df.index.str.rstrip('.tif')
+        hog_features_df.reset_index(drop=True, inplace=True)
     else:
         hog_features_df = pd.read_csv(features_hog)
+        hog_features_df['image_name'] = hog_features_df['Unnamed: 0'].str.rstrip('.tif')
+        hog_features_df.drop(columns=['Unnamed: 0'], inplace=True)
 
 
     images_w_stats_gdf = images_gdf.copy()
@@ -49,7 +55,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
     image_diff =images_gdf.shape[0] - images_w_stats_gdf.shape[0]
     if image_diff:
-        logger.error(f'{image_diff} elements were lost when joining the images and stats.')
+        logger.warning(f'{image_diff} elements were lost when joining the images and stats.')
 
     # Clean stat data
     images_w_stats_gdf.drop(columns=[
@@ -58,10 +64,9 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     ], inplace=True)
 
     logger.info('Format HOG info...')
-    name_map = {col: f'hog_{col}' for col in hog_features_df.columns if col != 'Unnamed: 0'}
+    name_map = {col: f'hog_{col}' for col in hog_features_df.columns if col != 'image_name'}
     hog_features_df.rename(columns=name_map, inplace=True)
-    hog_features_df['image_name'] = hog_features_df['Unnamed: 0'].str.rstrip('.tif')
-    hog_features_df.drop(columns=['Unnamed: 0'], inplace=True)
+    
 
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
@@ -96,6 +101,13 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     logger.success(f'Weighted f1 score: {round(metric, 2)}')
 
     if save_extra:
+        logger.info('Save model...')
+        filepath = os.path.join(output_dir, 'model_SVM.pkl')
+        with open(filepath, 'wb') as f:
+            dump(clf, f, protocol=5)
+        written_files.append(filepath)
+
+        logger.info('Save confusion matrix and classification report...')
         confusion_matrix_df = pd.DataFrame(confusion_matrix(label_tst, pred_tst), columns=clf.classes_, index=clf.classes_)
         filepath = os.path.join(output_dir, 'confusion_matrix.csv')
         confusion_matrix_df.transpose().to_csv(filepath)
@@ -107,6 +119,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         written_files.append(filepath)
 
     return metric, written_files
+
 
 
 if __name__ == "__main__":

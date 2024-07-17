@@ -56,3 +56,11 @@ svm.py:
   image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
   hog_features: outputs/feature_engineering/hog_features.csv
   band_stats: outputs/feature_engineering/stats_on_filtered_bands.csv
+
+
+optimization.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  output_dir: outputs/optimization
+  tile_dir: outputs/rgb_images/symbol_images_GT
+  image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
+  band_stats: outputs/feature_engineering/stats_on_filtered_bands.csv
