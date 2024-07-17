@@ -21,7 +21,7 @@ import functions.fct_misc as misc
 logger = misc.format_logger(logger)
 
 
-def main(tile_dir, image_file, output_dir='outputs'):
+def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
     written_files = []
@@ -142,9 +142,11 @@ if __name__ == "__main__":
 
     IMAGE_FILE = cfg['image_gpkg']
 
+    SAVE_EXTRA = cfg['save_extra']
+
     os.chdir(WORKING_DIR)
 
-    _, written_files = main(TILE_DIR, IMAGE_FILE, output_dir=OUTPUT_DIR)
+    _, written_files = main(TILE_DIR, IMAGE_FILE, save_extra=SAVE_EXTRA, output_dir=OUTPUT_DIR)
 
     logger.success("Done! The following files were written:")
     for written_file in written_files:
