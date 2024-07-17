@@ -12,6 +12,7 @@ from rasterio import open
 import optuna
 from functools import partial
 from joblib import dump
+from math import floor
 
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
@@ -26,13 +27,16 @@ logger = misc.format_logger(logger)
 def objective(trial, tiles_dict, images_gdf, stat_features_df):
 
     # Suggest value range to test
-    image_size = 59
-    ppc = trial.suggest_int('ppc', 8, 29)
-    cells_per_block = trial.suggest_int('cpb', 2, 7)
+    min_image_size, max_image_size = (50, 124)
+    min_ppc, max_ppc = (8, 25)
+    image_size = trial.suggest_int('image_size', min_image_size, max_image_size)
+    ppc = trial.suggest_int('ppc', min_ppc, max_ppc)
+    cells_per_block = trial.suggest_int('cpb', floor(min_image_size/max_ppc), floor(max_image_size/min_ppc))
     orientations = trial.suggest_int('orientations', 4, 9)
-    variance_threshold = trial.suggest_float('variance_threshold', 0.0005, 0.015, step = 0.0001)
+    variance_threshold = trial.suggest_float('variance_threshold', 0.0001, 0.007, step = 0.0001)
 
     dict_param = {
+        'image_size': image_size,
         'ppc': ppc,
         'cpb': cells_per_block,
         'orientations': orientations,

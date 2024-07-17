@@ -30,7 +30,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, ppc=9, cpb=4, orientations=4, variance_threshold=0.009, output_dir='outputs'):
+def main(tiles, image_size=59, ppc=9, cpb=4, orientations=4, variance_threshold=0.009, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -55,7 +55,8 @@ def main(tiles, ppc=9, cpb=4, orientations=4, variance_threshold=0.009, output_d
 
     # Resize images to median value of the small side
     for name, image in cropped_images.items():
-        new_size = np.median(min_array_values)
+        # new_size = np.median(min_array_values)
+        new_size = image_size
         if max(image.shape) <= new_size:
             resized_images[name] = resize(image, (new_size, new_size))
         else:
