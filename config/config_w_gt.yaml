@@ -1,12 +1,12 @@
 prepare_data.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
+  working_dir: .
   output_dir:
     vectors: outputs/formatted_labels
     clipped_tiles: outputs/clipped_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  border_points: inputs/ground_truth/PL_realite_terrain_20240614\Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  bbox: inputs/ground_truth/PL_realite_terrain_20240614\Realite_terrain_Box/PL_realite_terrain_box.shp
+  border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+  bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
   plan_scales: inputs/plan_scales.xlsx
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   # overlap_info: outputs/formatted_labels/max_point_size.csv
@@ -38,7 +38,8 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-  seed: 42
+  seed: 7
+
 
 train_model.py:
   debug_mode: false
@@ -64,7 +65,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0004749.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
@@ -97,7 +98,7 @@ post_processing.py:
   subtiles: formatted_labels/subtiles.gpkg
   tiles: formatted_labels/tiles.gpkg
   category_ids_json: category_ids.json
-  score: 0.75
+  score: 0.55
   keep_datasets: True
 
 
@@ -124,4 +125,3 @@ check_w_land_cover.py:
   output_dir: outputs/post_processing
   matched_points: outputs/post_processing/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
-
