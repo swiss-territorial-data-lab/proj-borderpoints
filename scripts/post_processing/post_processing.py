@@ -87,18 +87,19 @@ for scale in AREA_THRESHOLDS.keys():
     min_area, max_area = AREA_THRESHOLDS[scale]
     detections_gdf = detections_gdf[~((detections_gdf['scale'] == scale) & ((detections_gdf.area < min_area) | (detections_gdf.area > max_area)))].copy()
 
-logger.info('Find pairs of matching detections across tiles...')
+logger.info('Find pairs of matching detections across subtiles...')
 detections_gdf['original_geom'] = detections_gdf.geometry
 detections_gdf['geometry'] = detections_gdf.buffer(0.1)
 joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
+# Keep pairs about the same object (category) on different images
 dets_one_obj_gdf = joined_detections_gdf[
     (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
 ].copy()
 
-logger.info('Attribute a cluster id...')
+logger.info('Assign a cluster id to each group of detetections...')
 # Make a graph of the overlapping detections
 graph_dets = nx.Graph()
 for det_pair in dets_one_obj_gdf.itertuples():

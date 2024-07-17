@@ -57,6 +57,14 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     for bbox in tqdm(bboxes_gdf.itertuples(), desc='Clip tiles to the AOI of the bbox', total=bboxes_gdf.shape[0]):
 
         tilepath = bbox.tilepath
+        (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
+        tile_nbr = int(tilepath.split('_')[0])
+        new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
+        output_path = os.path.join(output_dir, new_name)
+
+        if not cst.OVERWRITE and os.path.exists(output_path):
+            continue
+
         if os.path.exists(tilepath):
             with rasterio.open(tilepath) as src:
                 out_image, out_transform, = mask(src, [bbox.geometry], crop=True)
@@ -66,7 +74,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
             width = out_image.shape[2]
             side_diff = abs(height-width)
 
-            if pad_tiles and (side_diff > 1):
+            if pad_tiles and (side_diff > 0):
                 pad_size = side_diff
                 pad_side = ((0, 0), (pad_size, 0), (0, 0)) if height < width else ((0, 0), (0, 0), (0, pad_size))
                 out_image = np.pad(out_image, pad_width=pad_side, constant_values=out_meta['nodata'])
@@ -78,14 +86,6 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
                  "width": width,
                  "transform": out_transform})
             
-            (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-            tile_nbr = int(os.path.basename(bbox.tilepath).split('_')[0])
-            new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
-            output_path = os.path.join(output_dir, new_name)
-
-            if not cst.OVERWRITE and os.path.exists(output_path):
-                continue
-
             if not os.path.exists(output_path):
                 name_correspondence_list.append((os.path.basename(tilepath).rstrip(tile_suffix), new_name.rstrip('.tif')))
 

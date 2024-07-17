@@ -56,7 +56,7 @@ If some overlap between tiles is required:
 python scripts/sandbox/get_point_bbox_size.py config/config_sandbox.yaml
 ```
 
-It produces a csv file with the info about the maximum size of border points at each scale. The file must then be passed as parameter in the data preparation.
+It produces a csv file with the info about the maximum size of border points at each scale. This maximum size at each scale is then used as the overlap distance for the tile production. The file must then be passed as parameter in the data preparation.
 
 **Dataset with GT**
 
