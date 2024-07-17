@@ -26,8 +26,9 @@ logger = misc.format_logger(logger)
 def objective(trial, tiles_dict, images_gdf, stat_features_df):
 
     # Suggest value range to test
-    ppc = trial.suggest_int('ppc', 3, 25)
-    cells_per_block = trial.suggest_int('cpb', 2, 8)
+    image_size = 59
+    ppc = trial.suggest_int('ppc', 8, 29)
+    cells_per_block = trial.suggest_int('cpb', 2, 7)
     orientations = trial.suggest_int('orientations', 4, 9)
     variance_threshold = trial.suggest_float('variance_threshold', 0.0005, 0.015, step = 0.0001)
 
@@ -39,7 +40,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     }
     print('params:', dict_param)
 
-    if ppc*cells_per_block > 59:
+    if ppc*cells_per_block > image_size:
         return 0
 
     hog_features_df, _ = hog.main(tiles_dict, output_dir=OUTPUT_DIR, **dict_param)
@@ -98,7 +99,7 @@ written_files.append(study_path)
 
 logger.info('Save the best hyperparameters')
 targets = {0: 'f1 score'}
-written_files.append(opti.save_best_hyperparameters(study, targets))
+written_files.append(opti.save_best_hyperparameters(study, targets, output_dir=OUTPUT_DIR))
 
 logger.info('Plot results...')
 output_plots = os.path.join(OUTPUT_DIR, 'plots')
