@@ -45,7 +45,7 @@ def get_bbox_origin(bbox_geom):
     return (min_x, min_y)
 
 
-def get_easting_northing(bbox_geom):
+def get_east_north(bbox_geom):
     """
     Get the maximum east and north coordinates from a bounding box geometry.
 
@@ -53,7 +53,7 @@ def get_easting_northing(bbox_geom):
         bbox_geom (shapely.geometry.Polygon): The bounding box geometry.
 
     Returns:
-        tuple: A tuple containing the maximum easting and northing coordinates.
+        tuple: A tuple containing the maximum east and north coordinates.
     """
 
     coords = bbox_geom.exterior.coords.xy

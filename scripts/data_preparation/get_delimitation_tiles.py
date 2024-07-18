@@ -26,7 +26,7 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
         gdf1 (GeoDataFrame): first GeoDataFrame
         gdf2 (GeoDataFrame): second GeoDataFrame
         threshold (float, optional): limit value. Defaults to 0.5.
-        op (str, optional): operator to use in the test. Possible values are 'larger' and 'seq'. Defaults to 'larger'.
+        op (str, optional): operator to use in the test. Possible values are 'larger' and 'lte'. Defaults to 'larger'.
 
     Returns:
         list: ids of the 1st gdf passing the test
@@ -39,10 +39,10 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
     intersection_gdf['percentage_area_left'] = intersection_gdf.area / intersection_gdf.total_area
     if op=='larger':
         id_to_keep = intersection_gdf.loc[intersection_gdf.percentage_area_left > threshold, 'id'].unique().tolist()
-    elif op=='seq':
+    elif op=='lte':
         id_to_keep = intersection_gdf.loc[intersection_gdf.percentage_area_left <= threshold, 'id'].unique().tolist()
     else:
-        logger.critical('Passed operator is unknow. Please pass "larger" or "seq" (= smaller or equal).')
+        logger.critical('Passed operator is unknow. Please pass "larger" or "lte" (= less than or equal).')
         sys.exit(1)
 
     return id_to_keep
@@ -225,7 +225,8 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     
 
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
-    """Pad the bounding box of a tile with the distance necessary to match a grid generated with the passed parameters.
+    """Pad the tile, defined by its bounding box, with a polygon covering the gap between the tile size and the grid size, 
+    defined by its cell width, height, and overlap as well as the pixel size.
     Save the result in a GeoDataFrame.
 
     Args:
