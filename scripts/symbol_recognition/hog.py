@@ -30,7 +30,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=59, ppc=9, cpb=4, orientations=4, variance_threshold=0.009, output_dir='outputs'):
+def main(tiles, image_size=67, ppc=14, cpb=4, orientations=4, variance_threshold=0.0063, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 

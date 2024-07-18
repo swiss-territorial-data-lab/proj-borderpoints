@@ -11,7 +11,7 @@ from rasterio import open
 
 import optuna
 from functools import partial
-from joblib import dump
+from joblib import dump, load
 from math import floor
 
 sys.path.insert(1, 'scripts')
@@ -94,7 +94,7 @@ logger.info('Optimize HOG parameters...')
 study_path = os.path.join(OUTPUT_DIR, 'study.pkl')
 
 study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(), study_name='Optimization of the HOG parameters')
-# study = joblib.load(open(study_path, 'rb'))
+study = load(study_path, 'r')
 objective = partial(objective, tiles_dict=image_data, images_gdf=images_gdf, stat_features_df=stat_features_df)
 study.optimize(objective, n_trials=100, callbacks=[callback])
 
@@ -110,6 +110,13 @@ output_plots = os.path.join(OUTPUT_DIR, 'plots')
 os.makedirs(output_plots, exist_ok=True)
 
 written_files.extend(opti.plot_optimization_results(study, targets, output_path=output_plots))
+
+logger.info('Produce results for the best hyperparameters')
+hog_features_df, written_files_hog = hog.main(image_data, output_dir=OUTPUT_DIR, **study.best_params)
+_, written_files_svm = svm.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
+
+written_files.extend(written_files_hog)
+written_files.extend(written_files_svm)
 
 print()
 logger.success("The following files were written. Let's check them out!")
