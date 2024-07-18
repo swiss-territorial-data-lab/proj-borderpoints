@@ -58,6 +58,9 @@ if not os.path.isfile(filepath) or OVERWRITE:
 
     logger.info('Transform points to polygons...')
     cs_points_poly_gdf = misc.buffer_by_max_size(cs_points_gdf, pt_sizes_gdf, factor=0.5, cap_style=3)
+    # Save image name on tile
+    cs_points_poly_gdf['image_name'] = (cs_points_poly_gdf.apply(lambda x: misc.get_tile_name(x.initial_tile.split('_')[0], x.geometry), axis=1)).str.rstrip('.tif')
+    
     cs_points_poly_gdf.to_file(filepath)
     written_files.append(filepath)
 

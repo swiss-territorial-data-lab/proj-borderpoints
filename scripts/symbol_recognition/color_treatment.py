@@ -21,15 +21,16 @@ import functions.fct_misc as misc
 logger = misc.format_logger(logger)
 
 
-def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
+def main(tile_dir, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
     written_files = []
 
     logger.info('Read data...')
     tile_list = glob(os.path.join(tile_dir, '*.tif'))
-    images_gdf = gpd.read_file(image_file)
-    images_gdf.loc[images_gdf.CATEGORY == 'undetermined', 'CATEGORY'] = 'undet'
+    if image_desc_gpkg:     # Without the images description based on the GT, don't do the parts about the category.
+        images_gdf = gpd.read_file(image_desc_gpkg)
+        images_gdf.loc[images_gdf.CATEGORY == 'undetermined', 'CATEGORY'] = 'undet'
 
     image_data = {}
     meta_data = {}
@@ -52,7 +53,7 @@ def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
         binary_list_final[name] = np.where(condition_black_blue | condition_red, 1, 0, )
 
     logger.info('Extract pixel under mask')
-    filtered_tile_dir = os.path.join(os.path.dirname(tile_dir), 'filtered_symbols_2')
+    filtered_tile_dir = os.path.join(os.path.dirname(tile_dir), 'filtered_symbols')
     filtered_images = {}
     os.makedirs(filtered_tile_dir, exist_ok=True)
     for name, image in tqdm(image_data.items()):
@@ -64,16 +65,11 @@ def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
     # Define parameters
     BAND_CORRESPONDENCE = {0: 'R', 1: 'G', 2: 'B'}
     STAT_LIST = ['min', 'max', 'std', 'mean', 'median']
-    cat_list = ['1b', '1n', '1r', '2b', '3b', '3r', '5n', 'undet']
-    # pxl_values_dict = {
-    #     0: {cat: [] for cat in cat_list}, 
-    #     1: {cat: [] for cat in cat_list}, 
-    #     2: {cat: [] for cat in cat_list}
-    # }
     stats_df_dict = {band: pd.DataFrame() for band in BAND_CORRESPONDENCE.keys()}
 
     for name, image in tqdm(image_data.items(), desc="Get statistics for each mask"):
-        category = images_gdf.loc[images_gdf.image_name == name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+        if image_desc_gpkg:
+            category = images_gdf.loc[images_gdf.image_name == name.rstrip('.tif'), 'CATEGORY'].iloc[0]
 
         mask = binary_list_final[name]
         if (mask==0).all():
@@ -85,13 +81,12 @@ def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
         mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[name]['crs'])  
 
         for band in BAND_CORRESPONDENCE.keys():
-            # Get individual pixel value
-            # pxl_values_dict[band][category].extend(image[:, :, band][mask].flatten())
 
-            # Get category stats on each image
+            # Get stats on each image
             tmp_stats = zonal_stats(mask_gdf, os.path.join(filtered_tile_dir, name), stats=STAT_LIST, band_num=band+1)
             tmp_stats_df = pd.DataFrame.from_records(tmp_stats)
-            tmp_stats_df['CATEGORY'] = category
+            if image_desc_gpkg:
+                tmp_stats_df['CATEGORY'] = category
             tmp_stats_df['image_name'] = name.rstrip('.tif')
             if not tmp_stats_df[tmp_stats_df['median'].notna()].empty:
                 stats_df_dict[band] = pd.concat([stats_df_dict[band], tmp_stats_df[tmp_stats_df['median'].notna()]], ignore_index=True)
@@ -101,28 +96,23 @@ def main(tile_dir, image_file, save_extra=False, output_dir='outputs'):
             tmp_df = stats_df_dict[band_nbr].copy()
             tmp_df['band'] = band_letter
             stats_df = pd.concat([stats_df, tmp_df], ignore_index=True)
-        stats_df.to_csv(os.path.join(output_dir, 'stats_on_filtered_bands.csv'), index=False)
+
+        filepath = os.path.join(output_dir, 'stats_on_filtered_bands.csv')
+        stats_df.to_csv(filepath, index=False)
+        written_files.append(filepath)
 
 
-    for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
-        # labels, data = [*zip(*pxl_values_dict[band].items())]
+    if image_desc_gpkg and save_extra:
+        for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
+            for stat in STAT_LIST:
 
-        # plt.boxplot(data)
-        # plt.xticks(range(1, len(labels) + 1), labels)
-        # plt.title(f'Pixel values on the {BAND_CORRESPONDENCE[band]} band')
-        # filename = os.path.join(output_dir, f'boxplot_filtered_pixels_{BAND_CORRESPONDENCE[band]}.png')
-        # plt.savefig(filename, bbox_inches='tight')
-        # plt.close()
-        # written_files.append(filename)
-
-        for stat in STAT_LIST:
-            stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
-            stats_df.plot.box(by='CATEGORY')
-            plt.title(f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
-            filename = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.png')
-            plt.savefig(filename, bbox_inches='tight')
-            plt.close()
-            written_files.append(filename)
+                stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
+                stats_df.plot.box(by='CATEGORY')
+                plt.title(f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
+                filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.png')
+                plt.savefig(filepath, bbox_inches='tight')
+                plt.close()
+                written_files.append(filepath)
 
 
     return stats_df, written_files
@@ -140,13 +130,13 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_dir']
     TILE_DIR = cfg['tile_dir']
 
-    IMAGE_FILE = cfg['image_gpkg']
+    image_desc_gpkg = cfg['image_gpkg']
 
     SAVE_EXTRA = cfg['save_extra']
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = main(TILE_DIR, IMAGE_FILE, save_extra=SAVE_EXTRA, output_dir=OUTPUT_DIR)
+    _, written_files = main(TILE_DIR, image_desc_gpkg, save_extra=SAVE_EXTRA, output_dir=OUTPUT_DIR)
 
     logger.success("Done! The following files were written:")
     for written_file in written_files:

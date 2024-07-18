@@ -16,7 +16,7 @@ prepare_symbol_classif.py:
     vectors: outputs/labels_symbol_matching
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  border_points_poly: inputs/ground_truth/PL_realite_terrain_20240318/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+  border_points_poly: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   tile_suffix: _geo.tif
   convert_images: False
@@ -51,7 +51,7 @@ color_treatment.py:
   save_extra: True
 
 
-svm.py:
+train_model.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
   output_dir: svm
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
@@ -65,3 +65,12 @@ optimization.py:
   tile_dir: rgb_images/symbol_images_GT
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
   band_stats: feature_engineering/stats_on_filtered_bands.csv
+
+
+classify_images_in_folder.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: classification
+  tile_dir: rgb_images/symbol_images
+  image_info_gpkg: labels_symbol_matching/MO_pt_polys.gpkg
+  scaler: svm/scaler_SVM.pkl
+  model: svm/model_SVM.pkl

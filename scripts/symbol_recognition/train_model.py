@@ -11,7 +11,7 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from pickle import dump
+from joblib import dump
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
@@ -41,33 +41,9 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         hog_features_df.drop(columns=['Unnamed: 0'], inplace=True)
 
 
-    images_w_stats_gdf = images_gdf.copy()
-    stat_list = []
-    for band in tqdm(band_stats_df.band.unique(), desc='Format stat info'):
-        sub_band_stats_df = band_stats_df[band_stats_df.band == band].copy()
-        sub_band_stats_df.rename(columns={'mean': f'mean_{band}', 'std': f'std_{band}', 'median': f'median_{band}', 'min': f'min_{band}', 'max': f'max_{band}'}, inplace=True)
-        sub_band_stats_df.drop(columns=['CATEGORY', 'band'], inplace=True)
-        sub_band_stats_df.loc[:, 'image_name'] = sub_band_stats_df.image_name.str.rstrip('.tif')
-
-        images_w_stats_gdf = images_w_stats_gdf.merge(sub_band_stats_df, how='inner', on='image_name')
-        
-        stat_list.extend([f'mean_{band}', f'std_{band}', f'median_{band}', f'min_{band}', f'max_{band}'])
-
-    image_diff =images_gdf.shape[0] - images_w_stats_gdf.shape[0]
-    if image_diff:
-        logger.warning(f'{image_diff} elements were lost when joining the images and stats.')
-
-    # Clean stat data
-    images_w_stats_gdf.drop(columns=[
-        'mean_R', 'std_R', 'mean_G', 'min_G', 'mean_B', 'std_B',    # Columns with a high correlation with at least one other column
-        'max_R', 'max_G',                                           # Columns unlikely to bring information based on the boxplot
-    ], inplace=True)
-
-    logger.info('Format HOG info...')
-    name_map = {col: f'hog_{col}' for col in hog_features_df.columns if col != 'image_name'}
-    hog_features_df.rename(columns=name_map, inplace=True)
+    images_w_stats_gdf, _ = misc.format_color_info(images_gdf, band_stats_df)
+    hog_features_df = misc.format_hog_info(hog_features_df)
     
-
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
@@ -82,6 +58,11 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     scaler = StandardScaler()
     data_trn_scaled = scaler.fit_transform(data_trn)
     data_tst_scaled = scaler.transform(data_tst)
+
+    filepath = os.path.join(output_dir, 'scaler_SVM.pkl')
+    with open(filepath, 'wb') as f:
+        dump(scaler, f, protocol=5)
+    written_files.append(filepath)
 
     # Prepare SVM model
     svc_model = svm.SVC(random_state=42, cache_size=1000)

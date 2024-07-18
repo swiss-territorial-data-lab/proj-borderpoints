@@ -17,7 +17,7 @@ from math import floor
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
 import functions.fct_optimization as opti
-import hog, svm
+import hog, train_model
 
 
 logger = misc.format_logger(logger)
@@ -51,7 +51,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     if hog_features_df.empty:
         return 0
 
-    f1_score, _ = svm.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
+    f1_score, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
 
     return f1_score
 
@@ -113,7 +113,7 @@ written_files.extend(opti.plot_optimization_results(study, targets, output_path=
 
 logger.info('Produce results for the best hyperparameters')
 hog_features_df, written_files_hog = hog.main(image_data, output_dir=OUTPUT_DIR, **study.best_params)
-_, written_files_svm = svm.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
+_, written_files_svm = train_model.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
 
 written_files.extend(written_files_hog)
 written_files.extend(written_files_svm)

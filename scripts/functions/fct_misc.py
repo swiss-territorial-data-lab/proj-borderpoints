@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from loguru import logger
+from tqdm import tqdm
 from yaml import load, FullLoader
 
 import geopandas as gpd
@@ -106,6 +107,53 @@ def format_logger(logger):
             level="ERROR")
 
     return logger
+
+
+def format_color_info(images_gdf, band_stats_df):
+
+    images_w_stats_gdf = images_gdf.copy()
+    stat_list = []
+    for band in tqdm(band_stats_df.band.unique(), desc='Format color info'):
+        sub_band_stats_df = band_stats_df[band_stats_df.band == band].copy()
+        sub_band_stats_df.rename(columns={'mean': f'mean_{band}', 'std': f'std_{band}', 'median': f'median_{band}', 'min': f'min_{band}', 'max': f'max_{band}'}, inplace=True)
+        sub_band_stats_df.drop(columns=['CATEGORY', 'band'], errors='ignore', inplace=True)
+        sub_band_stats_df.loc[:, 'image_name'] = sub_band_stats_df.image_name.str.rstrip('.tif')
+
+        images_w_stats_gdf = images_w_stats_gdf.merge(sub_band_stats_df, how='inner', on='image_name')
+        
+        stat_list.extend([f'mean_{band}', f'std_{band}', f'median_{band}', f'min_{band}', f'max_{band}'])
+
+    image_diff = images_gdf.shape[0] - images_w_stats_gdf.shape[0]
+    if image_diff:
+        logger.warning(f'{image_diff} elements were lost when joining the images and stats. The list of id is returned')
+        missing_ids = images_gdf.loc[~images_gdf.image_name.isin(images_w_stats_gdf.image_name), 'image_name'].tolist()
+    else:
+        logger.info('All images have some stat info. An empty list is returned.')
+        missing_ids = []
+
+    # Clean stat data
+    images_w_stats_gdf.drop(columns=[
+        'mean_R', 'std_R', 'mean_G', 'min_G', 'mean_B', 'std_B',    # Columns with a high correlation with at least one other column
+        'max_R', 'max_G',                                           # Columns unlikely to bring information based on the boxplot
+    ], inplace=True)
+
+    return images_w_stats_gdf, missing_ids
+
+
+def format_hog_info(hog_features_df):
+
+    logger.info('Format HOG info...')
+    
+    if 'Unnamed: 0' in hog_features_df.columns:
+        hog_features_df['image_name'] = hog_features_df['Unnamed: 0'].str.rstrip('.tif')
+        hog_features_df.drop(columns=['Unnamed: 0'], inplace=True)
+    else:
+        hog_features_df['image_name'] = hog_features_df.index.str.rstrip('.tif')
+        hog_features_df.reset_index(drop=True, inplace=True)
+    name_map = {col: f'hog_{col}' for col in hog_features_df.columns if col != 'image_name'}
+    hog_features_df.rename(columns=name_map, inplace=True)
+
+    return hog_features_df
 
 
 def get_config(config_key, desc=""):
