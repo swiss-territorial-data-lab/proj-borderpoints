@@ -3,9 +3,6 @@ from loguru import logger
 
 import pandas as pd
 
-import plotly.express as px
-import plotly.graph_objects as go
-
 import optuna.visualization as optviz
 
 def plot_optimization_results(study, targets={0: 'f1 score'}, output_path='.'):

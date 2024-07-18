@@ -110,12 +110,12 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         logger.info('Save confusion matrix and classification report...')
         confusion_matrix_df = pd.DataFrame(confusion_matrix(label_tst, pred_tst), columns=clf.classes_, index=clf.classes_)
         filepath = os.path.join(output_dir, 'confusion_matrix.csv')
-        confusion_matrix_df.transpose().to_csv(filepath)
+        confusion_matrix_df.to_csv(filepath)
         written_files.append(filepath)
 
         cl_report = classification_report(label_tst, pred_tst, output_dict=True)
         filepath = os.path.join(output_dir, 'classification_report.csv')
-        pd.DataFrame(cl_report).to_csv(filepath)
+        pd.DataFrame(cl_report).transpose().to_csv(filepath)
         written_files.append(filepath)
 
     return metric, written_files
