@@ -33,7 +33,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     ppc = trial.suggest_int('ppc', min_ppc, max_ppc)
     cells_per_block = trial.suggest_int('cpb', floor(min_image_size/max_ppc), floor(max_image_size/min_ppc))
     orientations = trial.suggest_int('orientations', 4, 9)
-    variance_threshold = trial.suggest_float('variance_threshold', 0.0001, 0.007, step = 0.0001)
+    variance_threshold = trial.suggest_float('variance_threshold', 0.0001, 0.01, step = 0.0001)
 
     dict_param = {
         'image_size': image_size,
@@ -94,7 +94,7 @@ logger.info('Optimize HOG parameters...')
 study_path = os.path.join(OUTPUT_DIR, 'study.pkl')
 
 study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(), study_name='Optimization of the HOG parameters')
-study = load(study_path, 'r')
+# study = load(study_path, 'r')
 objective = partial(objective, tiles_dict=image_data, images_gdf=images_gdf, stat_features_df=stat_features_df)
 study.optimize(objective, n_trials=100, callbacks=[callback])
 

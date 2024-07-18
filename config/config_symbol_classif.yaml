@@ -1,5 +1,5 @@
 prepare_ground_truth.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir:
     vectors: outputs/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -11,7 +11,7 @@ prepare_ground_truth.py:
 
 
 prepare_symbol_classif.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir:
     vectors: outputs/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -22,46 +22,46 @@ prepare_symbol_classif.py:
   convert_images: False
 
 boxplots.py:
-  working_dir: .
-  output_dir: outputs/feature_engineering
-  tile_dir: outputs/rgb_images
-  image_delimitation: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
-  tiles: outputs/labels_symbol_matching/tiles.gpkg
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: feature_engineering
+  tile_dir: rgb_images
+  image_delimitation: labels_symbol_matching/GT/GT_pt_polys.gpkg
+  tiles: labels_symbol_matching/tiles.gpkg
 
 test_notebooks.py:
-  working_dir: .
-  output_dir: outputs/feature_engineering
-  tile_dir: outputs/rgb_images/symbol_images_GT
-  svm_dir: outputs/svm
-  image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
-  hog_features: outputs/feature_engineering/hog_features.csv
-  band_stats: outputs/feature_engineering/stats_on_filtered_bands.csv
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: feature_engineering
+  tile_dir: rgb_images/symbol_images_GT
+  svm_dir: svm
+  image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
+  hog_features: feature_engineering/hog_features.csv
+  band_stats: feature_engineering/stats_on_filtered_bands.csv
 
 hog.py:
-  working_dir: .
-  output_dir: outputs/feature_engineering
-  tile_dir: outputs/rgb_images/symbol_images_GT
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: feature_engineering
+  tile_dir: rgb_images/symbol_images_GT
 
 
 color_treatment.py:
-  working_dir: .
-  output_dir: outputs/feature_engineering
-  tile_dir: outputs/rgb_images/symbol_images_GT
-  image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: feature_engineering
+  tile_dir: rgb_images/symbol_images_GT
+  image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
   save_extra: True
 
 
 svm.py:
-  working_dir: .
-  output_dir: outputs/svm
-  image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
-  hog_features: outputs/feature_engineering/hog_features.csv
-  band_stats: outputs/feature_engineering/stats_on_filtered_bands.csv
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: svm
+  image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
+  hog_features: feature_engineering/hog_features.csv
+  band_stats: feature_engineering/stats_on_filtered_bands.csv
 
 
 optimization.py:
-  working_dir: .
-  output_dir: outputs/optimization
-  tile_dir: outputs/rgb_images/symbol_images_GT
-  image_gpkg: outputs/labels_symbol_matching/GT/GT_pt_polys.gpkg
-  band_stats: outputs/feature_engineering/stats_on_filtered_bands.csv
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  output_dir: optimization
+  tile_dir: rgb_images/symbol_images_GT
+  image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
+  band_stats: feature_engineering/stats_on_filtered_bands.csv
