@@ -102,7 +102,7 @@ post_processing.py:
 
 
 assess_by_tile.py:
-  working_dir: outputs
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data\outputs
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
   ground_truth: formatted_labels/ground_truth_labels.gpkg
@@ -113,15 +113,21 @@ assess_by_tile.py:
 
 
 point_matching.py:
-  working_dir: outputs
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data\outputs
   output_dir: post_processing
   detections: post_processing/dst_detected_points.gpkg
-  border_points: formatted_labels/MO_points.gpkg
+  border_points: labels_symbol_matching/GT/ground_truth_labels.gpkg
 
 
 check_w_land_cover.py:
-  working_dir: .
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: outputs/post_processing
   matched_points: outputs/post_processing/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
+
+assess_point_classif.py:
+  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data\outputs
+  output_dir: post_processing
+  classified_points: post_processing/matched_points_2.gpkg
+  split_aoi_tiles: object_detector/split_aoi_tiles.geojson

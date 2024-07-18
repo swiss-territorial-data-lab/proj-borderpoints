@@ -73,13 +73,17 @@ def main(tiles, image_size=59, ppc=9, cpb=4, orientations=4, variance_threshold=
     try: 
         filtered_var_features = variance_filter.fit_transform(hog_features_df.to_numpy())
     except ValueError as e:
-        if "No feature meets the variance threshold" in str(e):
+        if "No feature in X meets the variance threshold" in str(e):
             return pd.DataFrame(), []
         else:
             raise(e)
         
     filtered_hog_features_df = pd.DataFrame(filtered_var_features, index=hog_features_df.index)
-    logger.info(f'Final number of HOG features: {filtered_hog_features_df.shape[1]}')
+    feature_number = filtered_hog_features_df.shape[1]
+    logger.info(f'Final number of HOG features: {feature_number}')
+    if feature_number > 5000:
+        logger.warning('Too many features, please reduce the variance threshold.')
+        return pd.DataFrame(), []
 
     logger.info('Save file...')
     filepath = os.path.join(output_dir, 'hog_features.csv')
