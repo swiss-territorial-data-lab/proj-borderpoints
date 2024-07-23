@@ -94,7 +94,7 @@ else:
 
 assert(labels_gdf.crs == tiles_gdf.crs)
 
-# Clip labels to define tiles
+# Clip the labels to the tiles
 tiles_gdf = tiles_gdf.merge(name_correspondence_df, left_on="initial_tile", right_on="bbox_name")
 
 clipped_labels_gdf = gpd.GeoDataFrame()

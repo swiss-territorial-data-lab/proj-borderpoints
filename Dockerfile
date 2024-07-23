@@ -8,6 +8,3 @@ RUN apt update && apt install -y git && apt clean
 
 ADD requirements.txt proj-borderpoints/requirements.txt
 RUN pip install -r proj-borderpoints/requirements.txt
-
-ADD object-detector object-detector
-RUN pip install -e object-detector

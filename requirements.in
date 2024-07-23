@@ -2,3 +2,4 @@ folium
 networkx
 openpyxl
 PyYAML
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git

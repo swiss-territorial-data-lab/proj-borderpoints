@@ -6,7 +6,7 @@ Classification of the border points from the BDMO2 based on the cadastral map of
 
 The installation is performed from this folder with the following steps:
 
-* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
+* Make a hard link with the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector) that you have cloned elsewhere,
 * Get into the `object-detector` folder,
 * Switch to my branch,
 * The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
@@ -22,7 +22,7 @@ The installation is performed from this folder with the following steps:
 The corresponding command lines are
 
 ```
-git clone https://github.com/swiss-territorial-data-lab/object-detector.git
+ln <path_object_detector> .
 cd object-detector
 git checkout gs/code_improvement
 cd -
@@ -43,7 +43,7 @@ The workflow can be divided into three parts:
     - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
     - Clip the map to the subtiles.
-* Detect the border points with the STDL's object detector. The necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
+* Detection of the border points with the STDL's object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted after the experts' requirements.
     - `post_processing.py`: the detections are filtered by their confidence score and ...
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,

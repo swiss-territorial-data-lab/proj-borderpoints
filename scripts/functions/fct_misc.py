@@ -92,7 +92,7 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
 
 def save_name_correspondence(features_list, output_dir, initial_name_column, new_name_column):
     """
-    Save the name correspondence of tiles between transformations.
+    Create a file to keep track of the tile names through the transformations
     If a file of name correspondences already exists in the output folder, the names for the converted tiles will be added. 
 
     Args:
