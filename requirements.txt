@@ -22,6 +22,8 @@ jinja2==3.1.4
     #   folium
 markupsafe==2.1.5
     # via jinja2
+networkx==3.1
+    # via -r requirements.in
 numpy==1.24.4
     # via folium
 openpyxl==3.1.2
