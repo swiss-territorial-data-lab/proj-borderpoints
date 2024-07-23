@@ -6,7 +6,6 @@ from time import time
 from yaml import load, FullLoader
 
 import geopandas as gpd
-import pandas as pd
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger

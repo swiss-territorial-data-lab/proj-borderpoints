@@ -132,4 +132,3 @@ if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
     tiles_to_box(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
-

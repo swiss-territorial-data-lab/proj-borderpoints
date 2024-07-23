@@ -24,7 +24,7 @@ tic = time()
 logger.info('Starting...')
 
 # Argument and parameter specification
-parser = ArgumentParser(description="The script performs the post-processing on the detections of border points.")
+parser = ArgumentParser(description="The script performs the post-processing of the border point detection.")
 parser.add_argument('config_file', type=str, help='Framework configuration file')
 args = parser.parse_args()
 
@@ -70,7 +70,6 @@ tiles_gdf = gpd.read_file(TILES)
 filepath = open(os.path.join(INPUT_DIR, CATEGORY_IDS_JSON))
 categories_json = json.load(filepath)
 filepath.close()
-
 
 logger.info('Filter dataframe by score and area...')
 detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
@@ -120,7 +119,6 @@ intersect_detections_gdf['iou'] = [
     intersection_over_union(geom1, geom2) for geom1, geom2 in zip(intersect_detections_gdf.geometry, intersect_detections_gdf.original_geom_right)
 ]
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.75].copy()
-
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
     for duplicate in duplicated_detections_gdf.itertuples():

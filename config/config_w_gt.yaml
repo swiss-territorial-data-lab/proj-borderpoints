@@ -5,8 +5,8 @@ prepare_data.py:
     clipped_tiles: outputs/clipped_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  border_points: inputs/ground_truth/PL_realite_terrain_20240614\Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  bbox: inputs/ground_truth/PL_realite_terrain_20240614\Realite_terrain_Box/PL_realite_terrain_box.shp
+  border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+  bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
   plan_scales: inputs/plan_scales.xlsx
   cadastral_surveying: inputs/MO/BDMO2.gpkg
   # overlap_info: outputs/formatted_labels/max_point_size.csv

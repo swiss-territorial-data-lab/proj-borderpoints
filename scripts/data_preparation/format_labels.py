@@ -24,7 +24,7 @@ def format_labels(path_points_poly, output_dir='outputs'):
         written_files: list with the path of the written files
     """
 
-    written_files =[] 
+    written_files = [] 
 
     os.makedirs(output_dir, exist_ok=True)
 

@@ -1,15 +1,24 @@
+# prepare_whole_tiles.py:
+#   working_dir: .
+#   output_dir: 
+#     vectors: outputs/gpkg_whole_tiles
+#   initial_image_dir: inputs/plans
+#   tile_dir: outputs/rgb_images
+#   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
+#   # overlap_info: outputs/formatted_labels/max_point_size.csv
+#   plan_scales: inputs/plan_scales.xlsx
+#   tile_suffix: _geo.tif
+#   convert_images: True
+
 prepare_whole_tiles.py:
   working_dir: .
   output_dir: 
     vectors: outputs/gpkg_whole_tiles
   initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
-  plan_scales: inputs/plan_scales.xlsx
+  cadastral_surveying: inputs/MO/BDMO2.gpkg
   tile_suffix: _geo.tif
   convert_images: True
-
 
 generate_tilesets.py:
   debug_mode: 
@@ -45,7 +54,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../model/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../object_detector/logs/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
