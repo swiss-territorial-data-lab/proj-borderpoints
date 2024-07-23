@@ -22,7 +22,7 @@ The installation is performed from this folder with the following steps:
 The corresponding command lines are
 
 ```
-ln <path_object_detector> .
+git clone https://github.com/swiss-territorial-data-lab/object-detector.git
 cd object-detector
 git checkout gs/code_improvement
 cd -
