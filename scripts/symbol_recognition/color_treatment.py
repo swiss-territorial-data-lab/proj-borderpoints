@@ -15,30 +15,73 @@ from rasterio.features import shapes
 from shapely.geometry import shape
 from skimage.color import rgb2hsv
 
+from joblib import Parallel, delayed
+
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
+from constants import OVERWRITE
 
 logger = misc.format_logger(logger)
 
+# ----- Define functions -----
 
-def main(tile_dir, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
+def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_correspondance, stats_list, output_path):
+        
+    if not images_gdf.empty:
+        category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+
+    mask = binary_list[image_name]
+    if (mask==0).all():
+        return [{}, {}, {}]
+
+    # Polygonize mask into one polygon
+    geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[image_name]['transform']) if v == 1)
+    mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[image_name]['crs'])
+    mask_gdf = gpd.GeoDataFrame([image_name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[image_name]['crs'])  
+
+    stat_values_list = []
+    for band in band_correspondance.keys():
+
+        # Get stats on each image
+        stats_dict = zonal_stats(mask_gdf, os.path.join(output_path, image_name), stats=stats_list, band_num=band+1)[0]  # zonal stats returns a list of dicts, but there is only one polygon
+        stats_dict['image_name'] = image_name.rstrip('.tif')
+
+        if not images_gdf.empty:
+            stats_dict['CATEGORY'] = category
+
+        if stats_dict['median'] is None:
+            stat_values_list.append({})
+        else:
+            stats_dict['band'] = band
+            stat_values_list.append(stats_dict)        
+    
+    return stat_values_list
+    
+
+def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
     written_files = []
-
+        
     logger.info('Read data...')
-    tile_list = glob(os.path.join(tile_dir, '*.tif'))
     if image_desc_gpkg:     # Without the images description based on the GT, don't do the parts about the category.
         images_gdf = gpd.read_file(image_desc_gpkg)
         images_gdf.loc[images_gdf.CATEGORY == 'undetermined', 'CATEGORY'] = 'undet'
+    else:
+        images_gdf = pd.DataFrame()
 
-    image_data = {}
-    meta_data = {}
-    for tile_path in tqdm(tile_list, desc='Read images'):
-        with rio.open(tile_path) as src:
-            tile_name = os.path.basename(tile_path)
-            image_data[tile_name] = src.read().transpose(1, 2, 0)
-            meta_data[tile_name] = src.meta
+    if isinstance(tiles, tuple):
+        image_data = tiles[0]
+        meta_data = tiles[1]
+    else:
+        tile_list = glob(os.path.join(tiles, '*.tif'))
+        image_data = {}
+        meta_data = {}
+        for tile_path in tqdm(tile_list, desc='Read images'):
+            with rio.open(tile_path) as src:
+                tile_name = os.path.basename(tile_path)
+                image_data[tile_name] = src.read().transpose(1, 2, 0)
+                meta_data[tile_name] = src.meta
 
     logger.info('Produce HSV images...')
     data_hsv = {key: rgb2hsv(i) for key, i in image_data.items()}
@@ -52,57 +95,63 @@ def main(tile_dir, image_desc_gpkg=None, save_extra=False, output_dir='outputs')
 
         binary_list_final[name] = np.where(condition_black_blue | condition_red, 1, 0, )
 
-    logger.info('Extract pixel under mask')
-    filtered_tile_dir = os.path.join(os.path.dirname(tile_dir), 'filtered_symbols')
+    # Filter images to keep only the symbol pixels
+    filtered_tile_dir = os.path.join(output_dir, 'filtered_symbols')
     filtered_images = {}
     os.makedirs(filtered_tile_dir, exist_ok=True)
-    for name, image in tqdm(image_data.items()):
+    for name, image in tqdm(image_data.items(), desc='Save pixels under mask in a new image'):
+        
+        filepath = os.path.join(filtered_tile_dir, name)
+        if os.path.isfile(filepath) and not OVERWRITE:
+            continue
+
         mask = np.repeat(binary_list_final[name][..., np.newaxis], repeats=3, axis=2)
         filtered_images[name] = np.where(mask, image, 0)
-        with rio.open(os.path.join(filtered_tile_dir, name), 'w', **meta_data[name]) as src:
+        with rio.open(filepath, 'w', **meta_data[name]) as src:
             src.write(filtered_images[name].transpose(2, 0, 1))
 
     # Define parameters
     BAND_CORRESPONDENCE = {0: 'R', 1: 'G', 2: 'B'}
     STAT_LIST = ['min', 'max', 'std', 'mean', 'median']
+    stats_values_list = []
+    param_dict = {'meta_data': meta_data, 'binary_list': binary_list_final, 'images_gdf': images_gdf, 
+                  'band_correspondance': BAND_CORRESPONDENCE, 'stats_list': STAT_LIST, 'output_path': filtered_tile_dir}
+    
+    stats_values_list = Parallel(n_jobs=1, backend='loky')(
+        delayed(get_stats_under_mask)(name, **param_dict)
+        for name in tqdm(image_data.keys(), desc="Get statistics for each image")
+    )
+
+    # for name, image in tqdm(image_data.items(), desc="Get statistics for each mask"):
+    #     stats_values_list.extend(get_stats_under_mask(name, meta_data, binary_list_final, images_gdf, BAND_CORRESPONDENCE, STAT_LIST, filtered_tile_dir))
+
+    # Transform list of dict in one dataframe per band
     stats_df_dict = {band: pd.DataFrame() for band in BAND_CORRESPONDENCE.keys()}
+    count_no_symbol = 0
+    for values_per_images in tqdm(stats_values_list, desc='Concatenate result'):
+        for values_per_band in values_per_images:
+            if values_per_band:
+                band = values_per_band['band']
+                stats_df_dict[band] = pd.concat([stats_df_dict[band], pd.DataFrame.from_records([values_per_band]).drop(columns='band')], ignore_index=True)
+            else:
+                count_no_symbol += 1
 
-    for name, image in tqdm(image_data.items(), desc="Get statistics for each mask"):
-        if image_desc_gpkg:
-            category = images_gdf.loc[images_gdf.image_name == name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+    del stats_values_list
+    logger.info(f'{int(count_no_symbol/3)} images were only filled with background. No statistic was produced.')
 
-        mask = binary_list_final[name]
-        if (mask==0).all():
-            continue
+    # Save all results in one dataframe
+    stats_df = pd.DataFrame()
+    for band_nbr, band_letter in BAND_CORRESPONDENCE.items():
+        tmp_df = stats_df_dict[band_nbr].copy()
+        tmp_df['band'] = band_letter
+        stats_df = pd.concat([stats_df, tmp_df], ignore_index=True)
 
-        # Polygonize mask
-        geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[name]['transform']) if v == 1)
-        mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[name]['crs'])
-        mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[name]['crs'])  
-
-        for band in BAND_CORRESPONDENCE.keys():
-
-            # Get stats on each image
-            tmp_stats = zonal_stats(mask_gdf, os.path.join(filtered_tile_dir, name), stats=STAT_LIST, band_num=band+1)
-            tmp_stats_df = pd.DataFrame.from_records(tmp_stats)
-            if image_desc_gpkg:
-                tmp_stats_df['CATEGORY'] = category
-            tmp_stats_df['image_name'] = name.rstrip('.tif')
-            if not tmp_stats_df[tmp_stats_df['median'].notna()].empty:
-                stats_df_dict[band] = pd.concat([stats_df_dict[band], tmp_stats_df[tmp_stats_df['median'].notna()]], ignore_index=True)
-
-        stats_df = pd.DataFrame()
-        for band_nbr, band_letter in BAND_CORRESPONDENCE.items():
-            tmp_df = stats_df_dict[band_nbr].copy()
-            tmp_df['band'] = band_letter
-            stats_df = pd.concat([stats_df, tmp_df], ignore_index=True)
-
-        filepath = os.path.join(output_dir, 'stats_on_filtered_bands.csv')
-        stats_df.to_csv(filepath, index=False)
-        written_files.append(filepath)
+    filepath = os.path.join(output_dir, 'stats_on_filtered_bands.csv')
+    stats_df.to_csv(filepath, index=False)
+    written_files.append(filepath)
 
 
-    if image_desc_gpkg and save_extra:
+    if not images_gdf.empty and save_extra:
         for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
             for stat in STAT_LIST:
 

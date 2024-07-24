@@ -13,6 +13,7 @@ from skimage.feature import hog
 from skimage.transform import resize
 import sklearn.feature_selection as sfse
 
+from joblib import dump, load
 from math import floor
 
 sys.path.insert(1,'scripts')
@@ -30,7 +31,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=67, ppc=14, cpb=4, orientations=4, variance_threshold=0.0063, output_dir='outputs'):
+def main(tiles, image_size=98, ppc=18, cpb=5, orientations=4, variance_threshold=0.0037, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -69,14 +70,21 @@ def main(tiles, image_size=67, ppc=14, cpb=4, orientations=4, variance_threshold
     hog_features_df = hog_features_df.transpose()
 
     logger.info('Select features based on variance...')
-    variance_filter = sfse.VarianceThreshold(threshold=variance_threshold)
-    try: 
-        filtered_var_features = variance_filter.fit_transform(hog_features_df.to_numpy())
-    except ValueError as e:
-        if "No feature in X meets the variance threshold" in str(e):
-            return pd.DataFrame(), []
-        else:
-            raise(e)
+    if fit_filter:
+        variance_filter = sfse.VarianceThreshold(threshold=variance_threshold)
+        try: 
+            filtered_var_features = variance_filter.fit_transform(hog_features_df.to_numpy())
+        except ValueError as e:
+            if "No feature in X meets the variance threshold" in str(e):
+                return pd.DataFrame(), []
+            else:
+                raise(e)
+    else:
+        with open(filter_path, 'rb') as f:
+            variance_filter = load(f)
+        filtered_var_features = variance_filter.transform(hog_features_df.to_numpy())
+        # training_features = pd.read_csv(filter_path)
+        # filtered_hog_features_df = hog_features_df[training_features.columns].copy()
         
     filtered_hog_features_df = pd.DataFrame(filtered_var_features, index=hog_features_df.index)
     feature_number = filtered_hog_features_df.shape[1]
@@ -85,10 +93,17 @@ def main(tiles, image_size=67, ppc=14, cpb=4, orientations=4, variance_threshold
         logger.warning('Too many features, please reduce the variance threshold.')
         return pd.DataFrame(), []
 
-    logger.info('Save file...')
+    logger.info('Save features...')
     filepath = os.path.join(output_dir, 'hog_features.csv')
     filtered_hog_features_df.to_csv(filepath)
     written_files = [filepath]
+
+    if save_extra:
+        logger.info('Save variance filter...')
+        filepath = os.path.join(output_dir, 'variance_filter.pkl')
+        with open(filepath, 'wb') as f:
+            dump(variance_filter, f, protocol=5)
+        written_files.append(filepath)
 
     return filtered_hog_features_df, written_files
 
@@ -108,6 +123,6 @@ if __name__ == '__main__':
 
     os.chdir(WORKING_DIR)
 
-    _ = written_files = main(TILE_DIR, output_dir=OUTPUT_DIR)
+    _ = written_files = main(TILE_DIR, save_extra=True, output_dir=OUTPUT_DIR)
 
     logger.success(f'All done! Time elapsed: {round(time() - tic, 1)} s')

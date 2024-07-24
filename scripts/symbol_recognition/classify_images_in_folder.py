@@ -6,9 +6,7 @@ from time import time
 from tqdm import tqdm
 
 import geopandas as gpd
-import pandas as pd
-from sklearn import svm
-from sklearn.preprocessing import StandardScaler
+import rasterio as rio
 
 from joblib import load
 
@@ -31,6 +29,7 @@ OUTPUT_DIR = cfg['output_dir']
 TILE_DIR = cfg['tile_dir']
 
 IMAGE_INFO_GPKG = cfg['image_info_gpkg']
+VARIANCE_FILTER = cfg['variance_filter']
 SCALER = cfg['scaler']
 MODEL = cfg['model']
 
@@ -40,21 +39,34 @@ written_files = []
 
 # ----- Main -----
 
-logger.info('Read model...')
-scaler = load(SCALER, 'r')
-model = load(MODEL, 'r')
+logger.info('Read data...')
 image_info_gdf = gpd.read_file(IMAGE_INFO_GPKG)
 
+tile_list = glob(os.path.join(TILE_DIR, '*.tif'))
+image_data = {}
+meta_data = {}
+for tile_path in tqdm(tile_list, desc='Read images'):
+    with rio.open(tile_path) as src:
+        tile_name = os.path.basename(tile_path)
+        image_data[tile_name] = src.read().transpose(1, 2, 0)
+        meta_data[tile_name] = src.meta
+
 logger.info('Extract HOG features...')
-hog_features_df, written_files_hog = hog.main(TILE_DIR, output_dir=OUTPUT_DIR)
+hog_features_df, written_files_hog = hog.main(image_data, fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=OUTPUT_DIR)
 hog_features_df = misc.format_hog_info(hog_features_df)
 
 logger.info('Extract color features...')
-color_features_df, written_files_color = color_treatment.main(TILE_DIR, output_dir=OUTPUT_DIR)
+color_features_df, written_files_color = color_treatment.main((image_data, meta_data), output_dir=OUTPUT_DIR)
 images_w_stats_gdf, id_images_wo_info = misc.format_color_info(image_info_gdf[['image_name', 'geometry']], color_features_df)
 logger.warning('Images without color info will be classified as undetermined.')
 
 logger.info('Merge and scale data...')
+# TODO: faire un pipeline et sauver celui-ci uniquement
+with open(SCALER, 'rb') as f:
+    scaler = load(f)
+with open(MODEL, 'rb') as f:
+    model = load(f)
+
 features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
 features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
 features_arr = features_gdf[features_list].to_numpy()
@@ -74,7 +86,7 @@ pts_gdf.loc[pts_gdf['image_name'].isin(id_images_wo_info), ['class', 'method']] 
 
 if pts_gdf['class'].isna().any():
     logger.critical('Some points were not classified!')
-    sys.exit()
+    sys.exit(1)
 
 logger.info('Deal with points present on several maps with different classes other than "undetermined"...')
 determined_pts_gdf = pts_gdf[pts_gdf['class'] != 'undetermined'].copy()

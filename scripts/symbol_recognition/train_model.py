@@ -33,12 +33,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         band_stats_df = pd.read_csv(features_stats)
     if isinstance(features_hog, pd.DataFrame):
         hog_features_df = features_hog.copy()
-        hog_features_df['image_name'] = hog_features_df.index.str.rstrip('.tif')
-        hog_features_df.reset_index(drop=True, inplace=True)
     else:
         hog_features_df = pd.read_csv(features_hog)
-        hog_features_df['image_name'] = hog_features_df['Unnamed: 0'].str.rstrip('.tif')
-        hog_features_df.drop(columns=['Unnamed: 0'], inplace=True)
 
 
     images_w_stats_gdf, _ = misc.format_color_info(images_gdf, band_stats_df)
@@ -59,11 +55,6 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     data_trn_scaled = scaler.fit_transform(data_trn)
     data_tst_scaled = scaler.transform(data_tst)
 
-    filepath = os.path.join(output_dir, 'scaler_SVM.pkl')
-    with open(filepath, 'wb') as f:
-        dump(scaler, f, protocol=5)
-    written_files.append(filepath)
-
     # Prepare SVM model
     svc_model = svm.SVC(random_state=42, cache_size=1000)
     parameters = {
@@ -82,6 +73,13 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     logger.success(f'Weighted f1 score: {round(metric, 2)}')
 
     if save_extra:
+
+        logger.info('Save scaler...')
+        filepath = os.path.join(output_dir, 'scaler_SVM.pkl')
+        with open(filepath, 'wb') as f:
+            dump(scaler, f, protocol=5)
+        written_files.append(filepath)
+
         logger.info('Save model...')
         filepath = os.path.join(output_dir, 'model_SVM.pkl')
         with open(filepath, 'wb') as f:

@@ -72,5 +72,6 @@ classify_images_in_folder.py:
   output_dir: classification
   tile_dir: rgb_images/symbol_images
   image_info_gpkg: labels_symbol_matching/MO_pt_polys.gpkg
+  variance_filter: feature_engineering/variance_filter.pkl
   scaler: svm/scaler_SVM.pkl
   model: svm/model_SVM.pkl
