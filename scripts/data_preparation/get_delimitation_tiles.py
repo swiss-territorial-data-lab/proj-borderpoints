@@ -225,7 +225,7 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     
 
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
-"""Extend the GeoDataFrame of the tile, definded by its bounding box, to match with a specified grid, 
+    """Extend the GeoDataFrame of the tile, definded by its bounding box, to match with a specified grid, 
     defined by its cell width, height, and overlapp, as well as the pixel size.
     Save the result in a GeoDataFrame.
 

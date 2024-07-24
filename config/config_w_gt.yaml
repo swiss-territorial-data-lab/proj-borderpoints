@@ -110,7 +110,7 @@ post_processing.py:
   keep_datasets: True
 
 
-assess_by_tile.py:
+assess_by_map.py:
   working_dir: outputs
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
