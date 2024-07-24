@@ -198,10 +198,11 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
     
     return polygon_intersection / polygon_union
 
+
 def save_name_correspondence(features_list, output_dir, initial_name_column, new_name_column):
     """
-    Save the name correspondence of tiles across transformations.
-    If a file of name correspondences already exists in the output folder, the names for the converted tiles will be appended. 
+    Create a file to keep track of the tile names through the transformations
+    If a file of name correspondences already exists in the output folder, the names for the converted tiles will be added. 
 
     Args:
         features_list (list): A list of features containing the initial name and new name.
@@ -212,11 +213,12 @@ def save_name_correspondence(features_list, output_dir, initial_name_column, new
     Returns:
         None
     """
+
     name_correspondence_df = pd.DataFrame.from_records(features_list, columns=[initial_name_column, new_name_column])
     filepath = os.path.join(output_dir, 'name_correspondence.csv')
 
     if os.path.isfile(filepath):
-        logger.warning("A file of name correspondences already existed in the output folder. The names for the converted tiles will be appended.")
+        logger.warning("A file of name correspondences already exists in the output folder. The names of the converted tiles will be added.")
         existing_df = pd.read_csv(filepath)
 
         if len(existing_df.columns) > 2:
@@ -235,4 +237,4 @@ def save_name_correspondence(features_list, output_dir, initial_name_column, new
             name_correspondence_df = pd.merge(existing_df, name_correspondence_df, on=initial_name_column, how='left')
 
     name_correspondence_df.to_csv(filepath, index=False)
-    logger.success(f'The name correspondence of tiles across tranformations was saved in {filepath}.')
+    logger.success(f'The correspondence of tile names between the tranformations was saved in {filepath}.')

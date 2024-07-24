@@ -1,16 +1,16 @@
 import os
 import sys
+from argparse import ArgumentParser
 from loguru import logger
 from time import time
+from yaml import load, FullLoader
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 
 import json
 from sklearn.metrics import confusion_matrix
 
-sys.path.insert(1,'scripts')
 import functions.fct_metrics as metrics
 import functions.fct_misc as misc
 
@@ -22,7 +22,15 @@ logger = misc.format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-cfg = misc.get_config(os.path.basename(__file__), "The script assess the result of the instance segmentation after the post-processing.")
+# Argument and parameter specification
+parser = ArgumentParser(description="The script prepares the initial files for the use of the OD in the detection of border points.")
+parser.add_argument('config_file', type=str, help='Framework configuration file')
+args = parser.parse_args()
+
+logger.info(f"Using {args.config_file} as config file.")
+
+with open(args.config_file) as fp:
+    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
@@ -86,7 +94,7 @@ else:
 
 assert(labels_gdf.crs == tiles_gdf.crs)
 
-# Clip labels to defined tiles
+# Clip the labels to the tiles
 tiles_gdf = tiles_gdf.merge(name_correspondence_df, left_on="initial_tile", right_on="bbox_name")
 
 clipped_labels_gdf = gpd.GeoDataFrame()
@@ -141,8 +149,8 @@ for dataset in datasets_list:
     fp_gdf['dataset'] = dataset
     fn_gdf['tag'] = 'FN'
     fn_gdf['dataset'] = dataset
-    mismatched_class_gdf['tag']='wrong class'
-    mismatched_class_gdf['dataset']=dataset
+    mismatched_class_gdf['tag'] = 'wrong class'
+    mismatched_class_gdf['dataset'] = dataset
 
     tagged_dets_gdf = pd.concat([tagged_dets_gdf, tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
     tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)

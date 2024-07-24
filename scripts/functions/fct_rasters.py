@@ -1,15 +1,12 @@
-from tqdm import tqdm
-
 import geopandas as gpd
-import numpy as np
 import rasterio
 import rasterio.features
 from shapely.geometry import Point, Polygon, shape
 
-from math import ceil, floor
+from math import ceil
 
 def get_grid_size(tile_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
-    """Determine number of grid cells based on the tile size, the grid dimension and the overlap between tiles.
+    """Determine the number of grid cells based on the tile size, grid dimension and overlap between tiles.
     All values are in pixels.
 
     Args:
@@ -40,6 +37,7 @@ def get_bbox_origin(bbox_geom):
     Returns:
         tuple: lower xy coordinates of the passed geometry
     """
+
     coords = bbox_geom.exterior.coords.xy
     min_x = min(coords[0])
     min_y = min(coords[1])
@@ -47,24 +45,26 @@ def get_bbox_origin(bbox_geom):
     return (min_x, min_y)
 
 
-def get_easting_northing(bbox_geom):
+def get_east_north(bbox_geom):
     """
-    Get the maximum easting and northing coordinates from a bounding box geometry.
+    Get the maximum east and north coordinates from a bounding box geometry.
 
     Args:
         bbox_geom (shapely.geometry.Polygon): The bounding box geometry.
 
     Returns:
-        tuple: A tuple containing the maximum easting and northing coordinates.
+        tuple: A tuple containing the maximum east and north coordinates.
     """
+
     coords = bbox_geom.exterior.coords.xy
     max_x = max(coords[0])
     max_y = max(coords[1])
 
     return (max_x, max_y)
 
+
 def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_dx=0, max_dy=0, grid_width=256, grid_height=256, crs='EPSG:2056', test_shape = None):
-    """Create a grid over a tile and saves it in a GeoDataFrame with each row representing a grid cell.
+    """Create a grid over a tile and save it in a GeoDataFrame with each row representing a grid cell.
 
     Args:
         tile_size (tuple): tile width and height
@@ -101,7 +101,7 @@ def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_
 
             # Fasten the process by not producing every single polygon
             if test_shape and not (test_shape.intersects(Point(down_left))):
-                    continue
+                continue
 
             # Define the coordinates of the polygon vertices
             vertices = [down_left,
@@ -115,7 +115,6 @@ def grid_over_tile(tile_size, tile_origin, pixel_size_x, pixel_size_y=None, max_
 
     # Create a GeoDataFrame from the polygons
     grid_gdf = gpd.GeoDataFrame(geometry=polygons, crs=crs)
-
     grid_gdf['id'] = [f'{round(min_x)}, {round(min_y)}' for min_x, min_y in [get_bbox_origin(poly) for poly in grid_gdf.geometry]]
 
     return grid_gdf

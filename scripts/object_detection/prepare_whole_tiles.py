@@ -47,7 +47,7 @@ logger.info('Format cadastral surveying data...')
 cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
-logger.info('Limit subtiles to area with data for cadastral survey and overwrite the initial file...')
+logger.info('Limit subtiles to the area with cadastral survey data and overwrite the initial file...')
 subtiles_gdf = gpd.sjoin(subtiles_gdf, cs_points_gdf[['pt_id', 'geometry']])
 subtiles_gdf.drop(columns='pt_id', inplace=True)
 subtiles_gdf.drop_duplicates(subset='id', inplace=True, ignore_index=True)

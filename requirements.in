@@ -1,13 +1,6 @@
-folium              # To remove eventually
-geopandas
-kaleido             # Unnecessary for the main workflow
-loguru
-matplotlib          # Unnecessary for the main workflow
+folium
+networkx
 openpyxl
 optuna              # Unnecessary for the main workflow
 PyYAML
-rasterio
-rasterstats         # Unnecessary for the main workflow
-scikit-image        # Unnecessary for the main workflow
-scikit-learn        # Unnecessary for the main workflow
-tqdm
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git

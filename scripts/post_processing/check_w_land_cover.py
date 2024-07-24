@@ -43,7 +43,7 @@ matched_points_gdf.loc[
 ] = (7, '5n')
 
 logger.info('Save result...')
-filepath = os.path.join(OUTPUT_DIR, 'matched_points_2.gpkg')
+filepath = os.path.join(OUTPUT_DIR, 'final_matched_points.gpkg')
 matched_points_gdf.to_file(filepath)
 
 logger.success(f'Done! The output was saved in {filepath}.')

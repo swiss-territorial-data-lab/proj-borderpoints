@@ -9,6 +9,7 @@ import geopandas as gpd
 import pandas as pd
 
 import json
+import networkx as nx
 
 sys.path.insert(1, 'scripts')
 from functions.fct_metrics import intersection_over_union
@@ -62,7 +63,6 @@ filepath = open(os.path.join(INPUT_DIR, CATEGORY_IDS_JSON))
 categories_json = json.load(filepath)
 filepath.close()
 
-
 logger.info('Filter dataframe by score and area...')
 detections_gdf = detections_gdf[detections_gdf['score'] > SCORE].copy()
 
@@ -78,10 +78,10 @@ for scale in AREA_THRESHOLDS.keys():
     min_area, max_area = AREA_THRESHOLDS[scale]
     detections_gdf = detections_gdf[~((detections_gdf['scale'] == scale) & ((detections_gdf.area < min_area) | (detections_gdf.area > max_area)))].copy()
 
-logger.info('Find pairs of matching detections across tiles...')
+logger.info('Find pairs of matching detections across subtiles...')
 detections_gdf['original_geom'] = detections_gdf.geometry
 detections_gdf['geometry'] = detections_gdf.buffer(0.1)
-joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf).sort_values(['det_id_right', 'det_id_left'], ignore_index=True)
+joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
 
@@ -91,28 +91,20 @@ dets_one_obj_gdf = joined_detections_gdf[
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
 ].copy()
 
-logger.info('Attribute a cluster id...')
-clustered_dets = dets_one_obj_gdf.det_id_left.unique()
-detections_gdf['cluster_id'] = None
-cluster_id = 0
-overlap_clusters_dict = {}
-for det_id in clustered_dets:
-    concerned_dets = [det_id] + dets_one_obj_gdf.loc[dets_one_obj_gdf.det_id_left == det_id, 'det_id_right'].tolist()
-    cluster_id += 1
-    for det in concerned_dets:
-        current_cluster = detections_gdf.loc[detections_gdf.det_id == det, 'cluster_id'].iloc[0]
-        if not current_cluster:
-            detections_gdf.loc[detections_gdf.det_id == det, 'cluster_id'] = cluster_id
-        else:
-            # Save number of overlapping clusters
-            if not current_cluster in overlap_clusters_dict.keys():
-                overlap_clusters_dict[current_cluster] = []
-            overlap_clusters_dict[current_cluster].append(cluster_id)
+logger.info('Assign a cluster id to each group of detetections...')
+# Make a graph of the overlapping detections
+graph_dets = nx.Graph()
+for det_pair in dets_one_obj_gdf.itertuples():
+    graph_dets.add_edge(det_pair.det_id_left, det_pair.det_id_right)
 
-# Give one id only to overlapping clusters
-for actual_cluster in dict(sorted(overlap_clusters_dict.items(), reverse=True)):
-    for duplicated_cluster in set(overlap_clusters_dict[actual_cluster]):
-            detections_gdf.loc[detections_gdf.cluster_id == duplicated_cluster, 'cluster_id'] = actual_cluster
+# Attribute a cluster id to each component of the graph
+detections_gdf['cluster_id'] = None
+cluster_id = 1
+for comp in nx.connected_components(graph_dets):
+    detections_gdf.loc[detections_gdf.det_id.isin(comp), 'cluster_id'] = cluster_id
+    cluster_id += 1
+
+clustered_dets = list(graph_dets)
 
 logger.info('Remove det pair with IoU > 0.75 and not in cluster...')
 intersect_detections_gdf  = joined_detections_gdf[joined_detections_gdf.image_right == joined_detections_gdf.image_left].copy()
@@ -120,19 +112,18 @@ intersect_detections_gdf['iou'] = [
     intersection_over_union(geom1, geom2) for geom1, geom2 in zip(intersect_detections_gdf.geometry, intersect_detections_gdf.original_geom_right)
 ]
 duplicated_detections_gdf = intersect_detections_gdf[intersect_detections_gdf.iou > 0.75].copy()
-
 duplicated_det_ids = []
 if not duplicated_detections_gdf.empty:
     for duplicate in duplicated_detections_gdf.itertuples():
-        id_highest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
+        id_lowest_score = duplicate.det_id_right if duplicate.score_right < duplicate.score_left else duplicate.det_id_left
         if (duplicate.det_id_right in clustered_dets) & (duplicate.det_id_left in clustered_dets):
-            det_to_remove = id_highest_score
+            det_to_remove = id_lowest_score
         elif duplicate.det_id_right in clustered_dets:
             det_to_remove = duplicate.det_id_left
         elif duplicate.det_id_left in clustered_dets:
             det_to_remove = duplicate.det_id_right
         else:
-            det_to_remove = id_highest_score
+            det_to_remove = id_lowest_score
         duplicated_det_ids.append(det_to_remove)
 
 logger.info(f'{len(duplicated_det_ids)} detections will be removed because they are duplicates of a same object.')

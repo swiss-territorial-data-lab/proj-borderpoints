@@ -26,7 +26,8 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
     Returns:
         tuple: A tuple containing the inferred points GeoDataFrame and a list of written files.
     """
-    written_files =[] 
+
+    written_files = [] 
 
     os.makedirs(output_dir, exist_ok=True)
     
@@ -41,7 +42,7 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
         tiles_gdf = gpd.read_file(tiles)
     elif isinstance(tiles, gpd.GeoDataFrame):
         tiles_gdf = tiles.copy()
-
+    
     logger.info('Get point coordinates...')
     if (survey_poly_gdf.geom_type == 'Polygon').all():
         pts_list = [
@@ -63,7 +64,7 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
     pt_ids_list = [
         str(i) + '_' + str(pt.coords[0][0])[2:].replace('.', '')[:5] + str(pt.coords[0][1])[2:].replace('.', '')[:5]
         for i, pt in zip(range(len(pts_list)), pts_list)
-    ]
+        ]
 
     logger.info('Put infered points in a GeoDataFrame...')
     pts_gdf = gpd.GeoDataFrame({'pt_id': pt_ids_list, 'approx_coor': coor_list, 'geometry': pts_list}, crs='EPSG:2056')

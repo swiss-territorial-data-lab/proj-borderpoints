@@ -38,7 +38,7 @@ def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
     # Get a weighted score made of the distance and the initial score
     multi_pts_df.loc[:, 'geometry_det'] = multi_pts_df.geometry_det.centroid
     multi_pts_df['distance'] = multi_pts_df.geometry_pt.distance(multi_pts_df.geometry_det)
-    multi_pts_df['weighted_score'] = multi_pts_df['distance']/multi_pts_df['score']
+    multi_pts_df['weighted_score'] = multi_pts_df['distance'] / multi_pts_df['score']
 
     # Keep best match in the gdf in regards to the distance and score
     multi_pts_df.sort_values('weighted_score', ascending=True, inplace=True)

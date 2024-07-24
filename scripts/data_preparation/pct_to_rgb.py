@@ -5,7 +5,6 @@ from time import time
 from tqdm import tqdm
 
 import numpy as np
-import pandas as pd
 import rasterio as rio
 from glob import glob
 from rasterio.crs import CRS
@@ -42,13 +41,16 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
     tile_nbr = 0
     existing_tiles = glob(os.path.join(output_dir, '*.tif'))
     for tile_path in tqdm(tiles_list, desc='Convert images from colormap to RGB'):
-        tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
+        if tile_suffix in tile_path:
+            tile_name = os.path.basename(tile_path).rstrip(tile_suffix)
+        else:
+            tile_name = os.path.basename(tile_path).rstrip('.tif')
 
         end_out_path = f"{tile_name[:6]}_{tile_name[6:]}.tif"
         if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
         
-        while any(name.startswith(str(tile_nbr)) for name in existing_tiles):
+        while any(os.path.basename(name).startswith(str(tile_nbr) + '_') for name in existing_tiles):
             tile_nbr += 1
         out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         

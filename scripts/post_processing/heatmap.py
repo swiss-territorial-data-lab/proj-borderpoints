@@ -10,7 +10,7 @@ from folium import Map, plugins
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger, get_config
-from functions.fct_rasters import get_bbox_origin, get_easting_northing, grid_over_tile
+from functions.fct_rasters import get_bbox_origin, get_east_north, grid_over_tile
 
 logger = format_logger(logger)
 
@@ -55,7 +55,7 @@ total_grid_gdf = gpd.GeoDataFrame()
 for zone in tqdm(fp_points_with_zones_gdf.zone.unique(), desc='Create a grid to calculate the FP density'):
     zone_geom = cs_zones_gdf.loc[cs_zones_gdf.zone==zone, 'geometry'].iloc[0]
     tile_origin = get_bbox_origin(zone_geom)
-    tile_n_e = get_easting_northing(zone_geom)
+    tile_n_e = get_east_north(zone_geom)
     tile_size = (
         ((tile_n_e[0] - tile_origin[0])/(GRID_SIZE*PIXEL_SIZE), 
          (tile_n_e[1] - tile_origin[1])/(GRID_SIZE*PIXEL_SIZE))

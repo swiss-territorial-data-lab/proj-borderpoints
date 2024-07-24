@@ -44,7 +44,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../model/model_0004749.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../model/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
@@ -61,7 +61,7 @@ post_processing.py:
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
-  score: 0.75
+  score: 0.55
   keep_datasets: False
 
 
