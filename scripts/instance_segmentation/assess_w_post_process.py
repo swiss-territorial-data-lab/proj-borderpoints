@@ -11,6 +11,7 @@ import pandas as pd
 import json
 from sklearn.metrics import confusion_matrix
 
+sys.path.insert(1, 'scripts')
 import functions.fct_metrics as metrics
 import functions.fct_misc as misc
 

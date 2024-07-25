@@ -50,7 +50,7 @@ train_model.py:
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
-  detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
 
@@ -63,7 +63,7 @@ make_detections.py:
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
-  detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     pth_file: ./logs/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
@@ -102,7 +102,7 @@ post_processing.py:
   keep_datasets: True
 
 
-assess_by_map.py:
+assess_w_post_process.py:
   working_dir: outputs/instance_segmentation
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
@@ -114,21 +114,21 @@ assess_by_map.py:
 
 
 point_matching.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
-  output_dir: post_processing
-  detections: post_processing/dst_detected_points.gpkg
+  working_dir: outputs
+  output_dir: instance_segmentation/post_processing
+  detections: instance_segmentation/post_processing/dst_detected_points.gpkg
   border_points: labels_symbol_matching/GT/ground_truth_labels.gpkg
 
 
 check_w_land_cover.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: .
   output_dir: outputs/instance_segmentation/post_processing
   matched_points: outputs/instance_segmentation/post_processing/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
 
 assess_point_classif.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
+  working_dir: outputs/instance_segmentation
   output_dir: post_processing
-  classified_points: post_processing/matched_points_2.gpkg
+  classified_points: post_processing/final_matched_points.gpkg
   split_aoi_tiles: object_detector/split_aoi_tiles.geojson

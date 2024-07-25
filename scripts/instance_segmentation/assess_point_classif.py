@@ -2,12 +2,12 @@ import os
 import sys
 from loguru import logger
 from time import time
-from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report, f1_score
 
+sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)

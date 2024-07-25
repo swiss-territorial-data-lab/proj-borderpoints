@@ -13,7 +13,7 @@ import networkx as nx
 
 sys.path.insert(1, 'scripts')
 from functions.fct_metrics import intersection_over_union
-from functions.fct_misc import format_logger, get_config
+from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
 
@@ -23,7 +23,15 @@ logger = format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-cfg = get_config(os.path.basename(__file__), desc="The script performs the post-processing on the detections of border points.")
+# Argument and parameter specification
+parser = ArgumentParser(description="The script performs the post-processing of the border point detection.")
+parser.add_argument('config_file', type=str, help='Framework configuration file')
+args = parser.parse_args()
+
+logger.info(f"Using {args.config_file} as config file.")
+
+with open(args.config_file) as fp:
+    cfg = load(fp, Loader=FullLoader)[os.path.basename(__file__)]
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
@@ -84,8 +92,7 @@ detections_gdf['geometry'] = detections_gdf.buffer(0.1)
 joined_detections_gdf = gpd.sjoin(detections_gdf, detections_gdf)
 # Remove duplicates of the same tuple and self-intersections
 joined_detections_gdf = joined_detections_gdf[joined_detections_gdf.det_id_left > joined_detections_gdf.det_id_right].copy()
-
-# Keep pairs of overlapping detections for the same class but on different subtiles
+# Keep pairs about the same object (category) on different images
 dets_one_obj_gdf = joined_detections_gdf[
     (joined_detections_gdf.image_right != joined_detections_gdf.image_left)
     & (joined_detections_gdf.det_class_right == joined_detections_gdf.det_class_left)
@@ -136,12 +143,12 @@ clustered_dets_gdf = detections_gdf[~detections_gdf.cluster_id.isnull()].copy()
 clustered_dets_gdf.loc[:, 'geometry'] = clustered_dets_gdf.buffer(0.1)
 if KEEP_DATASETS:
     dissolved_dets_gdf = clustered_dets_gdf[['dataset', 'score', 'det_id', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
-        ['cluster_id', 'dataset'], {'score': 'max', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max', 'det_id': 'first'}, as_index=False
+        ['cluster_id', 'dataset'], {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max', 'det_id': 'first'}, as_index=False
     )
     dissolved_dets_gdf = dissolved_dets_gdf.assign(geometry=dissolved_dets_gdf.buffer(-0.1))
 else:
     dissolved_dets_gdf = clustered_dets_gdf[['score', 'cluster_id', 'det_class', 'initial_tile', 'scale', 'geometry']].dissolve(
-        'cluster_id', {'score': 'max', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
+        'cluster_id', {'score': 'median', 'det_class': 'first', 'initial_tile': 'first', 'scale': 'max'}, as_index=False
     )
     dissolved_dets_gdf = dissolved_dets_gdf.assign(det_id=dissolved_dets_gdf.cluster_id + detections_gdf.det_id.max(), geometry=dissolved_dets_gdf.buffer(-0.1))
 

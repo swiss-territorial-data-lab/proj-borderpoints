@@ -72,7 +72,7 @@ The post-processing can be performed and the detections assessed again with the 
 
 ```
 python scripts/post_processing/post_processing.py config/config_w_gt.yaml
-python scripts/instance_segmentation/assess_by_tile.py config/config_w_gt.yaml
+python scripts/instance_segmentation/assess_w_post_process.py config/config_w_gt.yaml
 ```
 
 In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test datasets.
