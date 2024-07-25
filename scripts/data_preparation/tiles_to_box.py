@@ -56,7 +56,7 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
 
         tilepath = bbox.tilepath
         (min_x, min_y) = rasters.get_bbox_origin(bbox.geometry)
-        tile_nbr = int(tilepath.split('_')[0])
+        tile_nbr = int(os.path.basename(tilepath).split('_')[0])
         new_name = f"{tile_nbr}_{round(min_x)}_{round(min_y)}.tif"
         output_path = os.path.join(output_dir, new_name)
 

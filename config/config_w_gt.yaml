@@ -1,15 +1,15 @@
 prepare_data.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
   output_dir:
-    vectors: outputs/formatted_labels
-    clipped_tiles: outputs/clipped_tiles
+    vectors: outputs/instance_segmentation/formatted_labels
+    clipped_tiles: outputs/instance_segmentation/clipped_tiles
   initial_image_dir: inputs/plans
-  tile_dir: outputs/rgb_images
+  tile_dir: outputs/instance_segmentation/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
   bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
   plan_scales: inputs/plan_scales.xlsx
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
+  # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
   convert_images: True
 
@@ -18,7 +18,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: outputs
+  working_directory: outputs/instance_segmentation
   datasets:
     aoi_tiles: formatted_labels/subtiles.gpkg
     ground_truth_labels: formatted_labels/ground_truth_labels.gpkg
@@ -43,7 +43,7 @@ generate_tilesets.py:
 
 train_model.py:
   debug_mode: false
-  working_directory: outputs/object_detector
+  working_directory: outputs/instance_segmentation/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_training_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -56,7 +56,7 @@ train_model.py:
 
 
 make_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: outputs/instance_segmentation/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -74,7 +74,7 @@ make_detections.py:
 
 
 assess_detections.py:
-  working_directory: outputs/object_detector
+  working_directory: outputs/instance_segmentation/object_detector
   output_folder: .
   datasets:
     ground_truth_labels: ../formatted_labels/ground_truth_labels.gpkg
@@ -88,7 +88,7 @@ assess_detections.py:
 
 
 post_processing.py:
-  working_dir: outputs
+  working_dir: outputs/instance_segmentation
   input_dir: object_detector
   output_dir: post_processing
   detections:
@@ -103,7 +103,7 @@ post_processing.py:
 
 
 assess_by_map.py:
-  working_dir: outputs
+  working_dir: outputs/instance_segmentation
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
   ground_truth: formatted_labels/ground_truth_labels.gpkg
@@ -114,21 +114,21 @@ assess_by_map.py:
 
 
 point_matching.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data\outputs
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
   output_dir: post_processing
   detections: post_processing/dst_detected_points.gpkg
   border_points: labels_symbol_matching/GT/ground_truth_labels.gpkg
 
 
 check_w_land_cover.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
-  output_dir: outputs/post_processing
-  matched_points: outputs/post_processing/matched_points.gpkg
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  output_dir: outputs/instance_segmentation/post_processing
+  matched_points: outputs/instance_segmentation/post_processing/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
 
 assess_point_classif.py:
-  working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data\outputs
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs
   output_dir: post_processing
   classified_points: post_processing/matched_points_2.gpkg
   split_aoi_tiles: object_detector/split_aoi_tiles.geojson

@@ -6,7 +6,7 @@ Classification of the border points from the BDMO2 based on the cadastral map of
 
 The installation is performed from this folder with the following steps:
 
-* Make a hard link with the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector) that you have cloned elsewhere,
+* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
 * Get into the `object-detector` folder,
 * Switch to my branch,
 * The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
@@ -61,7 +61,7 @@ It produces a csv file with the info about the maximum size of border points at 
 **Dataset with GT**
 
 ```
-python scripts/prepare_data.py config/config_w_gt.yaml
+python scripts/instance_segmentation/prepare_data.py config/config_w_gt.yaml
 stdl-objdet generate_tilesets config/config_w_gt.yaml
 stdl-objdet train_model config/config_w_gt.yaml
 stdl-objdet make_detections config/config_w_gt.yaml
@@ -72,7 +72,7 @@ The post-processing can be performed and the detections assessed again with the 
 
 ```
 python scripts/post_processing/post_processing.py config/config_w_gt.yaml
-python scripts/assess_by_tile.py config/config_w_gt.yaml
+python scripts/instance_segmentation/assess_by_tile.py config/config_w_gt.yaml
 ```
 
 In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test datasets.
@@ -87,7 +87,7 @@ python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
 **Whole tiles**
 
 ```
-python scripts/prepare_whole_tiles.py config/config_whole_tiles.yaml
+python scripts/instance_segmentation/prepare_whole_tiles.py config/config_whole_tiles.yaml
 stdl-objdet generate_tilesets config/config_whole_tiles.yaml
 stdl-objdet make_detections config/config_whole_tiles.yaml
 python scripts/post_processing/post_processing.py config/config_whole_tiles.yaml

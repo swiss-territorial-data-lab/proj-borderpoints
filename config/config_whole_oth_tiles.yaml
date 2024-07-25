@@ -2,11 +2,11 @@
 prepare_whole_tiles.py:
   working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: 
-    vectors: outputs/gpkg_whole_oth_tiles
+    vectors: outputs/instance_segmentation/gpkg_whole_oth_tiles
   initial_image_dir: inputs/other_plans/subset
-  tile_dir: outputs/rgb_oth_images
+  tile_dir: outputs/instance_segmentation/rgb_oth_images
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
-  # overlap_info: outputs/formatted_labels/max_point_size.csv
+  # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
   convert_images: True
 
 
@@ -14,7 +14,7 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
-  working_directory: outputs
+  working_directory: outputs/instance_segmentation
   datasets:
     aoi_tiles: gpkg_whole_oth_tiles/subtiles.gpkg
     image_source:
@@ -37,7 +37,7 @@ generate_tilesets.py:
 
 
 make_detections.py:
-  working_directory: outputs/detections_oth_maps
+  working_directory: outputs/instance_segmentation/detections_oth_maps
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -53,7 +53,7 @@ make_detections.py:
 
 
 post_processing.py:
-  working_dir: outputs
+  working_dir: outputs/instance_segmentation
   input_dir: detections_oth_maps
   output_dir: detections_oth_maps
   subtiles: gpkg_whole_oth_tiles/subtiles.gpkg
@@ -66,7 +66,7 @@ post_processing.py:
 
 
 point_matching.py:
-  working_dir: outputs
+  working_dir: outputs/instance_segmentation
   output_dir: detections_oth_maps
   detections: detections_oth_maps/detected_points.gpkg
   border_points: gpkg_whole_oth_tiles/MO_points.gpkg
@@ -74,13 +74,13 @@ point_matching.py:
 
 check_w_land_cover.py:
   working_dir: .
-  output_dir: outputs/detections_oth_maps
-  matched_points: outputs/detections_oth_maps/matched_points.gpkg
+  output_dir: outputs/instance_segmentation/detections_oth_maps
+  matched_points: outputs/instance_segmentation/detections_oth_maps/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
 
 heatmap.py:
   working_dir: .
-  output_dir: outputs/detections_oth_maps/heatmap
-  matched_points: outputs/detections_oth_maps/matched_points_2.gpkg
+  output_dir: outputs/instance_segmentation/detections_oth_maps/heatmap
+  matched_points: outputs/instance_segmentation/detections_oth_maps/matched_points_2.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg
