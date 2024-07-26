@@ -20,7 +20,7 @@ logger = format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-cfg = get_config(os.path.basename, desc="The script creates a heatmap of the false positive points.")
+cfg = get_config(os.path.basename(__file__), desc="The script creates a heatmap of the false positive points.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
