@@ -31,7 +31,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=98, ppc=18, cpb=5, orientations=4, variance_threshold=0.0037, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
+def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold=0.0093, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -83,8 +83,6 @@ def main(tiles, image_size=98, ppc=18, cpb=5, orientations=4, variance_threshold
         with open(filter_path, 'rb') as f:
             variance_filter = load(f)
         filtered_var_features = variance_filter.transform(hog_features_df.to_numpy())
-        # training_features = pd.read_csv(filter_path)
-        # filtered_hog_features_df = hog_features_df[training_features.columns].copy()
         
     filtered_hog_features_df = pd.DataFrame(filtered_var_features, index=hog_features_df.index)
     feature_number = filtered_hog_features_df.shape[1]
@@ -106,7 +104,6 @@ def main(tiles, image_size=98, ppc=18, cpb=5, orientations=4, variance_threshold
         written_files.append(filepath)
 
     return filtered_hog_features_df, written_files
-
     
 
 if __name__ == '__main__':
@@ -123,6 +120,10 @@ if __name__ == '__main__':
 
     os.chdir(WORKING_DIR)
 
-    _ = written_files = main(TILE_DIR, save_extra=True, output_dir=OUTPUT_DIR)
+    _, written_files = main(TILE_DIR, save_extra=True, output_dir=OUTPUT_DIR)
 
-    logger.success(f'All done! Time elapsed: {round(time() - tic, 1)} s')
+    logger.success('Done! The following files were written:')
+    for written_file in written_files:
+        logger.success(written_file)
+
+    logger.info(f'Elapsd time: {round(time() - tic, 1)} s')

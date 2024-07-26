@@ -13,6 +13,7 @@ from joblib import load
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 import hog, color_treatment
+from constants import MODEL
 
 logger = misc.format_logger(logger)
 
@@ -30,8 +31,7 @@ TILE_DIR = cfg['tile_dir']
 
 IMAGE_INFO_GPKG = cfg['image_info_gpkg']
 VARIANCE_FILTER = cfg['variance_filter']
-SCALER = cfg['scaler']
-MODEL = cfg['model']
+MODEL_DIR = cfg['model_dir']
 
 os.chdir(WORKING_DIR)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -61,10 +61,11 @@ images_w_stats_gdf, id_images_wo_info = misc.format_color_info(image_info_gdf[['
 logger.warning('Images without color info will be classified as undetermined.')
 
 logger.info('Merge and scale data...')
+model_dir = MODEL_DIR if MODEL_DIR.endswith(MODEL) or MODEL_DIR.endswith(MODEL + '/') else os.path.join(MODEL_DIR, MODEL)
 # TODO: faire un pipeline et sauver celui-ci uniquement
-with open(SCALER, 'rb') as f:
+with open(os.path.join(model_dir, f'scaler_{MODEL}.pkl'), 'rb') as f:
     scaler = load(f)
-with open(MODEL, 'rb') as f:
+with open(os.path.join(model_dir, f'model_{MODEL}.pkl'), 'rb') as f:
     model = load(f)
 
 features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
@@ -93,7 +94,7 @@ determined_pts_gdf = pts_gdf[pts_gdf['class'] != 'undetermined'].copy()
 category_count_df = determined_pts_gdf.groupby(['pt_id', 'class'], as_index=False).size()
 
 multiple_classes_ids = category_count_df.loc[category_count_df.duplicated('pt_id'), 'pt_id'].tolist()
-pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), 'class'] = 'undetermined'
+pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), ['class', 'method']] = ('undetermined', 'default, because multiple classes were detected')
 logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
 
 pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
