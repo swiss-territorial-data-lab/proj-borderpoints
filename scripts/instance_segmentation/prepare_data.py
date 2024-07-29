@@ -54,7 +54,7 @@ tiles_gdf, _, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delim
 written_files.extend(tmp_written_files)
 
 output_path_tiles = os.path.join(OUTPUT_DIR_VECT, 'tiles.gpkg')
-if OVERWRITE or (not os.path.exists(output_path_tiles)):
+if len(tiles_gdf['scale'].unique()) == 1:
     logger.info('Correct scale info on tiles...')
     tile_columns = tiles_gdf.columns
     tiles_gdf.drop(columns='scale', inplace=True)
