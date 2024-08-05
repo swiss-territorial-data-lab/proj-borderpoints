@@ -207,13 +207,13 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
 
 def get_subtiles(nodata_gdf, tile_row):
     tile_infos = {
-            'tile_size': tuple(map(int, tile_row.dimension.strip('()').split(', '))), 
-            'tile_origin': tuple(map(float, tile_row.origin.strip('()').split(', '))), 
-            'pixel_size_x': tile_row.pixel_size_x,
-            'pixel_size_y': tile_row.pixel_size_y,
-            'max_dx': tile_row.max_dx,
-            'max_dy': tile_row.max_dy
-        }
+        'tile_size': tuple(map(int, tile_row.dimension.strip('()').split(', '))), 
+        'tile_origin': tuple(map(float, tile_row.origin.strip('()').split(', '))), 
+        'pixel_size_x': tile_row.pixel_size_x,
+        'pixel_size_y': tile_row.pixel_size_y,
+        'max_dx': tile_row.max_dx,
+        'max_dy': tile_row.max_dy
+    }
     nodata_subset_gdf = nodata_gdf[nodata_gdf.tile_name==tile_row.name].copy()
 
     # Make a large tiling grid to cover the image
