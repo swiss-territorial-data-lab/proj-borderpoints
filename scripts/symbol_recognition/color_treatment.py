@@ -2,7 +2,7 @@ import os
 import sys
 from glob import glob
 from loguru import logger
-from time import time
+from time import time, sleep
 from tqdm import tqdm
 
 import geopandas as gpd
@@ -24,6 +24,9 @@ from constants import OVERWRITE
 logger = misc.format_logger(logger)
 
 # ----- Define functions -----
+
+def wait():
+    sleep(0.1)
 
 def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_correspondance, stats_list, output_path):
         
@@ -116,14 +119,13 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     stats_values_list = []
     param_dict = {'meta_data': meta_data, 'binary_list': binary_list_final, 'images_gdf': images_gdf, 
                   'band_correspondance': BAND_CORRESPONDENCE, 'stats_list': STAT_LIST, 'output_path': filtered_tile_dir}
+    image_data_keys = list(image_data.keys())
+    del image_data
     
-    stats_values_list = Parallel(n_jobs=1, backend='loky')(
+    stats_values_list = Parallel(n_jobs=5, backend='threading')(
         delayed(get_stats_under_mask)(name, **param_dict)
-        for name in tqdm(image_data.keys(), desc="Get statistics for each image")
+        for name in tqdm(image_data_keys, desc="Get statistics for each image")
     )
-
-    # for name, image in tqdm(image_data.items(), desc="Get statistics for each mask"):
-    #     stats_values_list.extend(get_stats_under_mask(name, meta_data, binary_list_final, images_gdf, BAND_CORRESPONDENCE, STAT_LIST, filtered_tile_dir))
 
     # Transform list of dict in one dataframe per band
     stats_df_dict = {band: pd.DataFrame() for band in BAND_CORRESPONDENCE.keys()}

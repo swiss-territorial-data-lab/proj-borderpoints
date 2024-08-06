@@ -31,7 +31,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold=0.0093, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
+def main(tiles, image_size=92, ppc=21, cpb=2, orientations=4, variance_threshold=0.0096, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -44,6 +44,10 @@ def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold
         for tile_path in tqdm(tile_list, 'Read data'):
             with rio.open(tile_path) as src:
                 image_data[os.path.basename(tile_path)] = src.read().transpose(1, 2, 0)
+
+    if len(image_data.values()) == 0:
+        logger.critical('No image found')
+        sys.exit(1)
 
     logger.info('Format images...')
     data_gray = {key: color.rgb2gray(i) for key, i in image_data.items()}

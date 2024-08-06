@@ -48,8 +48,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
 
     logger.info('Prepare data...')
-    data_trn, data_tst, label_trn, label_tst = train_test_split(
-        features_gdf[features_list].to_numpy(), features_gdf.CATEGORY, test_size=0.2, random_state=42
+    data_trn, data_tst, labels_trn, labels_tst, _, geometries_tst, _, image_names_tst = train_test_split(
+        features_gdf[features_list].to_numpy(), features_gdf.CATEGORY, features_gdf.geometry, features_gdf.image_name, test_size=0.2, random_state=42
     )
 
     # Scale data 
@@ -79,11 +79,11 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='f1_weighted')
 
     logger.info('Train model with CV...')
-    clf.fit(data_trn_scaled, label_trn)
+    clf.fit(data_trn_scaled, labels_trn)
 
     logger.info('Test model...')
     pred_tst = clf.predict(data_tst_scaled)
-    metric = f1_score(label_tst, pred_tst, average='weighted')
+    metric = f1_score(labels_tst, pred_tst, average='weighted')
     logger.success(f'Weighted f1 score: {round(metric, 2)}')
 
     if save_extra:
@@ -101,14 +101,21 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         written_files.append(filepath)
 
         logger.info('Save confusion matrix and classification report...')
-        confusion_matrix_df = pd.DataFrame(confusion_matrix(label_tst, pred_tst), columns=clf.classes_, index=clf.classes_)
+        confusion_matrix_df = pd.DataFrame(confusion_matrix(labels_tst, pred_tst), columns=clf.classes_, index=clf.classes_)
         filepath = os.path.join(output_dir_model, 'confusion_matrix.csv')
         confusion_matrix_df.to_csv(filepath)
         written_files.append(filepath)
 
-        cl_report = classification_report(label_tst, pred_tst, output_dict=True)
+        cl_report = classification_report(labels_tst, pred_tst, output_dict=True)
         filepath = os.path.join(output_dir_model, 'classification_report.csv')
         pd.DataFrame(cl_report).transpose().to_csv(filepath)
+        written_files.append(filepath)
+
+        logger.info('Save a geodataframe with the test features...')
+        classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst}, geometry=geometries_tst)
+        classified_pts_tst_gdf['correct'] = [True if row.labels == row.preds else False for row in classified_pts_tst_gdf.itertuples()]
+        filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
+        classified_pts_tst_gdf.to_file(filepath)
         written_files.append(filepath)
 
     return metric, written_files

@@ -34,7 +34,8 @@ VARIANCE_FILTER = cfg['variance_filter']
 MODEL_DIR = cfg['model_dir']
 
 os.chdir(WORKING_DIR)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+output_dir = OUTPUT_DIR if OUTPUT_DIR.endswith(MODEL) or OUTPUT_DIR.endswith(MODEL + '/') else os.path.join(OUTPUT_DIR, MODEL)
+os.makedirs(output_dir, exist_ok=True)
 written_files = []
 
 # ----- Main -----
@@ -52,11 +53,11 @@ for tile_path in tqdm(tile_list, desc='Read images'):
         meta_data[tile_name] = src.meta
 
 logger.info('Extract HOG features...')
-hog_features_df, written_files_hog = hog.main(image_data, fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=OUTPUT_DIR)
+hog_features_df, written_files_hog = hog.main(image_data, fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir)
 hog_features_df = misc.format_hog_info(hog_features_df)
 
 logger.info('Extract color features...')
-color_features_df, written_files_color = color_treatment.main((image_data, meta_data), output_dir=OUTPUT_DIR)
+color_features_df, written_files_color = color_treatment.main((image_data, meta_data), output_dir=output_dir)
 images_w_stats_gdf, id_images_wo_info = misc.format_color_info(image_info_gdf[['image_name', 'geometry']], color_features_df)
 logger.warning('Images without color info will be classified as undetermined.')
 
@@ -100,7 +101,7 @@ logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined 
 pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
 
 logger.info('Save results...')
-filepath = os.path.join(OUTPUT_DIR, 'classified_points.gpkg')
+filepath = os.path.join(output_dir, 'classified_points.gpkg')
 pts_gdf.to_file(filepath)
 written_files.append(filepath)
 
