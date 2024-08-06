@@ -6,6 +6,7 @@ from time import time
 from tqdm import tqdm
 
 import geopandas as gpd
+import numpy as np
 import rasterio as rio
 
 from joblib import load
@@ -86,17 +87,43 @@ pts_gdf['class'] = None
 pts_gdf.loc[~pts_gdf['image_name'].isin(id_images_wo_info), 'class'] = pred_list
 pts_gdf.loc[pts_gdf['image_name'].isin(id_images_wo_info), ['class', 'method']] = ('undetermined', 'default, because no color info')
 
+if MODEL == 'RF':
+    pred_scores_list = model.predict_proba(scaled_features_arr)
+    pts_gdf['score'] = np.NaN
+    pts_gdf.loc[~pts_gdf['image_name'].isin(id_images_wo_info), 'score'] = pred_scores_list.max(axis=1).round(3)
+
 if pts_gdf['class'].isna().any():
     logger.critical('Some points were not classified!')
     sys.exit(1)
 
-logger.info('Deal with points present on several maps with different classes other than "undetermined"...')
+logger.info('Deal with points present on several maps...')
 determined_pts_gdf = pts_gdf[pts_gdf['class'] != 'undetermined'].copy()
 category_count_df = determined_pts_gdf.groupby(['pt_id', 'class'], as_index=False).size()
-
 multiple_classes_ids = category_count_df.loc[category_count_df.duplicated('pt_id'), 'pt_id'].tolist()
-pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), ['class', 'method']] = ('undetermined', 'default, because multiple classes were detected')
-logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
+
+if MODEL == 'SVM':
+    # Set points with different detected classes that are not "undetermined" to "undetermined"
+    pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), ['class', 'method']] = ('undetermined', 'default, because multiple classes were detected')
+    logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
+
+elif MODEL == 'RF':
+    # Determine best class based on score
+    determined_pts_gdf.sort_values(by='score', ascending=False, inplace=True)
+    determined_pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
+    best_score_duo = determined_pts_gdf.combo_id.unique()
+
+    len_before = len(pts_gdf)
+    pts_gdf = pts_gdf[~pts_gdf.id.isin(multiple_classes_ids) | pts_gdf.combo_id.isin(best_score_duo)].copy()
+    logger.info(f'{len_before - len(pts_gdf)} undetermined points were removed because they had a known class on some other maps.')
+
+    # Sort by score for the next duplicate drop
+    pts_gdf.sort_values(by='score', ascending=False, inplace=True)
+
+# Keep only the points with a determined class in case of several apparitions
+determined_pts_id = pts_gdf.loc[pts_gdf['class'] != 'undetermined', 'pt_id'].unique().tolist()
+len_before = len(pts_gdf)
+pts_gdf = pts_gdf[~pts_gdf['pt_id'].isin(determined_pts_id) | (pts_gdf['class'] != 'undetermined')].copy()
+logger.info(f'{len_before - len(pts_gdf)} undetermined points were removed because they had a known class on some other maps.')
 
 pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
 

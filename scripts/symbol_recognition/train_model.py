@@ -112,7 +112,15 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         written_files.append(filepath)
 
         logger.info('Save a geodataframe with the test features...')
-        classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst}, geometry=geometries_tst)
+        if MODEL == 'RF':
+            proba_pred_tst = clf.predict_proba(data_tst_scaled)
+            classified_pts_tst_gdf = gpd.GeoDataFrame(
+                {'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 
+                geometry=geometries_tst
+            )
+        else:
+            classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst}, geometry=geometries_tst)
+
         classified_pts_tst_gdf['correct'] = [True if row.labels == row.preds else False for row in classified_pts_tst_gdf.itertuples()]
         filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
         classified_pts_tst_gdf.to_file(filepath)
