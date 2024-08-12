@@ -113,8 +113,8 @@ elif MODEL == 'RF':
     best_score_duo = determined_pts_gdf.combo_id.unique()
 
     len_before = len(pts_gdf)
-    pts_gdf = pts_gdf[~pts_gdf.id.isin(multiple_classes_ids) | pts_gdf.combo_id.isin(best_score_duo)].copy()
-    logger.info(f'{len_before - len(pts_gdf)} undetermined points were removed because they had a known class on some other maps.')
+    pts_gdf = pts_gdf[~pts_gdf.pt_id.isin(multiple_classes_ids) | pts_gdf.combo_id.isin(best_score_duo)].copy()
+    logger.info(f'{len_before - len(pts_gdf)} points were classified based on score because several classes were detected.')
 
     # Sort by score for the next duplicate drop
     pts_gdf.sort_values(by='score', ascending=False, inplace=True)

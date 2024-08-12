@@ -6,13 +6,18 @@ from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
+from numpy import std
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import StandardScaler
 
+import plotly.graph_objects as go
 from joblib import dump
+import matplotlib.pyplot as plt
+
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
@@ -83,8 +88,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
     logger.info('Test model...')
     pred_tst = clf.predict(data_tst_scaled)
-    metric = f1_score(labels_tst, pred_tst, average='weighted')
-    logger.success(f'Weighted f1 score: {round(metric, 2)}')
+    metric = balanced_accuracy_score(labels_tst, pred_tst)
+    logger.success(f'balanced accuracy: {round(metric, 2)}')
 
     if save_extra:
 
@@ -125,6 +130,146 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
         classified_pts_tst_gdf.to_file(filepath)
         written_files.append(filepath)
+
+        if MODEL == 'RF':
+            thresholds_bins = [i/100 for i in range(0, 100, 5)]
+            labels_list = classified_pts_tst_gdf.labels.sort_values().unique().tolist()
+            weights_dict = {
+                gt_class: classified_pts_tst_gdf[classified_pts_tst_gdf.labels == gt_class].shape[0]/classified_pts_tst_gdf.shape[0] 
+                for gt_class in labels_list
+            }
+            classified_pts_tst_gdf['weight'] = classified_pts_tst_gdf.labels.map(weights_dict)
+
+            logger.info('Get the accuracy at each score...')
+            metric_dict = {'balanced accuracy': [], 'weighted accuracy': [], 'raw accuracy': [], 'dropped_fraction': []}
+            for threshold in thresholds_bins:
+                preds_above_score_gdf = classified_pts_tst_gdf[classified_pts_tst_gdf.score >= threshold].copy()
+                if preds_above_score_gdf.empty:
+                    continue
+                
+                metric_dict['dropped_fraction'].append(1 - preds_above_score_gdf.shape[0]/classified_pts_tst_gdf.shape[0])
+
+                # cf. https://scikit-learn.org/stable/modules/generated/sklearn.metrics.balanced_accuracy_score.html
+                # It is defined as the average of recall obtained on each class.
+                metric_dict['balanced accuracy'].append(balanced_accuracy_score(preds_above_score_gdf.labels, preds_above_score_gdf.preds))
+                # cf. https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html
+                # It computes subset accuracy: the set of labels predicted for a sample (y_pred) must exactly match the corresponding set of labels in y_true.
+                metric_dict['weighted accuracy'].append(accuracy_score(preds_above_score_gdf.labels, preds_above_score_gdf.preds, sample_weight=preds_above_score_gdf.weight))
+                metric_dict['raw accuracy'].append(accuracy_score(preds_above_score_gdf.labels, preds_above_score_gdf.preds))
+
+
+            # Make figure
+            fig=go.Figure()
+            for metric in metric_dict.keys():
+                fig.add_trace(
+                    go.Scatter(
+                        x=thresholds_bins,
+                        y=metric_dict[metric],
+                        mode='lines',
+                        name=metric
+                    )
+                )
+
+            fig.update_layout(
+                xaxis_title="confidance threshold", yaxis_title="metric",
+                title="metrics for each lower threshold on the confidence score"
+            )
+
+            file_to_write = os.path.join(output_dir_model, f'metrics_per_threshold.html')
+            fig.write_html(file_to_write)
+            written_files.append(file_to_write)
+
+            logger.info('Calculate the bin accuracy to estimate the calibration...')
+            accuracy_tables=[]
+
+            for gt_class in labels_list + ['global']:
+                if gt_class == 'global':
+                    determined_types_gdf = classified_pts_tst_gdf.copy()
+                else:
+                    determined_types_gdf = classified_pts_tst_gdf[classified_pts_tst_gdf.labels==gt_class].copy()
+
+
+                bin_values=[]
+                threshold_values=[]
+                for threshold in thresholds_bins:
+                    preds_in_bin = determined_types_gdf[
+                                                (determined_types_gdf.score > threshold-0.5)
+                                                & (determined_types_gdf.score <= threshold) 
+                                                ].copy()
+
+                    if not preds_in_bin.empty:
+                        if gt_class == 'global':
+                            bin_values.append(preds_in_bin[preds_in_bin.preds == preds_in_bin.labels].shape[0]/preds_in_bin.shape[0])
+                        else:
+                            bin_values.append(preds_in_bin[preds_in_bin.preds == gt_class].shape[0]/preds_in_bin.shape[0])
+                        threshold_values.append(threshold)
+
+                df = pd.DataFrame({'threshold': threshold_values, 'accuracy': bin_values})
+                df['name'] = gt_class
+                accuracy_tables.append(df)
+
+            # Make the calibration curve
+            fig=go.Figure()
+
+            for trace in accuracy_tables:
+                fig.add_trace(
+                    go.Scatter(
+                        x=trace.threshold,
+                        y=trace.accuracy,
+                        mode='markers+lines',
+                        name=trace.loc[0, 'name'],
+                    )
+                )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=thresholds_bins,
+                    y=thresholds_bins,
+                    mode='lines',
+                    name='reference',
+                )
+            )
+
+            fig.update_layout(xaxis_title="confidance threshold", yaxis_title="bin accuracy", title="Reliability diagram")
+
+            file_to_write = os.path.join(output_dir_model, f'reliability_diagram.html')
+            fig.write_html(file_to_write)
+            written_files.append(file_to_write)
+
+            logger.info('Get the feature importance...')
+
+            # Method of the mean decrease in impurity
+            importances = clf.best_estimator_.feature_importances_
+            std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_.estimators_], axis=0)
+
+            forest_importances = pd.Series(importances, index=features_list)
+
+            fig, ax = plt.subplots(figsize=(9, 5))
+            forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
+            ax.set_title("Feature importances using MDI")
+            ax.set_ylabel("Mean decrease in impurity")
+            fig.tight_layout()
+
+            file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.jpeg')
+            fig.savefig(file_to_write)
+            written_files.append(file_to_write)
+
+            # Based on feature permutation
+            result = permutation_importance(
+                clf.best_estimator_, data_tst_scaled, labels_tst, n_repeats=10, random_state=42, n_jobs=2
+            )
+            forest_importances = pd.Series(result.importances_mean, index=features_list)
+
+            fig, ax = plt.subplots(figsize=(9, 5))
+            forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
+            ax.set_title("Feature importances using permutation on full model")
+            ax.set_ylabel("Mean accuracy decrease")
+            fig.tight_layout()
+
+            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.jpeg')
+            fig.savefig(file_to_write)
+            written_files.append(file_to_write)
+
 
     return metric, written_files
 

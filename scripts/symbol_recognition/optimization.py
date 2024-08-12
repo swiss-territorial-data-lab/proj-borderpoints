@@ -28,12 +28,12 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
 
     # Suggest value range to test
     min_image_size, max_image_size = (75, 124)
-    min_ppc, max_ppc = (8, 25)
+    min_ppc, max_ppc = (8, 33)
     image_size = trial.suggest_int('image_size', min_image_size, max_image_size)
     ppc = trial.suggest_int('ppc', min_ppc, max_ppc)
     cells_per_block = trial.suggest_int('cpb', 2, floor(max_image_size/min_ppc))
     orientations = trial.suggest_int('orientations', 4, 9)
-    variance_threshold = trial.suggest_float('variance_threshold', 0.0001, 0.01, step = 0.0005)
+    variance_threshold = trial.suggest_float('variance_threshold', 0, 0.0065, step = 0.0005)
 
     dict_param = {
         'image_size': image_size,
@@ -51,9 +51,9 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     if hog_features_df.empty:
         return 0
 
-    f1_score, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
+    balanced_accuracy, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
 
-    return f1_score
+    return balanced_accuracy
 
 def callback(study, trial):
    # cf. https://stackoverflow.com/questions/62144904/python-how-to-retrive-the-best-model-from-optuna-lightgbm-study/62164601#62164601
