@@ -25,6 +25,82 @@ from constants import MODEL
 
 logger = misc.format_logger(logger)
 
+
+def split_label_info(labels, info_type):
+    new_labels_list = []
+    for label in labels:
+        if info_type =='color':
+            if label == '5n':
+                new_labels_list.append('various')
+            elif label == 'undetermined':
+                new_labels_list.append('undetermined')
+            else:
+                new_labels_list.append(label[1])
+        elif info_type == 'shape':
+            if label == 'undetermined':
+                new_labels_list.append('undetermined')
+            else:
+                new_labels_list.append(label[0])
+        else:
+            logger.critical('Wrong info type')
+            sys.exit(1)
+
+    return new_labels_list
+
+
+def train_model(features_gdf, features_list):
+    logger.info('Prepare data...')
+    data_trn, data_tst, labels_trn, labels_tst, _, geometries_tst, _, image_names_tst = train_test_split(
+        features_gdf[features_list].to_numpy(), features_gdf.CATEGORY, features_gdf.geometry, features_gdf.image_name, test_size=0.2, random_state=42
+    )
+
+    # Scale data 
+    scaler = StandardScaler()
+    data_trn_scaled = scaler.fit_transform(data_trn)
+    data_tst_scaled = scaler.transform(data_tst)
+
+    if MODEL == 'SVM':
+        logger.info('Prepare SVM model...')
+        # https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
+        svc_model = svm.SVC(random_state=42, cache_size=1000)
+        parameters = {
+            'C': [i/10 for i in range(5, 75, 1)],
+            'kernel': ['linear', 'rbf', 'sigmoid'],
+            'gamma': ['scale', 'auto']
+        }
+        clf = GridSearchCV(svc_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+
+    elif MODEL == 'RF':
+        logger.info('Prepare RF model...')
+        rf_model = RandomForestClassifier(random_state=42)
+        parameters = {
+            'n_estimators': range(120, 200, 5),
+            'max_features': ['sqrt', 'log2'],
+            'class_weight': ['balanced', 'balanced_subsample']
+        }
+        clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+
+    logger.info('Train model with CV...')
+    clf.fit(data_trn_scaled, labels_trn)
+
+    logger.info('Test model...')
+    pred_tst = clf.predict(data_tst_scaled)
+    metric = balanced_accuracy_score(labels_tst, pred_tst)
+
+    logger.info('Save a geodataframe with the test features...')
+    if MODEL == 'RF':
+        proba_pred_tst = clf.predict_proba(data_tst_scaled)
+        classified_pts_tst_gdf = gpd.GeoDataFrame(
+            {'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 
+            geometry=geometries_tst
+        )
+    else:
+        classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst}, geometry=geometries_tst)
+        classified_pts_tst_gdf['correct'] = [True if row.labels == row.preds else False for row in classified_pts_tst_gdf.itertuples()]
+
+    return scaler, clf, metric, classified_pts_tst_gdf
+
+
 def main(images, features_hog, features_stats, save_extra=False, output_dir='outputs'):
     output_dir_model = output_dir if output_dir.endswith(MODEL) or output_dir.endswith(MODEL + '/') else os.path.join(output_dir, MODEL)
     os.makedirs(output_dir_model, exist_ok=True)
@@ -50,45 +126,12 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
+    features_gdf['color'] = split_label_info(features_gdf.CATEGORY, 'color')
+    features_gdf['shape'] = split_label_info(features_gdf.CATEGORY, 'shape')
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
 
-    logger.info('Prepare data...')
-    data_trn, data_tst, labels_trn, labels_tst, _, geometries_tst, _, image_names_tst = train_test_split(
-        features_gdf[features_list].to_numpy(), features_gdf.CATEGORY, features_gdf.geometry, features_gdf.image_name, test_size=0.2, random_state=42
-    )
+    scaler, clf, metric, classified_pts_tst_gdf = train_model(features_gdf, features_list)
 
-    # Scale data 
-    scaler = StandardScaler()
-    data_trn_scaled = scaler.fit_transform(data_trn)
-    data_tst_scaled = scaler.transform(data_tst)
-
-    if MODEL == 'SVM':
-        logger.info('Prepare SVM model...')
-        # https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
-        svc_model = svm.SVC(random_state=42, cache_size=1000)
-        parameters = {
-            'C': [i/10 for i in range(5, 75, 1)],
-            'kernel': ['linear', 'rbf', 'sigmoid'],
-            'gamma': ['scale', 'auto']
-        }
-        clf = GridSearchCV(svc_model, parameters, n_jobs=10, verbose=1, scoring='f1_weighted')
-
-    elif MODEL == 'RF':
-        logger.info('Prepare RF model...')
-        rf_model = RandomForestClassifier(random_state=42)
-        parameters = {
-            'n_estimators': range(120, 200, 5),
-            'max_features': ['sqrt', 'log2'],
-            'class_weight': ['balanced', 'balanced_subsample']
-        }
-        clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='f1_weighted')
-
-    logger.info('Train model with CV...')
-    clf.fit(data_trn_scaled, labels_trn)
-
-    logger.info('Test model...')
-    pred_tst = clf.predict(data_tst_scaled)
-    metric = balanced_accuracy_score(labels_tst, pred_tst)
     logger.success(f'balanced accuracy: {round(metric, 2)}')
 
     if save_extra:
@@ -106,27 +149,18 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         written_files.append(filepath)
 
         logger.info('Save confusion matrix and classification report...')
-        confusion_matrix_df = pd.DataFrame(confusion_matrix(labels_tst, pred_tst), columns=clf.classes_, index=clf.classes_)
+        confusion_matrix_df = pd.DataFrame(
+            confusion_matrix(classified_pts_tst_gdf.labels, classified_pts_tst_gdf.preds), columns=clf.classes_, index=clf.classes_
+        )
         filepath = os.path.join(output_dir_model, 'confusion_matrix.csv')
         confusion_matrix_df.to_csv(filepath)
         written_files.append(filepath)
 
-        cl_report = classification_report(labels_tst, pred_tst, output_dict=True)
+        cl_report = classification_report(classified_pts_tst_gdf.labels, classified_pts_tst_gdf.preds, output_dict=True)
         filepath = os.path.join(output_dir_model, 'classification_report.csv')
         pd.DataFrame(cl_report).transpose().to_csv(filepath)
         written_files.append(filepath)
 
-        logger.info('Save a geodataframe with the test features...')
-        if MODEL == 'RF':
-            proba_pred_tst = clf.predict_proba(data_tst_scaled)
-            classified_pts_tst_gdf = gpd.GeoDataFrame(
-                {'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 
-                geometry=geometries_tst
-            )
-        else:
-            classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'labels': labels_tst, 'preds': pred_tst}, geometry=geometries_tst)
-
-        classified_pts_tst_gdf['correct'] = [True if row.labels == row.preds else False for row in classified_pts_tst_gdf.itertuples()]
         filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
         classified_pts_tst_gdf.to_file(filepath)
         written_files.append(filepath)
@@ -254,21 +288,21 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             fig.savefig(file_to_write)
             written_files.append(file_to_write)
 
-            # Based on feature permutation
-            result = permutation_importance(
-                clf.best_estimator_, data_tst_scaled, labels_tst, n_repeats=10, random_state=42, n_jobs=2
-            )
-            forest_importances = pd.Series(result.importances_mean, index=features_list)
+            # # Based on feature permutation
+            # result = permutation_importance(
+            #     clf.best_estimator_, data_tst_scaled, labels_tst, n_repeats=10, random_state=42, n_jobs=2
+            # )
+            # forest_importances = pd.Series(result.importances_mean, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(9, 5))
-            forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
-            ax.set_title("Feature importances using permutation on full model")
-            ax.set_ylabel("Mean accuracy decrease")
-            fig.tight_layout()
+            # fig, ax = plt.subplots(figsize=(9, 5))
+            # forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
+            # ax.set_title("Feature importances using permutation on full model")
+            # ax.set_ylabel("Mean accuracy decrease")
+            # fig.tight_layout()
 
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.jpeg')
-            fig.savefig(file_to_write)
-            written_files.append(file_to_write)
+            # file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.jpeg')
+            # fig.savefig(file_to_write)
+            # written_files.append(file_to_write)
 
 
     return metric, written_files
