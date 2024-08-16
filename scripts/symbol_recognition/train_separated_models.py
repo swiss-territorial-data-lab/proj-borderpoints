@@ -6,94 +6,80 @@ from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
-from numpy import std
-from sklearn import svm
-from sklearn.ensemble import RandomForestClassifier
+from numpy import std, nan
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.preprocessing import StandardScaler
 
 import plotly.graph_objects as go
 from joblib import dump
 import matplotlib.pyplot as plt
 
-
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from constants import MODEL
+from train_model import train_model
 
 logger = misc.format_logger(logger)
 
 
-def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=None):
-    logger.info('Prepare data...')
+def merge_color_and_shape(color_gdf, shape_gdf, category_df, possible_classes):
+    logger.info('Merge color and shape...')
 
-    if isinstance(test_ids, pd.Series):
-        test_mask = features_gdf.image_name.isin(test_ids)
-        data_trn = features_gdf.loc[~test_mask, features_list].to_numpy()
-        data_tst = features_gdf.loc[test_mask, features_list].to_numpy()
-        labels_trn = features_gdf.loc[~test_mask, label_name].to_numpy()
-        labels_tst = features_gdf.loc[test_mask, label_name].to_numpy()
-        geometries_tst = features_gdf.loc[test_mask, 'geometry'].to_numpy()
-        image_names_tst = features_gdf.loc[test_mask, 'image_name'].to_numpy()
+    shape_gdf.rename(columns={'pred': 'symbol_shape', 'score': 'shape_score'}, inplace=True)
+    color_gdf.rename(columns={'pred': 'color', 'score': 'color_score'}, inplace=True)
 
-    else:
-        data_trn, data_tst, labels_trn, labels_tst, _, geometries_tst, _, image_names_tst = train_test_split(
-            features_gdf[features_list].to_numpy(), features_gdf[label_name], features_gdf.geometry, features_gdf.image_name, test_size=0.2, stratify=features_gdf[label_name].to_numpy()
-        )
+    classified_pts_gdf = shape_gdf[['image_name', 'symbol_shape', 'shape_score', 'geometry']].merge(
+        color_gdf[['image_name', 'color', 'color_score']], how='left', on='image_name'
+    )
+    classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
+    classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
 
-    # Scale data 
-    scaler = StandardScaler()
-    data_trn_scaled = scaler.fit_transform(data_trn)
-    data_tst_scaled = scaler.transform(data_tst)
+    detected_categories_list = []
+    for pt in classified_pts_gdf.itertuples():
+        if pt.symbol_shape == 'undetermined':
+            detected_categories_list.append('undetermined')
+        elif pt.color == 'undetermined':
+            if pt.symbol_shape == '1':
+                detected_categories_list.append('1b')
+            else:
+                detected_categories_list.append('undetermined')
+        elif pt.symbol_shape == '5':
+            detected_categories_list.append('5n')
+        elif pt.color is nan:
+            detected_categories_list.append('undetermined')
+        else:
+            pt_pred = pt.symbol_shape + pt.color
+            if pt_pred in possible_classes:
+                detected_categories_list.append(pt_pred)
+            elif pt_pred == '3n':
+                detected_categories_list.append('3n')
+            else:
+                detected_categories_list.append('undetermined')
+    classified_pts_gdf['pred'] = detected_categories_list
 
-    if MODEL == 'SVM':
-        logger.info('Prepare SVM model...')
-        # https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
-        svc_model = svm.SVC(random_state=42, cache_size=1000)
-        parameters = {
-            'C': [i/10 for i in range(5, 75, 1)],
-            'kernel': ['linear', 'rbf', 'sigmoid'],
-            'gamma': ['scale', 'auto']
-        }
-        clf = GridSearchCV(svc_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
-
-    elif MODEL == 'RF':
-        logger.info('Prepare RF model...')
-        rf_model = RandomForestClassifier(random_state=42)
-        parameters = {
-            'n_estimators': range(120, 200, 5),
-            'max_features': ['sqrt', 'log2'],
-            'class_weight': ['balanced', 'balanced_subsample']
-        }
-        clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
-
-    logger.info('Train model with CV...')
-    clf.fit(data_trn_scaled, labels_trn)
-
-    logger.info('Test model...')
-    pred_tst = clf.predict(data_tst_scaled)
-    metric = balanced_accuracy_score(labels_tst, pred_tst)
-
-    logger.info('Save a geodataframe with the test features...')
-    if MODEL == 'RF':
-        proba_pred_tst = clf.predict_proba(data_tst_scaled)
-        classified_pts_tst_gdf = gpd.GeoDataFrame(
-            {'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 
-            geometry=geometries_tst
-        )
-    else:
-        classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst}, geometry=geometries_tst)
-        classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
-
-    tst_data_df = pd.DataFrame(data_tst, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
-    classified_pts_tst_gdf = classified_pts_tst_gdf.merge(tst_data_df, how='inner', on='image_name')
-
-    return scaler, clf, metric, classified_pts_tst_gdf
+    return classified_pts_gdf
 
 
-def main(images, features_hog, features_stats, save_extra=False, output_dir='outputs'):
+def split_label_info(labels, info_type):
+    new_labels_list = []
+    for label in labels:
+        if label == 'undetermined':
+            new_labels_list.append('undetermined')
+        elif info_type =='color':
+            if label == '5n':
+                new_labels_list.append('various')
+            else:
+                new_labels_list.append(label[1])
+        elif info_type == 'shape':
+            new_labels_list.append(label[0])
+        else:
+            logger.critical('Wrong info type')
+            sys.exit(1)
+
+    return new_labels_list
+
+
+def main(images, features_hog, features_stats, save_extra=False, do_plot=False, output_dir='outputs'):
     output_dir_model = output_dir if output_dir.endswith(MODEL) or output_dir.endswith(MODEL + '/') else os.path.join(output_dir, MODEL)
     os.makedirs(output_dir_model, exist_ok=True)
     written_files = []
@@ -118,27 +104,45 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
+    categories_list = features_gdf.CATEGORY
+    features_gdf['color'] = split_label_info(categories_list, 'color')
+    features_gdf['symbol_shape'] = split_label_info(categories_list, 'shape')
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
 
-    scaler, clf, metric, classified_pts_tst_gdf = train_model(features_gdf, features_list)
+    
+    scaler_shapes, clf_shapes, metric_shapes, classified_shapes_tst_gdf = train_model(features_gdf, features_list[7:], label_name='symbol_shape')
+    test_image_names = classified_shapes_tst_gdf.image_name
+    scaler_colors, clf_colors, metric_colors, classified_colors_tst_gdf = train_model(
+        features_gdf[features_gdf.CATEGORY != '5n'], features_list[:6], label_name='color', test_ids=test_image_names
+    )
+    
+    classified_pts_tst_gdf = merge_color_and_shape(
+        classified_colors_tst_gdf, classified_shapes_tst_gdf, features_gdf[['image_name', 'CATEGORY']], categories_list.unique().tolist()
+    )
 
     global_metric = balanced_accuracy_score(classified_pts_tst_gdf.label, classified_pts_tst_gdf.pred)
-    logger.info(f'Balanced accuracy: {round(global_metric, 2)}')
+    logger.info('Balanced accuracy:')
+    logger.info(f'- for colors: {round(metric_colors, 2)}')
+    logger.info(f'- for shapes: {round(metric_shapes, 2)}')
+    logger.info(f'- for categories: {round(global_metric, 2)}')
 
     if save_extra:
-        labels_list = classified_pts_tst_gdf.label.sort_values().unique().tolist()
+        labels_list = classified_pts_tst_gdf.pred.sort_values().unique().tolist()
+        shape_dict = {'desc': 'shape', 'model': clf_shapes, 'scaler': scaler_shapes, 'tst_results': classified_shapes_tst_gdf}
+        color_dict = {'desc': 'color', 'model': clf_colors, 'scaler': scaler_colors, 'tst_results': classified_colors_tst_gdf}
 
-        logger.info('Save scaler...')
-        filepath = os.path.join(output_dir_model, f'scaler_{MODEL}.pkl')
-        with open(filepath, 'wb') as f:
-            dump(scaler, f, protocol=5)
-        written_files.append(filepath)
+        for model in [shape_dict, color_dict]:
+            logger.info(f'Save scaler for {model["desc"]}...')
+            filepath = os.path.join(output_dir_model, f'scaler_{MODEL}_{model["desc"]}.pkl')
+            with open(filepath, 'wb') as f:
+                dump(model['scaler'], f, protocol=5)
+            written_files.append(filepath)
 
-        logger.info('Save model...')
-        filepath = os.path.join(output_dir_model, f'model_{MODEL}.pkl')
-        with open(filepath, 'wb') as f:
-            dump(clf, f, protocol=5)
-        written_files.append(filepath)
+            logger.info(f'Save model for {model["desc"]}...')
+            filepath = os.path.join(output_dir_model, f'model_{MODEL}_{model["desc"]}.pkl')
+            with open(filepath, 'wb') as f:
+                dump(model['model'], f, protocol=5)
+            written_files.append(filepath)
 
         logger.info('Save confusion matrix and classification report...')
         confusion_matrix_df = pd.DataFrame(
@@ -164,6 +168,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
                 for gt_class in labels_list
             }
             classified_pts_tst_gdf['weight'] = classified_pts_tst_gdf.label.map(weights_dict)
+            classified_pts_tst_gdf['score'] = classified_pts_tst_gdf[['shape_score', 'color_score']].min(axis=1)
 
             logger.info('Get the accuracy at each score...')
             metric_dict = {'balanced accuracy': [], 'weighted accuracy': [], 'raw accuracy': [], 'dropped_fraction': []}
@@ -228,6 +233,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
                         else:
                             bin_values.append(preds_in_bin[preds_in_bin.pred == gt_class].shape[0]/preds_in_bin.shape[0])
                         threshold_values.append(threshold)
+                    else:
+                        continue
 
                 df = pd.DataFrame({'threshold': threshold_values, 'accuracy': bin_values})
                 df['name'] = gt_class
@@ -237,6 +244,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             fig=go.Figure()
 
             for trace in accuracy_tables:
+                if trace.empty:
+                    continue
                 fig.add_trace(
                     go.Scatter(
                         x=trace.threshold,
@@ -261,45 +270,46 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             fig.write_html(file_to_write)
             written_files.append(file_to_write)
 
-            logger.info('Get the feature importance...')
+            for model in [shape_dict, color_dict]:
+                logger.info(f'Get the feature importance in the determination of {model["desc"]}...')
+                features_list = [col for col in model['tst_results'].columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
 
-            # Method of the mean decrease in impurity
-            importances = clf.best_estimator_.feature_importances_
-            std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_.estimators_], axis=0)
+                # Method of the mean decrease in impurity
+                importances = model['model'].best_estimator_.feature_importances_
+                std_feat_importance = std([tree.feature_importances_ for tree in model['model'].best_estimator_.estimators_], axis=0)
 
-            forest_importances = pd.Series(importances, index=features_list)
+                forest_importances = pd.Series(importances, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(9, 5))
-            forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
-            ax.set_title("Feature importances using MDI")
-            ax.set_ylabel("Mean decrease in impurity")
-            fig.tight_layout()
+                fig, ax = plt.subplots(figsize=(9, 5))
+                forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
+                ax.set_title("Feature importances using MDI")
+                ax.set_ylabel("Mean decrease in impurity")
+                fig.tight_layout()
 
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.jpeg')
-            fig.savefig(file_to_write)
-            written_files.append(file_to_write)
+                file_to_write = os.path.join(output_dir_model, f'feature_importance_{model["desc"]}s_MDI.jpeg')
+                fig.savefig(file_to_write)
+                written_files.append(file_to_write)
 
-            # Based on feature permutation
-            data_tst_scaled = classified_pts_tst_gdf[features_list].to_numpy()
+                # Based on feature permutation
+                data_tst_scaled = model['tst_results'][features_list].to_numpy()
 
-            result = permutation_importance(
-                clf.best_estimator_, data_tst_scaled, classified_pts_tst_gdf.label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
-            )
-            forest_importances = pd.Series(result.importances_mean, index=features_list)
+                result = permutation_importance(
+                    model['model'].best_estimator_, data_tst_scaled, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+                )
+                forest_importances = pd.Series(result.importances_mean, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(9, 5))
-            forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
-            ax.set_title("Feature importances using permutation on full model")
-            ax.set_ylabel("Mean accuracy decrease")
-            fig.tight_layout()
+                fig, ax = plt.subplots(figsize=(9, 5))
+                forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
+                ax.set_title("Feature importances using permutation on full model")
+                ax.set_ylabel("Mean accuracy decrease")
+                fig.tight_layout()
 
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.jpeg')
-            fig.savefig(file_to_write)
-            written_files.append(file_to_write)
+                file_to_write = os.path.join(output_dir_model, f'feature_importance_{model["desc"]}_permutations.jpeg')
+                fig.savefig(file_to_write)
+                written_files.append(file_to_write)
 
 
     return global_metric, written_files
-
 
 
 if __name__ == "__main__":
@@ -316,9 +326,11 @@ if __name__ == "__main__":
     HOG_FEATURES = cfg['hog_features']
     BAND_STATS = cfg['band_stats']
 
+    DO_PLOT = False
+
     os.chdir(WORKING_DIR)
 
-    _, written_files = main(IMAGES_FILE, HOG_FEATURES, BAND_STATS, save_extra=True, output_dir=OUTPUT_DIR)
+    _, written_files = main(IMAGES_FILE, HOG_FEATURES, BAND_STATS, save_extra=True, do_plot=DO_PLOT, output_dir=OUTPUT_DIR)
 
     logger.success("Done! The following files were written:")
     for written_file in written_files:
