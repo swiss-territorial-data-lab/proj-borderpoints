@@ -62,6 +62,14 @@ train_model.py:
   band_stats: feature_engineering/stats_on_filtered_bands.csv
 
 
+train_separated_models.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  output_dir: model_training/separated_models
+  image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
+  hog_features: feature_engineering/hog_features.csv
+  band_stats: feature_engineering/stats_on_filtered_bands.csv
+
+
 optimization.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
   output_dir: optimization
@@ -74,6 +82,15 @@ classify_images_in_folder.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
   output_dir: classification
   model_dir: model_training
+  tile_dir: ../instance_segmentation/rgb_images/symbol_images
+  image_info_gpkg: labels_symbol_matching/MO_pt_polys.gpkg
+  variance_filter: feature_engineering/variance_filter.pkl
+
+
+classify_color_and_shapes.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  output_dir: classification/separated_models
+  model_dir: model_training/separated_models
   tile_dir: ../instance_segmentation/rgb_images/symbol_images
   image_info_gpkg: labels_symbol_matching/MO_pt_polys.gpkg
   variance_filter: feature_engineering/variance_filter.pkl
