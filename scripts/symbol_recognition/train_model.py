@@ -18,7 +18,6 @@ import plotly.graph_objects as go
 from joblib import dump
 import matplotlib.pyplot as plt
 
-
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from constants import MODEL
@@ -40,7 +39,8 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
 
     else:
         data_trn, data_tst, labels_trn, labels_tst, _, geometries_tst, _, image_names_tst = train_test_split(
-            features_gdf[features_list].to_numpy(), features_gdf[label_name], features_gdf.geometry, features_gdf.image_name, test_size=0.2, stratify=features_gdf[label_name].to_numpy()
+            features_gdf[features_list].to_numpy(), features_gdf[label_name], features_gdf.geometry, features_gdf.image_name, test_size=0.2, stratify=features_gdf[label_name].to_numpy(),
+            random_state=42
         )
 
     # Scale data 
@@ -85,7 +85,8 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
         )
     else:
         classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst}, geometry=geometries_tst)
-        classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
+    
+    classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
 
     tst_data_df = pd.DataFrame(data_tst, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
     classified_pts_tst_gdf = classified_pts_tst_gdf.merge(tst_data_df, how='inner', on='image_name')
@@ -118,7 +119,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
-    features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
+    features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
 
     scaler, clf, metric, classified_pts_tst_gdf = train_model(features_gdf, features_list)
 

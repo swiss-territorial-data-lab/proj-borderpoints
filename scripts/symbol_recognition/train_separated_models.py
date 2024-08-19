@@ -22,7 +22,7 @@ from train_model import train_model
 logger = misc.format_logger(logger)
 
 
-def merge_color_and_shape(color_gdf, shape_gdf, category_df, possible_classes):
+def merge_color_and_shape(color_gdf, shape_gdf, possible_classes, category_df=None):
     logger.info('Merge color and shape...')
 
     shape_gdf.rename(columns={'pred': 'symbol_shape', 'score': 'shape_score'}, inplace=True)
@@ -31,8 +31,9 @@ def merge_color_and_shape(color_gdf, shape_gdf, category_df, possible_classes):
     classified_pts_gdf = shape_gdf[['image_name', 'symbol_shape', 'shape_score', 'geometry']].merge(
         color_gdf[['image_name', 'color', 'color_score']], how='left', on='image_name'
     )
-    classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
-    classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
+    if isinstance(category_df, pd.DataFrame):
+        classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
+        classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
 
     detected_categories_list = []
     for pt in classified_pts_gdf.itertuples():
@@ -107,19 +108,20 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
     categories_list = features_gdf.CATEGORY
     features_gdf['color'] = split_label_info(categories_list, 'color')
     features_gdf['symbol_shape'] = split_label_info(categories_list, 'shape')
-    features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'std', 'max', 'hog']]
+    features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'min', 'std', 'max', 'hog']]
 
     
     scaler_shapes, clf_shapes, metric_shapes, classified_shapes_tst_gdf = train_model(features_gdf, features_list[7:], label_name='symbol_shape')
     test_image_names = classified_shapes_tst_gdf.image_name
     scaler_colors, clf_colors, metric_colors, classified_colors_tst_gdf = train_model(
-        features_gdf[features_gdf.CATEGORY != '5n'], features_list[:6], label_name='color', test_ids=test_image_names
+        features_gdf[features_gdf.CATEGORY != '5n'], features_list[:7], label_name='color', test_ids=test_image_names
     )
     
     classified_pts_tst_gdf = merge_color_and_shape(
-        classified_colors_tst_gdf, classified_shapes_tst_gdf, features_gdf[['image_name', 'CATEGORY']], categories_list.unique().tolist()
+        classified_colors_tst_gdf, classified_shapes_tst_gdf, categories_list.unique().tolist(), features_gdf[['image_name', 'CATEGORY']]
     )
 
+    classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
     global_metric = balanced_accuracy_score(classified_pts_tst_gdf.label, classified_pts_tst_gdf.pred)
     logger.info('Balanced accuracy:')
     logger.info(f'- for colors: {round(metric_colors, 2)}')
