@@ -53,7 +53,7 @@ for tile_path in tqdm(tile_list, desc='Read images'):
 logger.info('Extract HOG features...')
 hog_features_df, written_files_hog = hog.main(
     image_data,
-    image_size=105, ppc=15, cpb=6, orientations=4, variance_threshold=0.0025,
+    image_size=109, ppc=19, cpb=4, orientations=5, variance_threshold=0.0045,
     fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
 )
 hog_features_df = misc.format_hog_info(hog_features_df)
@@ -79,7 +79,10 @@ if MODEL == 'SVM':
     logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
 
 elif MODEL == 'RF':
+    pts_gdf['score'] = pts_gdf[['shape_score', 'color_score']].min(axis=1)
+
     # Determine best class based on score
+    determined_pts_gdf['score'] = determined_pts_gdf[['shape_score', 'color_score']].min(axis=1)
     determined_pts_gdf.sort_values(by='score', ascending=False, inplace=True)
     determined_pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
     best_score_duo = determined_pts_gdf.combo_id.unique()
@@ -101,7 +104,7 @@ pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)
 
 # Indicate points classified as undetermined, because the detected class is not a valid combination of shape and color
 pts_gdf.loc[
-    (pts_gdf['class'] == 'undetermined') and pts_gdf.symbol_shape.isin(['1', '2', '3', '5']) and pts_gdf.color.isin('b', 'n', 'r'), 
+    (pts_gdf['class'] == 'undetermined') & pts_gdf.symbol_shape.isin(['1', '2', '3', '5']) & pts_gdf.color.isin(['b', 'n', 'r']), 
     'method'
 ] = 'invalid color and shape combination'
 

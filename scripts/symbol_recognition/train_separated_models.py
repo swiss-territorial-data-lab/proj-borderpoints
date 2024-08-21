@@ -22,41 +22,55 @@ from train_model import train_model
 logger = misc.format_logger(logger)
 
 
-def merge_color_and_shape(color_gdf, shape_gdf, possible_classes, category_df=None):
+def merge_color_and_shape(colors_gdf, shapes_gdf, possible_classes, category_df=None):
     logger.info('Merge color and shape...')
 
-    shape_gdf.rename(columns={'pred': 'symbol_shape', 'score': 'shape_score'}, inplace=True)
-    color_gdf.rename(columns={'pred': 'color', 'score': 'color_score'}, inplace=True)
+    shapes_gdf.rename(columns={'pred': 'symbol_shape', 'score': 'shape_score', 'method':  'shape_method'}, inplace=True)
+    colors_gdf.rename(columns={'pred': 'color', 'score': 'color_score', 'method':  'color_method'}, inplace=True)
 
-    classified_pts_gdf = shape_gdf[['image_name', 'symbol_shape', 'shape_score', 'geometry']].merge(
-        color_gdf[['image_name', 'color', 'color_score']], how='left', on='image_name'
-    )
+    if 'combo_id' in colors_gdf.columns:
+        classified_pts_gdf = shapes_gdf[['pt_id', 'combo_id', 'image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
+            colors_gdf[['combo_id', 'color', 'color_score', 'color_method']], how='left', on='combo_id'
+        )
+    else:
+        classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
+            colors_gdf[['image_name', 'color', 'color_score', 'color_method']], how='left', on='image_name'
+        )
     if isinstance(category_df, pd.DataFrame):
         classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
         classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
 
     detected_categories_list = []
+    methods_list = []
     for pt in classified_pts_gdf.itertuples():
-        if pt.symbol_shape == 'undetermined':
+        # Determine final category based on the combination of the shape and color
+        if (pt.symbol_shape == 'undetermined') | (pt.color == 'undetermined'):
             detected_categories_list.append('undetermined')
-        elif pt.color == 'undetermined':
-            if pt.symbol_shape == '1':
-                detected_categories_list.append('1b')
-            else:
-                detected_categories_list.append('undetermined')
         elif pt.symbol_shape == '5':
             detected_categories_list.append('5n')
         elif pt.color is nan:
             detected_categories_list.append('undetermined')
         else:
             pt_pred = pt.symbol_shape + pt.color
-            if pt_pred in possible_classes:
+            if pt_pred == '2r':
+                detected_categories_list.append('5n')
+            elif pt_pred == '2n':
+                detected_categories_list.append('1n')
+            elif pt_pred in possible_classes:
                 detected_categories_list.append(pt_pred)
-            elif pt_pred == '3n':
-                detected_categories_list.append('3n')
+            # elif pt_pred == '3n':
+            #     detected_categories_list.append('3n')
             else:
                 detected_categories_list.append('undetermined')
+
+        # Determine the used method for the results on shape and color
+        if pt.shape_method == pt.color_method:
+            methods_list.append(pt.shape_method)
+        else:
+            methods_list.append('mixed')
+        
     classified_pts_gdf['pred'] = detected_categories_list
+    classified_pts_gdf['method'] = methods_list
 
     return classified_pts_gdf
 

@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import rasterio as rio
 
 from joblib import load
@@ -36,25 +37,27 @@ def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_mo
 
     logger.info('Apply classification model...')
     pred_list = model.predict(scaled_features_arr)
+    preds_df = pd.DataFrame({'image_name': features_gdf.image_name, 'pred': pred_list})
+    if MODEL == 'RF':
+        preds_df['score'] = model.predict_proba(scaled_features_arr).max(axis=1).round(3)
 
     pts_gdf = image_info_gdf.copy()
     pts_gdf.loc[:, 'geometry'] = image_info_gdf.geometry.centroid
 
     pts_gdf['method'] = 'symbol classification'
-    pts_gdf['pred'] = None
-    pts_gdf.loc[~pts_gdf['image_name'].isin(id_images_wo_info), 'pred'] = pred_list
-    pts_gdf.loc[pts_gdf['image_name'].isin(id_images_wo_info), ['pred', 'method']] = ('undetermined', 'default, because no color info')
+    classified_pts_gdf = pts_gdf.merge(preds_df, how='left', on='image_name')
+    if model_desc != 'shape':
+        classified_pts_gdf.loc[classified_pts_gdf.image_name.isin(id_images_wo_info), ['pred', 'method']] = ('undetermined', 'default, because no color info')
 
-    if MODEL == 'RF':
-        pred_scores_list = model.predict_proba(scaled_features_arr)
-        pts_gdf['score'] = np.NaN
-        pts_gdf.loc[~pts_gdf['image_name'].isin(id_images_wo_info), 'score'] = pred_scores_list.max(axis=1).round(3)
+    multiple_pts_images = classified_pts_gdf.loc[classified_pts_gdf.image_name.duplicated(), 'image_name'].unique().tolist()
+    logger.warning(f'{len(multiple_pts_images)} points share a same image because they are too close.')
+    classified_pts_gdf.loc[classified_pts_gdf.image_name.isin(multiple_pts_images), 'method'] = 'classification on one image for multiple points'
 
-    if pts_gdf['pred'].isna().any():
+    if classified_pts_gdf['pred'].isna().any():
         logger.critical('Some points were not classified!')
         sys.exit(1)
 
-    return pts_gdf
+    return classified_pts_gdf
 
 
 if __name__ == '__main__':
@@ -97,7 +100,7 @@ if __name__ == '__main__':
     logger.info('Extract HOG features...')
     hog_features_df, written_files_hog = hog.main(
         image_data,
-        image_size=80, ppc=21, cpb=2, orientations=7, variance_threshold=0.0045,
+        image_size=80, ppc=33, cpb=2, orientations=9, variance_threshold=0.0005,
         fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
     )
     hog_features_df = misc.format_hog_info(hog_features_df)

@@ -91,6 +91,8 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
     tst_data_df = pd.DataFrame(data_tst, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
     classified_pts_tst_gdf = classified_pts_tst_gdf.merge(tst_data_df, how='inner', on='image_name')
 
+    classified_pts_tst_gdf['method'] = 'test for the model training'
+
     return scaler, clf, metric, classified_pts_tst_gdf
 
 
