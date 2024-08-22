@@ -4,7 +4,7 @@ prepare_ground_truth.py:
     vectors: outputs/symbol_classification/labels_symbol_matching
   initial_image_dir: inputs/plans
   tile_dir: outputs/instance_segmentation/rgb_images
-  border_points_pt: inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points_v2408.shp
+  border_points_pt: inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points_v240822.shp
   border_points_poly: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
   tile_suffix: _geo.tif
   convert_images: True
@@ -38,6 +38,12 @@ test_notebooks.py:
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
   hog_features: feature_engineering/hog_features.csv
   band_stats: feature_engineering/stats_on_filtered_bands.csv
+
+
+data_augmentation.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  output_dir: ../instance_segmentation/rgb_images/symbol_images_GT
+  tile_dir: ../instance_segmentation/rgb_images/symbol_images_GT
 
 
 hog.py:

@@ -1,4 +1,4 @@
-OVERWRITE =  False
+OVERWRITE =  True
 GRID_LARGE_TILES = 512
 GRID_SMALL_TILES = 256
 # Thresholds
@@ -7,4 +7,5 @@ OVERLAP_SMALL_TILES =  0.25
 CLIP_OR_PAD_SUBTILES = 'clip'
 
 # symbol classification
+AUGMENTATION = True
 MODEL = 'RF'
