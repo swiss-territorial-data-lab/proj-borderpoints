@@ -2,7 +2,7 @@ import os
 import sys
 from glob import glob
 from loguru import logger
-from time import time, sleep
+from time import time
 from tqdm import tqdm
 
 import geopandas as gpd
@@ -11,8 +11,6 @@ import pandas as pd
 import rasterio as rio
 from matplotlib import pyplot as plt
 from rasterstats import zonal_stats
-from rasterstats.io import Raster, read_features
-from rasterstats.utils import rasterize_geom
 from rasterio.features import shapes
 from shapely.geometry import shape
 from skimage.color import rgb2hsv
@@ -26,9 +24,6 @@ from constants import OVERWRITE
 logger = misc.format_logger(logger)
 
 # ----- Define functions -----
-
-def wait():
-    sleep(0.1)
 
 def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_correspondance, stats_list, output_path):
         
@@ -65,33 +60,6 @@ def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_co
             stat_values_list.append(stats_dict)        
     
     return stat_values_list
-
-def test_raster_transformations(image, meta_data, mask_gdf, name):
-    mask_list = []
-    with Raster(image[0,:,:], affine=meta_data[name]['transform'], nodata=meta_data[name]['nodata'], band=1) as rast:
-        features_iter = read_features(mask_gdf, 0)
-        for i, feat in enumerate(features_iter):
-            geom = shape(feat['geometry'])
-            geom_bounds = tuple(geom.bounds)
-
-            fsrc = rast.read(bounds=geom_bounds)
-
-            # create ndarray of rasterized geometry
-            rv_array = rasterize_geom(geom, like=fsrc, all_touched=False)
-            assert rv_array.shape == fsrc.shape
-
-            # Mask the source data array with our current feature
-            # we take the logical_not to flip 0<->1 for the correct mask effect
-            # we also mask out nodata values explicitly
-            masked = np.ma.MaskedArray(
-                fsrc.array,
-                mask=np.logical_or(
-                    fsrc.array == fsrc.nodata,
-                    np.logical_not(rv_array)))
-    
-            mask_list.append(masked)
-
-    return mask_list
     
 
 def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
@@ -165,19 +133,6 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
         mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[name]['crs'])
         mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[name]['crs'])
 
-        mask_written = test_raster_transformations(filtered_images[name].transpose(2, 0, 1), meta_data, mask_gdf, name)[0]
-        applied_mask_written = np.where(mask_written.mask, mask_written.data, 999)
-        mask_read = test_raster_transformations(test_image, meta_data, mask_gdf, name)[0]
-        applied_mask_read = np.where(mask_read.mask, mask_read.data, 999)
-
-        if (applied_mask_read != applied_mask_written).any():
-            comp_image = np.abs(applied_mask_read[0] - applied_mask_written[0])
-            with rio.open(os.path.join(OUTPUT_DIR, 'comp_images', 'masked_' + name), 'w', **meta_data[name]) as src:
-                src.write(comp_image)
-
-        if (applied_mask_read == 999).any() or (applied_mask_written == 999).any():
-            continue
-
     # Define parameters
     BAND_CORRESPONDENCE = {0: 'R', 1: 'G', 2: 'B'}
     STAT_LIST = ['min', 'max', 'std', 'mean', 'median']
@@ -192,11 +147,6 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
         for name in tqdm(image_data_keys, desc="Get statistics for each image")
     )
 
-    # stats_df_dict = []
-    # for name, image in tqdm(filtered_images.items(), desc="Get statistics for each image"):
-    #     stats_values_list.append(get_stats_under_mask(image.transpose(2, 0, 1), name, **param_dict))
-
-    # Transform list of dict in one dataframe per band
     stats_df_dict = {band: pd.DataFrame() for band in BAND_CORRESPONDENCE.keys()}
     count_no_symbol = 0
     for values_per_images in tqdm(stats_values_list, desc='Concatenate result'):
