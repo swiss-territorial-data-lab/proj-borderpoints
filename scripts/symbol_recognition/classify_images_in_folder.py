@@ -100,7 +100,7 @@ if __name__ == '__main__':
     logger.info('Extract HOG features...')
     hog_features_df, written_files_hog = hog.main(
         image_data,
-        image_size=80, ppc=33, cpb=2, orientations=9, variance_threshold=0.0005,
+        image_size=104, ppc=33, cpb=3, orientations=9, variance_threshold=0.0035,
         fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
     )
     hog_features_df = misc.format_hog_info(hog_features_df)

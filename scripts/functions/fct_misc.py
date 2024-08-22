@@ -125,7 +125,7 @@ def format_color_info(images_gdf, band_stats_df):
 
     image_diff = images_gdf.shape[0] - images_w_stats_gdf.shape[0]
     if image_diff:
-        logger.warning(f'{image_diff} elements were lost when joining the images and stats. The list of id is returned.')
+        logger.warning(f'{image_diff} elements were lost when joining the images and stats. The list of ids is returned.')
         missing_ids = images_gdf.loc[~images_gdf.image_name.isin(images_w_stats_gdf.image_name), 'image_name'].tolist()
     else:
         logger.info('All images have some stat info. An empty list is returned.')

@@ -33,7 +33,11 @@ def wait():
 def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_correspondance, stats_list, output_path):
         
     if not images_gdf.empty:
-        category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+        try:
+            category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+        except IndexError:
+            logger.info(f'No image found for {image_name}.')
+            return [{}, {}, {}]
 
     mask = binary_list[image_name]
     if (mask==0).all():
