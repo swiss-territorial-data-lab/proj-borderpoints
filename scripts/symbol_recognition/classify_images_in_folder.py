@@ -15,14 +15,15 @@ from joblib import load
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 import hog, color_treatment
-from constants import MODEL
+from constants import AUGMENTATION, MODEL
 
 logger = misc.format_logger(logger)
 
 
 def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_model_dir, model_desc=''):
     logger.info('Merge and scale data...')
-    model_dir = original_model_dir if original_model_dir.endswith(MODEL) or original_model_dir.endswith(MODEL + '/') \
+
+    model_dir = original_model_dir if MODEL.lower() in original_model_dir.lower() \
         else os.path.join(original_model_dir, MODEL)
     # TODO: faire un pipeline et sauver celui-ci uniquement
     with open(os.path.join(model_dir, f'scaler_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
@@ -84,6 +85,12 @@ if __name__ == '__main__':
     written_files = []
 
     # ----- data processing -----
+    if AUGMENTATION and ('augmented_images' not in MODEL_DIR.lower()):
+        logger.error('The parameter for data augmentation is set to true, but no augmentation indicated in the model path.')
+        sys.exit(1)
+    elif not AUGMENTATION and ('augmented_images' in MODEL_DIR.lower()):
+        logger.error('The parameter for data augmentation is set to false, but augmentation indicated in the model path.')
+        sys.exit(1)
 
     logger.info('Read data...')
     image_info_gdf = gpd.read_file(IMAGE_INFO_GPKG)
@@ -100,7 +107,6 @@ if __name__ == '__main__':
     logger.info('Extract HOG features...')
     hog_features_df, written_files_hog = hog.main(
         image_data,
-        image_size=104, ppc=33, cpb=3, orientations=9, variance_threshold=0.0035,
         fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
     )
     hog_features_df = misc.format_hog_info(hog_features_df)

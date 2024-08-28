@@ -19,7 +19,7 @@ from joblib import Parallel, delayed
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
-from constants import OVERWRITE
+from constants import AUGMENTATION, OVERWRITE
 
 logger = misc.format_logger(logger)
 
@@ -31,8 +31,11 @@ def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_co
         try:
             category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
         except IndexError:
-            logger.info(f'No image found for {image_name}.')
-            return [{}, {}, {}]
+            try:    # Check if we are looking for the augmented image
+                category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif').lstrip('aug_'), 'CATEGORY'].iloc[0]
+            except IndexError:
+                logger.info(f'No image found for {image_name}.')
+                return [{}, {}, {}]
 
     mask = binary_list[image_name]
     if (mask==0).all():
@@ -78,10 +81,13 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
         image_data = tiles[0]
         meta_data = tiles[1]
     else:
-        tile_list = glob(os.path.join(tiles, '*.tif'))
+        tile_dir = tiles
+        tile_list = glob(os.path.join(tile_dir, '*.tif'))
         image_data = {}
         meta_data = {}
         for tile_path in tqdm(tile_list, desc='Read images'):
+            if os.path.basename(tile_path).startswith('aug_') and not AUGMENTATION:
+                continue
             with rio.open(tile_path) as src:
                 tile_name = os.path.basename(tile_path)
                 image_data[tile_name] = src.read().transpose(1, 2, 0)

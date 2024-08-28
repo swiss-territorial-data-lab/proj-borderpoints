@@ -18,7 +18,7 @@ sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
 import functions.fct_optimization as opti
 import hog, train_model
-
+from constants import AUGMENTATION
 
 logger = misc.format_logger(logger)
 
@@ -50,6 +50,11 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     hog_features_df, _ = hog.main(tiles_dict, output_dir=OUTPUT_DIR, **dict_param)
     if hog_features_df.empty:
         return 0
+    
+    if AUGMENTATION:
+        augmented_images_gdf = images_gdf.copy()
+        augmented_images_gdf['image_name'] = augmented_images_gdf['image_name'].apply(lambda x: 'aug_' + x)
+        images_gdf = pd.concat([images_gdf, augmented_images_gdf], ignore_index=True)
 
     balanced_accuracy, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
 
@@ -87,6 +92,8 @@ stat_features_df = pd.read_csv(BAND_STATS)
 tile_list = glob(os.path.join(TILE_DIR, '*.tif'))
 image_data = {}
 for tile_path in tqdm(tile_list, 'Read tiles'):
+    if os.path.basename(tile_path).startswith('aug_') and not AUGMENTATION:
+        continue
     with open(tile_path) as src:
         image_data[os.path.basename(tile_path)] = src.read().transpose(1, 2, 0)
 

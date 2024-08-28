@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
-from constants import MODEL
+from constants import AUGMENTATION, MODEL
 
 logger = misc.format_logger(logger)
 
@@ -106,6 +106,12 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         images_gdf = images.copy()
     else:
         images_gdf = gpd.read_file(images)
+        if AUGMENTATION:
+            output_dir_model = os.path.join(output_dir_model, 'augmented_images')
+            os.makedirs(output_dir_model, exist_ok=True)
+            augmented_images_gdf = images_gdf.copy()
+            augmented_images_gdf['image_name'] = augmented_images_gdf['image_name'].apply(lambda x: 'aug_' + x)
+            images_gdf = pd.concat([images_gdf, augmented_images_gdf], ignore_index=True)
     if isinstance(features_stats, pd.DataFrame):
         band_stats_df = features_stats.copy()
     else:

@@ -19,6 +19,7 @@ from math import floor
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from functions.fct_rasters import remove_black_border
+from constants import AUGMENTATION
 
 logger = misc.format_logger(logger)
 
@@ -31,7 +32,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=104, ppc=33, cpb=3, orientations=9, variance_threshold=0.0035, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
+def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold=0.004, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
 # def main(tiles, image_size=109, ppc=19, cpb=4, orientations=5, variance_threshold=0.0045, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Optimized of old GT
 
     os.makedirs(output_dir, exist_ok=True)
@@ -43,6 +44,8 @@ def main(tiles, image_size=104, ppc=33, cpb=3, orientations=9, variance_threshol
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
         image_data = {}
         for tile_path in tqdm(tile_list, 'Read data'):
+            if os.path.basename(tile_path).startswith('aug_') and not AUGMENTATION:
+                continue
             with rio.open(tile_path) as src:
                 image_data[os.path.basename(tile_path)] = src.read().transpose(1, 2, 0)
 
@@ -93,7 +96,7 @@ def main(tiles, image_size=104, ppc=33, cpb=3, orientations=9, variance_threshol
     feature_number = filtered_hog_features_df.shape[1]
     logger.info(f'Final number of HOG features: {feature_number}')
     if feature_number > 5000:
-        logger.warning('Too many features, please reduce the variance threshold.')
+        logger.warning('Too many features, please increase the variance threshold.')
         return pd.DataFrame(), []
 
     logger.info('Save features...')

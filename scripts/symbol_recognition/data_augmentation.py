@@ -66,6 +66,8 @@ def main(tiles, output_dir='outputs'):
         random_transformation = rng.choice(transformation_choices)
         random_transformation(name, image, meta_data, output_dir=output_dir)
 
+    # TODO: augment a second time for class 1r and 3b
+
     logger.success(f'Done! The output was saved in {output_dir}.')
 
 

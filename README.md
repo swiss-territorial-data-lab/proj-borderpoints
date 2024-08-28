@@ -97,3 +97,46 @@ python scripts/post_processing/heatmap.py config/config_whole_tiles.yaml
 ```
 
 The command lines above use the configuration files for the maps with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for maps on which no point was digitized as part of the ground truth. Only the path to the different folders should change between the two configurations.
+
+
+## Symbol classification
+
+This workflow trains an algorithm to classify images of the border points.
+
+* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire tiles. More precisely, the following steps are performed:
+    1. Transform the maps from a color map to RGB images,
+    2. Determine the symbol size based on the ground truth,
+    3. Generate a vector layer with the tile information and delineation,
+    4. Join survey points to tiles and create a unique id based on point and tile,
+    5. Clip the map to the survey points based on the determined symbol size at each scale (step 2).
+* (*facultative*) Data augmentation: double the number of training images by flipping them and changing slightly the colorimetry with the script `data_augmentation.py`.
+* Feature extraction:
+    - `color_treatment.py`: Create a mask indicating the symbol area on the image,	calculate the zonal stats on each color band for the determined areas,
+    - `hog.py`: calculate the Histogram of Oriented Gradients (HOG) features for each symbol image.
+* Training and assessment: train and assess the model with the balanced accuracy and classification report generated with scikit-learn. Two methods are available.
+    - `train_model.py`: train a model with the color and HOG features to classify the symbol images,
+    - `train_separate_models.py`: train separate models on color and HOG features to classify the color and shape, then merge the results.
+* Classify all images in a folder: get the features and classify all images in a folder. Two methods are available.
+    - `classify_images_in_folder.py`: use the model trained on color and HOG features,
+    - `classify_color_and_shape.py`: use the color model and the shape model.
+
+The optimization for the classification was performed with the `optuna` package in the dedicated script `optimization.py`.
+
+Below, the command lines are presented for the algorithm version with a unique model for the classification.
+
+**Dataset with GT**
+
+```
+python scripts/symbol_recognition/prepare_ground_truth.py config/config_symbol_classif.yaml
+python scripts/symbol_recognition/data_augmentation.py config/config_symbol_classif.yaml
+python scripts/symbol_recognition/hog.py config/config_symbol_classif.yaml
+python scripts/symbol_recognition/color_treatment.py config/config_symbol_classif.yaml
+python scripts/symbol_recognition/train_model.py config/config_symbol_classif.yaml
+```
+
+**Points on a map**
+
+```
+python scripts/symbol_recognition/prepare_symbol_classif.py config/config_symbol_classif.yaml
+python scripts/symbol_recognition/classify_images_in_folder.py config/config_symbol_classif.yaml
+```
