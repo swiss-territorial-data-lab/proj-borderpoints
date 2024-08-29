@@ -17,7 +17,7 @@ from math import floor
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
 import functions.fct_optimization as opti
-import hog, train_model
+import hog, train_separated_models
 from constants import AUGMENTATION
 
 logger = misc.format_logger(logger)
@@ -33,7 +33,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     ppc = trial.suggest_int('ppc', min_ppc, max_ppc)
     cells_per_block = trial.suggest_int('cpb', 2, floor(max_image_size/min_ppc))
     orientations = trial.suggest_int('orientations', 4, 9)
-    variance_threshold = trial.suggest_float('variance_threshold', 0, 0.0065, step = 0.0005)
+    variance_threshold = trial.suggest_float('variance_threshold', 0, 0.01, step = 0.001)
 
     dict_param = {
         'image_size': image_size,
@@ -56,7 +56,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
         augmented_images_gdf['image_name'] = augmented_images_gdf['image_name'].apply(lambda x: 'aug_' + x)
         images_gdf = pd.concat([images_gdf, augmented_images_gdf], ignore_index=True)
 
-    balanced_accuracy, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
+    balanced_accuracy, _ = train_separated_models.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
 
     return balanced_accuracy
 
@@ -120,7 +120,7 @@ written_files.extend(opti.plot_optimization_results(study, targets, output_path=
 
 logger.info('Produce results for the best hyperparameters')
 hog_features_df, written_files_hog = hog.main(image_data, output_dir=OUTPUT_DIR, **study.best_params)
-_, written_files_svm = train_model.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
+_, written_files_svm = train_separated_models.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
 
 written_files.extend(written_files_hog)
 written_files.extend(written_files_svm)

@@ -1,8 +1,8 @@
 # Classification of the border points based on the cadastral map of the canton of Fribourg.
 
-This project aims to classify points missing in the official cadastral survey on old cadastral maps.
+This project aims to classify on old cadastral maps points missing in the digitized versioin of the official cadastral survey.
 
-In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
+*Context*:In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
 These missing boundary points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
 
 Two methods were tested:
@@ -29,7 +29,7 @@ The full documentation in available on our technical website: **link**.
 
 The historical maps can be heavy files. In our case, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
 
-The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To not be limited by the driver and python version, it is recommended to run the process in a *Docker* container. The steps necessary to the creation of the Docker image are described in the next section.
+The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
 
 ### Installation
 
@@ -42,7 +42,7 @@ The installation is performed from this folder with the following steps:
     * You can control the image existence by listing the available images with `docker images ls`.
     * If it is not available, build it from the folder of the object detector with `docker compose build`.
     * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
-* Go to the folder `proj-borderpoints`,
+* Go back to the folder `proj-borderpoints`,
 * Build docker,
 * Run docker,
 * Go to `proj-borderpoints` directory in docker.
@@ -60,14 +60,14 @@ docker compose run --rm borderpoints-dev
 cd proj-borderpoints            # Command to run in the docker bash
 ```
 
-**All workflow commands are supposed to be launched in Docker from the proj-borderpoint directory.**
+**All workflow commands are supposed to be launched in Docker from the `proj-borderpoints` directory.**
 
 
 ## Data
 
 <!-- I will develop this section when we finalize the repo with some example data. For now, it's just key points. -->
 
-* Maps: RGB image or images with a color map in EPSG:2056.
+* Maps: RGB images or images with a color map in EPSG:2056.
 * Cadastral survey data: vector layer with the approximate position of cadastral points used to limit the production of tiles in the area of interest.
 
 When working with the ground truth, the following files are required in addition:
@@ -157,6 +157,8 @@ This workflow trains an algorithm to classify images of the border points.
 * Classify all images in a folder: get the features and classify all images in a folder. Two methods are available.
     - `classify_images_in_folder.py`: use the model trained on color and HOG features,
     - `classify_color_and_shape.py`: use the color model and the shape model.
+
+All the parameters are passed through a configuration file. Some fixed parameters are set for the whole process in `constants.py`.
 
 The optimization for the classification was performed with the `optuna` package in the dedicated script `optimization.py`.
 

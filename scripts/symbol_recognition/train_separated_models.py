@@ -95,7 +95,7 @@ def split_label_info(labels, info_type):
 
 
 def main(images, features_hog, features_stats, save_extra=False, do_plot=False, output_dir='outputs'):
-    output_dir_model = output_dir if output_dir.endswith(MODEL) or output_dir.endswith(MODEL + '/') else os.path.join(output_dir, MODEL)
+    output_dir_model = output_dir if MODEL.lower() in output_dir.lower() else os.path.join(output_dir, MODEL)
     os.makedirs(output_dir_model, exist_ok=True)
     written_files = []
 
@@ -183,7 +183,7 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
         classified_pts_tst_gdf.to_file(filepath)
         written_files.append(filepath)
 
-        if MODEL == 'RF':
+        if MODEL in ['RF', 'HGBC']:
             thresholds_bins = [i/100 for i in range(0, 100, 5)]
             weights_dict = {
                 gt_class: classified_pts_tst_gdf[classified_pts_tst_gdf.label == gt_class].shape[0]/classified_pts_tst_gdf.shape[0] 

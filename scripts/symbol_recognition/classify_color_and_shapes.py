@@ -11,7 +11,7 @@ import rasterio as rio
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 import classify_images_in_folder,  color_treatment, hog, train_separated_models
-from constants import MODEL
+from constants import AUGMENTATION, MODEL
 
 logger = misc.format_logger(logger)
 
@@ -32,9 +32,16 @@ VARIANCE_FILTER = cfg['variance_filter']
 MODEL_DIR = cfg['model_dir']
 
 os.chdir(WORKING_DIR)
-output_dir = OUTPUT_DIR if OUTPUT_DIR.endswith(MODEL) or OUTPUT_DIR.endswith(MODEL + '/') else os.path.join(OUTPUT_DIR, MODEL)
+output_dir = OUTPUT_DIR if MODEL.lower() in OUTPUT_DIR.lower() else os.path.join(OUTPUT_DIR, MODEL)
 os.makedirs(output_dir, exist_ok=True)
 written_files = []
+
+if AUGMENTATION and ('augmented_images' not in MODEL_DIR.lower()):
+    logger.error('The parameter for data augmentation is set to true, but no augmentation indicated in the model path.')
+    sys.exit(1)
+elif not AUGMENTATION and ('augmented_images' in MODEL_DIR.lower()):
+    logger.error('The parameter for data augmentation is set to false, but augmentation indicated in the model path.')
+    sys.exit(1)
 
 # ----- Main -----
 
@@ -53,7 +60,6 @@ for tile_path in tqdm(tile_list, desc='Read images'):
 logger.info('Extract HOG features...')
 hog_features_df, written_files_hog = hog.main(
     image_data,
-    image_size=109, ppc=19, cpb=4, orientations=5, variance_threshold=0.0045,
     fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
 )
 hog_features_df = misc.format_hog_info(hog_features_df)
@@ -78,7 +84,7 @@ if MODEL == 'SVM':
     pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), ['class', 'method']] = ('undetermined', 'default, because multiple classes were detected')
     logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
 
-elif MODEL == 'RF':
+elif MODEL in ['RF', 'HGBC']:
     pts_gdf['score'] = pts_gdf[['shape_score', 'color_score']].min(axis=1)
 
     # Determine best class based on score

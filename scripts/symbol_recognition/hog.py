@@ -32,8 +32,8 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold=0.004, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
-# def main(tiles, image_size=109, ppc=19, cpb=4, orientations=5, variance_threshold=0.0045, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Optimized of old GT
+# def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold=0.004, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
+def main(tiles, image_size=114, ppc=21, cpb=3, orientations=6, variance_threshold=0.006, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
 

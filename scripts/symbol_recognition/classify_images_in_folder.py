@@ -39,7 +39,7 @@ def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_mo
     logger.info('Apply classification model...')
     pred_list = model.predict(scaled_features_arr)
     preds_df = pd.DataFrame({'image_name': features_gdf.image_name, 'pred': pred_list})
-    if MODEL == 'RF':
+    if MODEL in ['RF', 'HGBC']:
         preds_df['score'] = model.predict_proba(scaled_features_arr).max(axis=1).round(3)
 
     pts_gdf = image_info_gdf.copy()
@@ -85,6 +85,9 @@ if __name__ == '__main__':
     written_files = []
 
     # ----- data processing -----
+    logger.info('Control paths...')
+    assert MODEL.lower() in MODEL_DIR.lower(), f'Model name not found in the path {MODEL_DIR}.'
+
     if AUGMENTATION and ('augmented_images' not in MODEL_DIR.lower()):
         logger.error('The parameter for data augmentation is set to true, but no augmentation indicated in the model path.')
         sys.exit(1)
@@ -130,7 +133,7 @@ if __name__ == '__main__':
         pts_gdf.loc[pts_gdf['pt_id'].isin(multiple_classes_ids), ['class', 'method']] = ('undetermined', 'default, because multiple classes were detected')
         logger.info(f'{len(multiple_classes_ids)} points are classified as undetermined because multiple classes were detected.')
 
-    elif MODEL == 'RF':
+    elif MODEL in ['RF', 'HGBC']:
         # Determine best class based on score
         determined_pts_gdf.sort_values(by='score', ascending=False, inplace=True)
         determined_pts_gdf.drop_duplicates(subset=['pt_id'], inplace=True)

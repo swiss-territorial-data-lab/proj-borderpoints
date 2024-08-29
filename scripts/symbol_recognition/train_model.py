@@ -8,7 +8,7 @@ import geopandas as gpd
 import pandas as pd
 from numpy import std
 from sklearn import svm
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -69,8 +69,26 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
         }
         clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
 
+    elif MODEL == 'HGBC':
+        logger.info('Prepare HGBC model...')
+        hgcb_model = HistGradientBoostingClassifier(random_state=42, early_stopping=True, validation_fraction=0.2, class_weight='balanced')
+        parameters = {
+            'learning_rate': [0.01, 0.1, 0.5],
+            'max_iter': [25, 50, 75],
+            'max_leaf_nodes': [15, 31, 63, None],
+            'max_features': [0.15, 0.25, 0.33],
+
+        }
+        clf = GridSearchCV(hgcb_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+
+    else:
+        logger.critical(f'Model {MODEL} not implemented')
+        sys.exit()
+
     logger.info('Train model with CV...')
     clf.fit(data_trn_scaled, labels_trn)
+    logger.success(f"Best score: {clf.best_score_:.3f}")
+    logger.success(f"Best parameters: {clf.best_params_}")
 
     logger.info('Test model...')
     pred_tst = clf.predict(data_tst_scaled)
@@ -97,7 +115,7 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
 
 
 def main(images, features_hog, features_stats, save_extra=False, output_dir='outputs'):
-    output_dir_model = output_dir if output_dir.endswith(MODEL) or output_dir.endswith(MODEL + '/') else os.path.join(output_dir, MODEL)
+    output_dir_model = output_dir if MODEL.lower() in output_dir.lower() else os.path.join(output_dir, MODEL)
     os.makedirs(output_dir_model, exist_ok=True)
     written_files = []
 
