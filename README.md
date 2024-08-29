@@ -1,8 +1,37 @@
-# proj-borderpoints
-Classification of the border points from the BDMO2 based on the cadastral map of the canton of Fribourg.
+# Classification of the border points based on the cadastral map of the canton of Fribourg.
 
+This project aims to classify points missing in the official cadastral survey on old cadastral maps.
 
-## Installation
+In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
+These missing boundary points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
+
+Two methods were tested:
+
+* Instance segmentation with the already available STDL's object detector, and
+* Image classification with `scikit-learn` package.
+
+Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, it's the method presented in this readme. The second method is briefly described in the [additional development]().
+
+The full documentation in available on our technical website: **link**.
+
+**Table of content**
+
+- [Setup](#Setup)
+    - [Requirements](#requirements)
+    - [Installation](#installation)
+- [Data](#data)
+- [General workflow](#general-workflow)
+- [Additional development](#additional-development)
+
+## Setup
+
+### Requirements
+
+The historical maps can be heavy files. In our case, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
+
+The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To not be limited by the driver and python version, it is recommended to run the process in a *Docker* container. The steps necessary to the creation of the Docker image are described in the next section.
+
+### Installation
 
 The installation is performed from this folder with the following steps:
 
@@ -33,12 +62,26 @@ cd proj-borderpoints            # Command to run in the docker bash
 
 **All workflow commands are supposed to be launched in Docker from the proj-borderpoint directory.**
 
-## General workflow
 
+## Data
+
+<!-- I will develop this section when we finalize the repo with some example data. For now, it's just key points. -->
+
+* Maps: RGB image or images with a color map in EPSG:2056.
+* Cadastral survey data: vector layer with the approximate position of cadastral points used to limit the production of tiles in the area of interest.
+
+When working with the ground truth, the following files are required in addition:
+
+* Bounding boxes: vector layer of the areas were all the cadastral points were digitized.
+* Ground truth (GT): vector layer with the delineation and class of all the cadastral points in the bounding boxes.
+* Plan scales: Excel file with the number and scale of each plan used for the GT.
+
+
+## General workflow
 
 The workflow can be divided into three parts:
 
-* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
+* Data preparation: call of the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
     - Transform the maps from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
@@ -50,13 +93,7 @@ The workflow can be divided into three parts:
     - `check_w_land_cover.py`: use the data on land cover to assign the class "non-materialized point" to undetermined points in building and stagnant waters.
     - `heatmap.py`: highlight areas with a high concentration of false positive points.
 
-If some overlap between tiles is required:
-
-```
-python scripts/sandbox/get_point_bbox_size.py config/config_sandbox.yaml
-```
-
-It produces a csv file with the info about the maximum size of border points at each scale. This maximum size at each scale is then used as the overlap distance for the tile production. The file must then be passed as parameter in the data preparation.
+All the parameters are passed through a configuration file. Some fixed parameters are set for the whole process in `constants.py`.
 
 **Dataset with GT**
 
@@ -77,11 +114,12 @@ python scripts/instance_segmentation/assess_w_post_process.py config/config_w_gt
 
 In the configuration file, the parameters `keep_datasets` must be set to `True` to preserve the split of the training, validation and test datasets.
 
-Performing the point matching is possible with the ground truth. However, the polygons are then transformed to points and a new script would be needed for the assessment.
+Performing the point matching is possible with the ground truth.
 
 ```
 python scripts/post_processing/point_matching.py config/config_w_gt.yaml
 python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
+python scripts/instance_segmentation_assess_point_classif.py config/config_w_gt.yaml
 ```
 
 **Whole tiles**
@@ -122,9 +160,9 @@ This workflow trains an algorithm to classify images of the border points.
 
 The optimization for the classification was performed with the `optuna` package in the dedicated script `optimization.py`.
 
-Below, the command lines are presented for the algorithm version with a unique model for the classification.
+Below, the command lines are presented for the algorithm version with a single model for the classification.
 
-**Dataset with GT**
+**Points with GT**
 
 ```
 python scripts/symbol_recognition/prepare_ground_truth.py config/config_symbol_classif.yaml
@@ -134,7 +172,7 @@ python scripts/symbol_recognition/color_treatment.py config/config_symbol_classi
 python scripts/symbol_recognition/train_model.py config/config_symbol_classif.yaml
 ```
 
-**Points on a map**
+**Points on an entire map**
 
 ```
 python scripts/symbol_recognition/prepare_symbol_classif.py config/config_symbol_classif.yaml
