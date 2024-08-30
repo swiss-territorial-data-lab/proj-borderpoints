@@ -10,7 +10,7 @@ Two methods were tested:
 * Instance segmentation with the already available STDL's object detector, and
 * Image classification with `scikit-learn` package.
 
-Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, it's the method presented in this readme. The second method is briefly described in the [additional development]().
+Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, it's the method presented in this readme. The second method is briefly described in the [additional information](#additional-information).
 
 The full documentation in available on our technical website: **link**.
 
@@ -21,7 +21,11 @@ The full documentation in available on our technical website: **link**.
     - [Installation](#installation)
 - [Data](#data)
 - [General workflow](#general-workflow)
-- [Additional development](#additional-development)
+- [Additional information](#additional-information)
+    - [Project structure](#project-structure)
+    - [Symbol classification](#symbol-classification)
+
+## Data
 
 ## Setup
 
@@ -81,7 +85,7 @@ When working with the ground truth, the following files are required in addition
 
 The workflow can be divided into three parts:
 
-* Data preparation: call of the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire tiles. More precisely, the following steps are performed:
+* Data preparation: call of the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire maps. More precisely, the following steps are performed:
     - Transform the maps from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
@@ -137,7 +141,31 @@ python scripts/post_processing/heatmap.py config/config_whole_tiles.yaml
 The command lines above use the configuration files for the maps with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for maps on which no point was digitized as part of the ground truth. Only the path to the different folders should change between the two configurations.
 
 
-## Symbol classification
+## Additional information
+
+### Project structure
+
+The project is constituted of the following folders:
+
+``` 
+.
+├── config            # Configuration files
+├── data              # Input data
+└── scripts           # Scripts
+    ├── data_preparation        # Scripts for data preparation
+    ├── functions               # Functions
+    ├── instance_segmentation   # Scripts for instance segmentation
+    ├── post_processing         # Scripts for post-processing after the instance segmentation
+    ├── sandbox                 # Test scripts not included in workflows
+    └── symbol_recognition      # Scripts for symbol classification
+```
+
+The figure below shows the different available workflows and the scripts involved in them.
+
+![Workflow](img/workflow_w_scripts.jpg)
+
+
+### Symbol classification
 
 This workflow trains an algorithm to classify images of the border points.
 
