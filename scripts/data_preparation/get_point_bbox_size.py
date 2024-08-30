@@ -13,7 +13,7 @@ from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
 
-def get_point_bbox_size(border_pts_path, output_dir='outputs'):
+def main(border_pts_path, output_dir='outputs'):
     """Get the maximum bounding box size of the border points at each scale.
 
     Args:
