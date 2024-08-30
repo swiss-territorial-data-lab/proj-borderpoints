@@ -10,7 +10,7 @@ from functions.fct_misc import format_logger, get_config
 logger = format_logger(logger)
 
 
-def format_labels(path_points_poly, output_dir='outputs'):
+def main(path_points_poly, output_dir='outputs'):
     """Format the labels based on the GT from the experts
 
     Args:
@@ -40,7 +40,6 @@ def format_labels(path_points_poly, output_dir='outputs'):
     written_files.append(filepath)
 
     logger.success('Done formatting the labels!')
-
     return pts_gdf, written_files
 
 
@@ -58,7 +57,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = format_labels(BORDER_POINTS, OUTPUT_DIR)
+    _, written_files = main(BORDER_POINTS, OUTPUT_DIR)
 
     print()
     logger.success("The following files were written. Let's check them out!")

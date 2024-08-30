@@ -41,14 +41,14 @@ TILE_SUFFIX = cfg['tile_suffix']
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
+    pct_to_rgb.main(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
-pts_gdf, written_files = format_labels.format_labels(BORDER_POINTS, OUTPUT_DIR_VECT)
+pts_gdf, written_files = format_labels.main(BORDER_POINTS, OUTPUT_DIR_VECT)
 
 logger.info('Clip tiles to the digitization bounding boxes...')
-tiles_to_box.tiles_to_box(TILE_DIR, BBOX, OUTPUT_DIR_CLIPPED_TILES)
+tiles_to_box.main(TILE_DIR, BBOX, OUTPUT_DIR_CLIPPED_TILES)
 
-tiles_gdf, _, subtiles_gdf, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(
+tiles_gdf, _, subtiles_gdf, tmp_written_files = get_delimitation_tiles.main(
     tile_dir=OUTPUT_DIR_CLIPPED_TILES, overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True
 )
 written_files.extend(tmp_written_files)
@@ -71,12 +71,12 @@ if len(tiles_gdf['scale'].unique()) == 1:
     tiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECT, 'tiles.gpkg'))
 
 logger.info('Format cadastral survey points...')
-cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
+cs_points_gdf, tmp_written_files = format_surveying_data.main(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
 logger.info('Clip images to subtiles...')
 SUBTILE_DIR = os.path.join(OUTPUT_DIR_CLIPPED_TILES, 'subtiles')
-tiles_to_box.tiles_to_box(OUTPUT_DIR_CLIPPED_TILES, subtiles_gdf, SUBTILE_DIR)
+tiles_to_box.main(OUTPUT_DIR_CLIPPED_TILES, subtiles_gdf, SUBTILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")

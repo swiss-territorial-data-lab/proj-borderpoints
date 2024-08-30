@@ -46,7 +46,7 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
     return id_to_keep
 
 
-def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
+def main(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
     """Get the delimitation of the tiles in a directory
 
     Args:
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, _, written_files = get_delimitation_tiles(TILE_DIR,  OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
+    _, _, written_files = main(TILE_DIR,  OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
 
     print()
     logger.success("The following files were written. Let's check them out!")

@@ -160,12 +160,21 @@ The project is constituted of the following folders:
     └── symbol_recognition      # Scripts for symbol classification
 ```
 
-The figure below shows the different available workflows and the scripts involved in them.
+The figure below shows the different available workflows and the scripts involved in them (click on it to see it larger).
 
 ![Workflow](img/workflow_w_scripts.jpg)
 
 
 ### Symbol classification
+
+#### Requirements
+
+For this workflow, like for the instance segmentation, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. <br>
+However, the rest of the process does not require a GPU. It was tested on a Windows 10 machine with python 3.12.
+
+<!-- Update later for the library that are actually required. -->
+
+#### Workflow
 
 This workflow trains an algorithm to classify images of the border points.
 

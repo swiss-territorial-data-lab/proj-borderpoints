@@ -19,7 +19,7 @@ logger = format_logger(logger)
 # Functions ------------------------------------------
 
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
+def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
     """Convert images with a color palette to RGB images.
     Reproject the images to EPSG:2056 if the tranform or the CRS is not already corresponding to EPSG:2056.
 
@@ -104,9 +104,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
 
     if len(name_correspondence_list) > 0:
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
-        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+        logger.success(f"Done converting color map images to RGB! The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.success(f"All files were already present in folder. Nothing done.")
+        logger.success(f"Done converting color map images to RGB! All files were already present in folder.")
 
 
 # ------------------------------------------
@@ -130,4 +130,4 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)
+    main(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)

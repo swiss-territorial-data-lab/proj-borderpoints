@@ -17,7 +17,7 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
+def main(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     """Clip the tiles in a directory to the box geometries from a GeoDataFrame
 
     Args:
@@ -110,9 +110,9 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         misc.save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
 
     if len(name_correspondence_list) > 0:
-        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+        logger.success(f"Done clipping the tiles to the bboxes! The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.success(f"All files were already present in folder. Nothing done.")
+        logger.success(f"Done clipping the tiles to the bboxes! All files were already present in folder.")
         
 
 # ------------------------------------------
@@ -131,4 +131,4 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    tiles_to_box(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
+    main(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)

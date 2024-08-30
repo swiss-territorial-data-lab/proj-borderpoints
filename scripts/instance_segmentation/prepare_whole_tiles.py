@@ -38,13 +38,13 @@ CONVERT_IMAGES = cfg['convert_images']
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
+    pct_to_rgb.main(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
-tiles_gdf, _, subtiles_gdf, written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, 
+tiles_gdf, _, subtiles_gdf, written_files = get_delimitation_tiles.main(TILE_DIR, 
                                                                                        overlap_info=OVERLAP_INFO, output_dir=OUTPUT_DIR_VECT, subtiles=True)
 
 logger.info('Format cadastral surveying data...')
-cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
+cs_points_gdf, tmp_written_files = format_surveying_data.main(CADASTRAL_SURVEYING, subtiles_gdf, output_dir=OUTPUT_DIR_VECT)
 written_files.extend(tmp_written_files)
 
 logger.info('Limit subtiles to the area with cadastral survey data and overwrite the initial file...')
@@ -56,7 +56,7 @@ subtiles_gdf.to_file(os.path.join(OUTPUT_DIR_VECT, 'subtiles.gpkg'))
 # Clip images to subtiles
 SUBTILE_DIR = os.path.join(TILE_DIR, 'subtiles')
 os.makedirs(SUBTILE_DIR, exist_ok=True)
-tiles_to_box.tiles_to_box(TILE_DIR, subtiles_gdf, SUBTILE_DIR)
+tiles_to_box.main(TILE_DIR, subtiles_gdf, SUBTILE_DIR)
 
 print()
 logger.success("The following files were written. Let's check them out!")
