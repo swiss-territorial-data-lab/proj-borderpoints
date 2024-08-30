@@ -48,6 +48,7 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
     data_trn_scaled = scaler.fit_transform(data_trn)
     data_tst_scaled = scaler.transform(data_tst)
 
+    # TODO: setup pipelines
     if MODEL == 'SVM':
         logger.info('Prepare SVM model...')
         # https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
@@ -95,7 +96,7 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
     metric = balanced_accuracy_score(labels_tst, pred_tst)
 
     logger.info('Save a geodataframe with the test features...')
-    if MODEL == 'RF':
+    if MODEL in ['RF', 'HGBC']:
         proba_pred_tst = clf.predict_proba(data_tst_scaled)
         classified_pts_tst_gdf = gpd.GeoDataFrame(
             {'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 

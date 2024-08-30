@@ -296,21 +296,22 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
                 logger.info(f'Get the feature importance in the determination of {model["desc"]}...')
                 features_list = [col for col in model['tst_results'].columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
 
-                # Method of the mean decrease in impurity
-                importances = model['model'].best_estimator_.feature_importances_
-                std_feat_importance = std([tree.feature_importances_ for tree in model['model'].best_estimator_.estimators_], axis=0)
+                if MODEL == 'RF':
+                    # Method of the mean decrease in impurity
+                    importances = model['model'].best_estimator_.feature_importances_
+                    std_feat_importance = std([tree.feature_importances_ for tree in model['model'].best_estimator_.estimators_], axis=0)
 
-                forest_importances = pd.Series(importances, index=features_list)
+                    forest_importances = pd.Series(importances, index=features_list)
 
-                fig, ax = plt.subplots(figsize=(9, 5))
-                forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
-                ax.set_title("Feature importances using MDI")
-                ax.set_ylabel("Mean decrease in impurity")
-                fig.tight_layout()
+                    fig, ax = plt.subplots(figsize=(9, 5))
+                    forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
+                    ax.set_title("Feature importances using MDI")
+                    ax.set_ylabel("Mean decrease in impurity")
+                    fig.tight_layout()
 
-                file_to_write = os.path.join(output_dir_model, f'feature_importance_{model["desc"]}s_MDI.jpeg')
-                fig.savefig(file_to_write)
-                written_files.append(file_to_write)
+                    file_to_write = os.path.join(output_dir_model, f'feature_importance_{model["desc"]}s_MDI.jpeg')
+                    fig.savefig(file_to_write)
+                    written_files.append(file_to_write)
 
                 # Based on feature permutation
                 data_tst_scaled = model['tst_results'][features_list].to_numpy()
