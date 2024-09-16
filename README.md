@@ -25,7 +25,6 @@ The full documentation in available on our technical website: **link**.
     - [Project structure](#project-structure)
     - [Symbol classification](#symbol-classification)
 
-## Data
 
 ## Setup
 
@@ -65,6 +64,7 @@ cd proj-borderpoints            # Command to run in the docker bash
 ```
 
 **All workflow commands are supposed to be launched in Docker from the `proj-borderpoints` directory.**
+
 
 
 ## Data

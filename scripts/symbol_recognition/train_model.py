@@ -107,7 +107,7 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
     
     classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
 
-    tst_data_df = pd.DataFrame(data_tst, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
+    tst_data_df = pd.DataFrame(data_tst_scaled, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
     classified_pts_tst_gdf = classified_pts_tst_gdf.merge(tst_data_df, how='inner', on='image_name')
 
     classified_pts_tst_gdf['method'] = 'test for the model training'
@@ -318,9 +318,9 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             )
             forest_importances = pd.Series(result.importances_mean, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(9, 5))
+            fig, ax = plt.subplots(figsize=(0.125*len(features_list), 5))
             forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
-            ax.set_title("Feature importances using permutation on full model")
+            ax.set_title("Feature importances using permutation on scaled variables")
             ax.set_ylabel("Mean accuracy decrease")
             fig.tight_layout()
 

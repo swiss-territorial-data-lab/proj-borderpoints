@@ -245,7 +245,7 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
                 threshold_values=[]
                 for threshold in thresholds_bins:
                     preds_in_bin = determined_types_gdf[
-                                                (determined_types_gdf.score > threshold-0.5)
+                                                (determined_types_gdf.score > threshold-0.05)
                                                 & (determined_types_gdf.score <= threshold) 
                                                 ].copy()
 
@@ -319,11 +319,11 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
                 result = permutation_importance(
                     model['model'].best_estimator_, data_tst_scaled, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
                 )
-                forest_importances = pd.Series(result.importances_mean, index=features_list)
+                forest_importances = pd.Series(result.importances_mean, index=features_list).sort_values(ascending=False)
 
                 fig, ax = plt.subplots(figsize=(9, 5))
                 forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
-                ax.set_title("Feature importances using permutation on full model")
+                ax.set_title("Feature importances using permutation on scaled variables")
                 ax.set_ylabel("Mean accuracy decrease")
                 fig.tight_layout()
 
