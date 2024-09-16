@@ -178,12 +178,12 @@ However, the rest of the process does not require a GPU. It was tested on a Wind
 
 This workflow trains an algorithm to classify images of the border points.
 
-* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire tiles. More precisely, the following steps are performed:
+* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire maps. More precisely, the following steps are performed:
     1. Transform the maps from a color map to RGB images,
-    2. Determine the symbol size based on the ground truth,
-    3. Generate a vector layer with the tile information and delineation,
-    4. Join survey points to tiles and create a unique id based on point and tile,
-    5. Clip the map to the survey points based on the determined symbol size at each scale (step 2).
+    2. Determine the symbol size at each map scale based on the ground truth,
+    3. Generate a vector layer with the map information and delineation,
+    4. Join survey points to maps and create a unique id based on point and map,
+    5. Clip the map to the survey points based on the determined symbol size from step ii.
 * (*facultative*) Data augmentation: double the number of training images by flipping them and changing slightly the colorimetry with the script `data_augmentation.py`.
 * Feature extraction:
     - `color_treatment.py`: Create a mask indicating the symbol area on the image,	calculate the zonal stats on each color band for the determined areas,

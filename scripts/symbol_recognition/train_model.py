@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
-from numpy import std
+from numpy import nan, std
 from sklearn import svm
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.inspection import permutation_importance
@@ -198,6 +198,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             for threshold in thresholds_bins:
                 preds_above_score_gdf = classified_pts_tst_gdf[classified_pts_tst_gdf.score >= threshold].copy()
                 if preds_above_score_gdf.empty:
+                    for key in ['balanced accuracy', 'weighted accuracy', 'raw accuracy']:
+                        metric_dict[key].append(nan)
                     continue
                 
                 metric_dict['dropped_fraction'].append(1 - preds_above_score_gdf.shape[0]/classified_pts_tst_gdf.shape[0])
@@ -246,7 +248,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
                 threshold_values=[]
                 for threshold in thresholds_bins:
                     preds_in_bin = determined_types_gdf[
-                                                (determined_types_gdf.score > threshold-0.5)
+                                                (determined_types_gdf.score > threshold-0.05)
                                                 & (determined_types_gdf.score <= threshold) 
                                                 ].copy()
 
@@ -291,21 +293,22 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
             logger.info('Get the feature importance...')
 
-            # Method of the mean decrease in impurity
-            importances = clf.best_estimator_.feature_importances_
-            std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_.estimators_], axis=0)
+            if MODEL == 'RF':
+                # Method of the mean decrease in impurity
+                importances = clf.best_estimator_.feature_importances_
+                std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_.estimators_], axis=0)
 
-            forest_importances = pd.Series(importances, index=features_list)
+                forest_importances = pd.Series(importances, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(9, 5))
-            forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
-            ax.set_title("Feature importances using MDI")
-            ax.set_ylabel("Mean decrease in impurity")
-            fig.tight_layout()
+                fig, ax = plt.subplots(figsize=(0.125*len(features_list), 5))
+                forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
+                ax.set_title("Feature importances using MDI")
+                ax.set_ylabel("Mean decrease in impurity")
+                fig.tight_layout()
 
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.jpeg')
-            fig.savefig(file_to_write)
-            written_files.append(file_to_write)
+                file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.jpeg')
+                fig.savefig(file_to_write)
+                written_files.append(file_to_write)
 
             # Based on feature permutation
             data_tst_scaled = classified_pts_tst_gdf[features_list].to_numpy()

@@ -9,4 +9,4 @@ CLIP_OR_PAD_SUBTILES = 'clip'
 
 # symbol classification
 AUGMENTATION = True
-MODEL = 'HGBC'
+MODEL = 'RF'
