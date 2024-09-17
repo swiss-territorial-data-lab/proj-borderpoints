@@ -22,6 +22,7 @@ sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from constants import AUGMENTATION, MODEL
 
+pd.options.plotting.backend = "plotly"
 logger = misc.format_logger(logger)
 
 
@@ -185,7 +186,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
         classified_pts_tst_gdf.to_file(filepath)
         written_files.append(filepath)
 
-        if MODEL == 'RF':
+        if MODEL in ['RF', 'HGBC']:
             thresholds_bins = [i/100 for i in range(0, 100, 5)]
             weights_dict = {
                 gt_class: classified_pts_tst_gdf[classified_pts_tst_gdf.label == gt_class].shape[0]/classified_pts_tst_gdf.shape[0] 
@@ -300,14 +301,11 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
                 forest_importances = pd.Series(importances, index=features_list)
 
-                fig, ax = plt.subplots(figsize=(0.125*len(features_list), 5))
-                forest_importances.plot.bar(yerr=std_feat_importance, ax=ax)
-                ax.set_title("Feature importances using MDI")
-                ax.set_ylabel("Mean decrease in impurity")
-                fig.tight_layout()
+                fig = forest_importances.plot.bar(error_y=std_feat_importance)
+                fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
 
-                file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.jpeg')
-                fig.savefig(file_to_write)
+                file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.html')
+                fig.write_html(file_to_write)
                 written_files.append(file_to_write)
 
             # Based on feature permutation
@@ -318,14 +316,11 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             )
             forest_importances = pd.Series(result.importances_mean, index=features_list)
 
-            fig, ax = plt.subplots(figsize=(0.125*len(features_list), 5))
-            forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
-            ax.set_title("Feature importances using permutation on scaled variables")
-            ax.set_ylabel("Mean accuracy decrease")
-            fig.tight_layout()
+            fig = forest_importances.plot.bar(error_y=result.importances_std)
+            fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")
 
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.jpeg')
-            fig.savefig(file_to_write)
+            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.html')
+            fig.write_html(file_to_write)
             written_files.append(file_to_write)
 
 
