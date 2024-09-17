@@ -208,12 +208,11 @@ def main(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', 
 
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
             logger.info('The tiles are clipped to the image border.')
-            tiling_zone = tiles_gdf.unary_union
             subtiles_gdf = gpd.overlay(
-                subtiles_gdf, gpd.GeoDataFrame({'tiling_id': [1], 'geometry': [tiling_zone]}, crs='EPSG:2056'), 
+                subtiles_gdf, tiles_gdf[['name', 'geometry']], 
                 how="intersection", keep_geom_type=True
             )
-            subtiles_gdf = subtiles_gdf[['id', 'initial_tile', 'geometry']]
+            subtiles_gdf = subtiles_gdf.loc[subtiles_gdf.initial_tile == subtiles_gdf.name, ['id', 'initial_tile', 'geometry']]
 
         filepath = os.path.join(output_dir, 'subtiles.gpkg')
         subtiles_gdf.to_file(filepath)

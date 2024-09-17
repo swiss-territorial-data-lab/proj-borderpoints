@@ -50,7 +50,7 @@ def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix
         if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
         
-        while any(os.path.basename(name).startswith(str(tile_nbr) + '_') for name in existing_tiles):
+        while any(os.path.basename(name).startswith(str(tile_nbr) + '_') for name in existing_tiles) and not cst.OVERWRITE:
             tile_nbr += 1
         out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         

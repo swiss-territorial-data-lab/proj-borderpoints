@@ -33,6 +33,9 @@ def main(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
         bboxes_gdf = gpd.read_file(bboxes)
+        # Exclude areas added for symbol classification
+        bboxes_gdf.loc[:,'Num_box'] = bboxes_gdf.Num_box.astype(int)
+        bboxes_gdf = bboxes_gdf[bboxes_gdf.Num_box <= 35].copy()
         # Find tilepath matching initial plan number
         bboxes_gdf['tilepath'] = [
             tilepath 
@@ -43,7 +46,6 @@ def main(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     elif isinstance(bboxes, gpd.GeoDataFrame):
         bboxes_gdf = bboxes.copy()
         bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
-        bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         if cst.CLIP_OR_PAD_SUBTILES == 'pad':
             logger.info('Subtiles not entirely covered by the tile will be padded.')
             pad_tiles = True
