@@ -4,7 +4,7 @@ prepare_data.py:
     vectors: outputs/instance_segmentation/formatted_labels
     clipped_tiles: outputs/instance_segmentation/clipped_tiles
   initial_image_dir: inputs/plans
-  tile_dir: outputs/instance_segmentation/rgb_images
+  tile_dir: outputs/rgb_images
   border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
   bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
   plan_scales: inputs/plan_scales.xlsx
@@ -108,7 +108,7 @@ assess_w_post_process.py:
   subtiles: object_detector/split_aoi_tiles.geojson
   ground_truth: formatted_labels/ground_truth_labels.gpkg
   category_ids_json: object_detector/category_ids.json
-  name_correspondence: rgb_images/name_correspondence.csv
+  name_correspondence: ../rgb_images/name_correspondence.csv
   keep_datasets: True
   detections: post_processing/dst_detected_points.gpkg
 

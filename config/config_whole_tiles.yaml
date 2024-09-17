@@ -3,7 +3,7 @@ prepare_whole_tiles.py:
   output_dir: 
     vectors: outputs/instance_segmentation/gpkg_whole_tiles
   initial_image_dir: inputs/plans
-  tile_dir: outputs/instance_segmentation/rgb_images
+  tile_dir: outputs/rgb_images
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   tile_suffix: _geo.tif
   convert_images: True
@@ -17,7 +17,7 @@ generate_tilesets.py:
     aoi_tiles: gpkg_whole_tiles/subtiles.gpkg
     image_source:
       type: FOLDER
-      location: rgb_images/subtiles
+      location: ../rgb_images/subtiles
       srs: 2056
   output_folder: detections
   overwrite: True
