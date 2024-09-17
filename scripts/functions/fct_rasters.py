@@ -133,8 +133,8 @@ def no_data_to_polygons(image_band, transform, nodata_value, crs="EPSG:2056"):
 
     nodata_polygons = []
 
-    nodata_shapes = list(shapes(image_band, transform=transform))
-    nodata_polygons.extend([shape(geom) for geom, value in nodata_shapes if value == nodata_value])
+    nodata_shapes = list(shapes(image_band, mask=image_band == nodata_value, transform=transform))
+    nodata_polygons.extend([shape(geom) for geom, value in nodata_shapes])
 
     nodata_gdf = gpd.GeoDataFrame({'id_nodata_poly': [i for i in range(len(nodata_polygons))], 'geometry': nodata_polygons}, crs=crs)
     # Remove isolated pixels with the same value as nodata
