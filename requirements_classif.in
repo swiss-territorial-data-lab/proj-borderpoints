@@ -1,0 +1,10 @@
+geopandas
+loguru
+openpyxl
+optuna              # Unnecessary for the main workflow
+plotly
+PyYAML
+rasterstats
+scikit-learn
+scikit-image
+tqdm

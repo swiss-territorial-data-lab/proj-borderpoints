@@ -44,7 +44,7 @@ def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_co
     # Polygonize mask into one polygon
     geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[image_name]['transform']) if v == 1)
     mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[image_name]['crs'])
-    mask_gdf = gpd.GeoDataFrame([image_name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[image_name]['crs'])  
+    mask_gdf = gpd.GeoDataFrame([image_name], geometry = [mask_gdf.union_all()], columns=['geometry'], crs = meta_data[image_name]['crs'])  
 
     stat_values_list = []
     for band in band_correspondance.keys():

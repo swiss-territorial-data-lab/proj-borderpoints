@@ -2,7 +2,7 @@
 
 This project aims to classify on old cadastral maps points missing in the digitized versioin of the official cadastral survey.
 
-*Context*:In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
+*Context*: In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
 These missing boundary points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
 
 Two methods were tested:
@@ -172,7 +172,11 @@ The figure below shows the different available workflows and the scripts involve
 For this workflow, like for the instance segmentation, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. <br>
 However, the rest of the process does not require a GPU. It was tested on a Windows 10 machine with python 3.12.
 
-<!-- Update later for the library that are actually required. -->
+The required libraries can be installed from the file `requirements_classif.txt`.
+
+```
+pip install -r requirements_classif.txt
+```
 
 #### Workflow
 

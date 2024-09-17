@@ -1,4 +1,3 @@
-folium
 networkx
 openpyxl
 optuna              # Unnecessary for the main workflow
