@@ -123,7 +123,8 @@ border_pts_gdf = gpd.read_file(BORDER_POINTS)
 if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
     logger.critical('Some border points have a duplicated id!')
     sys.exit(1)
-border_pts_gdf = border_pts_gdf[(border_pts_gdf.Num_box.fillna(0).astype(int) <= 34) | (border_pts_gdf.Num_box.isna())]
+if 'Num_box' in border_pts_gdf.columns:
+    border_pts_gdf = border_pts_gdf[(border_pts_gdf.Num_box.fillna(0).astype(int) <= 35) | (border_pts_gdf.Num_box.isna())]
 
 logger.info('Test intersection between the border points and detections...')
 lonely_points_gdf, pts_w_cat_gdf = test_intersection(border_pts_gdf, detections_gdf)
