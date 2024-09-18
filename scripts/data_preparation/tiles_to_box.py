@@ -35,7 +35,7 @@ def main(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         bboxes_gdf = gpd.read_file(bboxes)
         # Exclude areas added for symbol classification
         bboxes_gdf.loc[:,'Num_box'] = bboxes_gdf.Num_box.astype(int)
-        bboxes_gdf = bboxes_gdf[bboxes_gdf.Num_box <= 35].copy()
+        bboxes_gdf = bboxes_gdf[bboxes_gdf.Num_box <= 34].copy()
         # Find tilepath matching initial plan number
         bboxes_gdf['tilepath'] = [
             tilepath 

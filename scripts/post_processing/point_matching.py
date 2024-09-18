@@ -68,7 +68,7 @@ def test_intersection(border_pts_gdf, detections_gdf):
     intersection_count_df = intersected_pts_gdf.groupby(['pt_id', 'det_category'], as_index=False).size()
 
     logger.info("   Isolate points properly intersected...")
-    multiple_intersections = intersection_count_df.duplicated('pt_id')
+    multiple_intersections = intersection_count_df.duplicated('pt_id', keep=False) | (intersection_count_df['size'] > 1)
     intersected_id = intersection_count_df.loc[~multiple_intersections, 'pt_id']
     pts_w_cat_gdf = intersected_pts_gdf[
         intersected_pts_gdf.pt_id.isin(intersected_id) & ~intersected_pts_gdf.det_category.isna() 
@@ -123,6 +123,7 @@ border_pts_gdf = gpd.read_file(BORDER_POINTS)
 if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
     logger.critical('Some border points have a duplicated id!')
     sys.exit(1)
+border_pts_gdf = border_pts_gdf[(border_pts_gdf.Num_box.fillna(0).astype(int) <= 34) | (border_pts_gdf.Num_box.isna())]
 
 logger.info('Test intersection between the border points and detections...')
 lonely_points_gdf, pts_w_cat_gdf = test_intersection(border_pts_gdf, detections_gdf)
