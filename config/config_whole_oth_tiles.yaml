@@ -42,7 +42,7 @@ make_detections.py:
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
-  detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     pth_file: ../model/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
@@ -61,7 +61,7 @@ post_processing.py:
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
-  score: 0.55
+  score: 0.60
   keep_datasets: False
 
 
@@ -82,5 +82,5 @@ check_w_land_cover.py:
 heatmap.py:
   working_dir: .
   output_dir: outputs/instance_segmentation/detections_oth_maps/heatmap
-  matched_points: outputs/instance_segmentation/detections_oth_maps/matched_points_2.gpkg
+  matched_points: outputs/instance_segmentation/detections_oth_maps/final_matched_points.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg

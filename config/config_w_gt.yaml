@@ -98,7 +98,7 @@ post_processing.py:
   subtiles: formatted_labels/subtiles.gpkg
   tiles: formatted_labels/tiles.gpkg
   category_ids_json: category_ids.json
-  score: 0.55
+  score: 0.60
   keep_datasets: True
 
 
@@ -114,10 +114,10 @@ assess_w_post_process.py:
 
 
 point_matching.py:
-  working_dir: outputs
-  output_dir: instance_segmentation/post_processing
-  detections: instance_segmentation/post_processing/dst_detected_points.gpkg
-  border_points: labels_symbol_matching/GT/ground_truth_labels.gpkg
+  working_dir: outputs/instance_segmentation
+  output_dir: post_processing
+  detections: post_processing/dst_detected_points.gpkg
+  border_points: ../../inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points_v240822.shp
 
 
 check_w_land_cover.py:

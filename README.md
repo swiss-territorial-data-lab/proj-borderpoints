@@ -123,7 +123,7 @@ Performing the point matching is possible with the ground truth.
 ```
 python scripts/post_processing/point_matching.py config/config_w_gt.yaml
 python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
-python scripts/instance_segmentation_assess_point_classif.py config/config_w_gt.yaml
+python scripts/instance_segmentation/assess_point_classif.py config/config_w_gt.yaml
 ```
 
 **Whole tiles**
