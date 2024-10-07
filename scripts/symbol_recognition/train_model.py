@@ -333,7 +333,7 @@ if __name__ == "__main__":
     tic = time()
     logger.info("Starting...")
 
-    cfg = misc.get_config(os.path.basename(__file__), "The script trains the SVM and tests it.")
+    cfg = misc.get_config(os.path.basename(__file__), "The script trains the SVM model and tests it.")
 
     WORKING_DIR = cfg['working_dir']
     OUTPUT_DIR = cfg['output_dir']
