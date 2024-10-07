@@ -11,7 +11,7 @@ logger = format_logger(logger)
 
 
 def main(path_points_poly, output_dir='outputs'):
-    """Format the labels based on the GT from the experts
+    """Format the labels based on the GT
 
     Args:
         path_points_poly (str): path to the GT file
