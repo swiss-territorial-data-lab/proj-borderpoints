@@ -1,5 +1,5 @@
 prepare_ground_truth.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -9,9 +9,9 @@ prepare_ground_truth.py:
   tile_suffix: _geo.tif
   convert_images: True
 
-
+ 
 prepare_symbol_classif.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -23,19 +23,19 @@ prepare_symbol_classif.py:
 
 
 data_augmentation.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: ../rgb_images/symbol_images_GT
   tile_dir: ../rgb_images/symbol_images_GT
 
 
 hog.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: feature_engineering
   tile_dir: ../rgb_images/symbol_images_GT
 
 
 color_treatment.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: feature_engineering
   tile_dir: ../rgb_images/symbol_images_GT
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
@@ -43,7 +43,7 @@ color_treatment.py:
 
 
 train_model.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: model_training
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
   hog_features: feature_engineering/hog_features.csv
@@ -51,7 +51,7 @@ train_model.py:
 
 
 train_separated_models.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: model_training/separated_models
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
   hog_features: feature_engineering/hog_features.csv
@@ -59,7 +59,7 @@ train_separated_models.py:
 
 
 optimization.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: optimization
   tile_dir: ../rgb_images/symbol_images_GT
   image_gpkg: labels_symbol_matching/GT/GT_pt_polys.gpkg
@@ -67,7 +67,7 @@ optimization.py:
 
 
 classify_images_in_folder.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: classification
   model_dir: model_training/HGBC/augmented_images
   tile_dir: ../rgb_images/symbol_images
@@ -76,7 +76,7 @@ classify_images_in_folder.py:
 
 
 classify_color_and_shapes.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/symbol_classification
+  working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: classification/separated_models
   model_dir: model_training/separated_models/HGBC/augmented_images
   tile_dir: ../rgb_images/symbol_images

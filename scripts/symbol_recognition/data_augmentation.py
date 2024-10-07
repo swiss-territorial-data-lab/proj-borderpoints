@@ -78,7 +78,6 @@ def make_red(name, image, meta, output_dir='outputs'):
     with rio.open(os.path.join(output_dir, 'aug_' + name), 'w', **meta[name]) as dst:
         dst.write(image.transpose(2, 0, 1))
 
-
 def make_blue(name, image, meta, output_dir='outputs'):
     image[:,:, 0:2] = np.where((image[:, :, :1] > 225) & (image[:, :, 1:2] > 225) & (image[:, :, 2:3] < 255-20), image[:, :, 0:2]-50, image[:, :, 0:2])
     image[:, :, 2:3] = np.where((image[:, :, :1] > 225) & (image[:, :, 1:2] > 225) & (image[:, :, 2:3] < 255-20), image[:, :, 2:3]+20, image[:, :, 2:3])
@@ -90,7 +89,7 @@ def make_blue(name, image, meta, output_dir='outputs'):
 
 if __name__ == '__main__':
 
-    cfg = misc.get_config(os.path.basename(__file__), 'The script performs data augmentation on the images.')
+    cfg = misc.get_config(os.path.basename(__file__), 'The script performs data augmentation of the images.')
 
     WORKING_DIR = cfg['working_dir']
     TILE_DIR = cfg['tile_dir']

@@ -26,9 +26,11 @@ def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_mo
     model_dir = original_model_dir if MODEL.lower() in original_model_dir.lower() \
         else os.path.join(original_model_dir, MODEL)
     # TODO: faire un pipeline et sauver celui-ci uniquement
-    with open(os.path.join(model_dir, f'scaler_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
+    print(model_desc)
+    with open(os.path.join(model_dir, f'scaler_{MODEL}.pkl'), 'rb') as f:
+    # with open(os.path.join(model_dir, f'scaler_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
         scaler = load(f)
-    with open(os.path.join(model_dir, f'model_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
+    with open(os.path.join(model_dir, f'model_{MODEL}.pkl'), 'rb') as f:
         model = load(f)
 
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]

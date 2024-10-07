@@ -181,7 +181,6 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     if not images_gdf.empty and save_extra:
         for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
             for stat in STAT_LIST:
-
                 stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
                 stats_df.plot.box(by='CATEGORY')
                 plt.title(f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')

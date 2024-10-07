@@ -27,7 +27,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
     hog_features = {}
     for name, image in tqdm(im_list.items()):
         # ppc = floor(min(image.shape)/6)
-        fd= hog(image, orientations=orientations, pixels_per_cell=(ppc,ppc), cells_per_block=(cpb, cpb), block_norm= 'L2', visualize=False)
+        fd = hog(image, orientations=orientations, pixels_per_cell=(ppc,ppc), cells_per_block=(cpb, cpb), block_norm= 'L2', visualize=False)
         hog_features[name] = fd
 
     return hog_features
@@ -58,11 +58,11 @@ def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold
     cropped_images = {k: remove_black_border(v) for k, v in data_gray.items()}
     resized_images = {}
 
-    # Get the small size of the small side of the images
+    # Get the size of the smaller side of the images
     min_size_images = {k: min(v.shape) for k, v in cropped_images.items()}
     min_array_values = np.array(list(min_size_images.values()))
 
-    # Resize images to median value of the small side
+    # Resize images to median value of the smaller side
     for name, image in cropped_images.items():
         # new_size = np.median(min_array_values)
         new_size = image_size
