@@ -106,7 +106,7 @@ def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
         logger.success(f"Done converting color map images to RGB! The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.success(f"Done converting color map images to RGB! All files were already present in folder.")
+        logger.success(f"All files were already present in folder {output_dir}. Nothing to do.")
 
 
 # ------------------------------------------

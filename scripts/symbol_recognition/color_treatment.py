@@ -72,10 +72,10 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     written_files = []
         
     logger.info('Read data...')
-    if image_desc_gpkg:     # Without the images description based on the GT, don't do the parts about the category.
+    if image_desc_gpkg:     # If the symbols on the images are known from GT, save info in a dataframe
         images_gdf = gpd.read_file(image_desc_gpkg)
         images_gdf.loc[images_gdf.CATEGORY == 'undetermined', 'CATEGORY'] = 'undet'
-    else:
+    else:                   # else create an empty dataframe that will switch off parts concerning GT processing
         images_gdf = pd.DataFrame()
 
     if isinstance(tiles, tuple):
@@ -138,7 +138,7 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
         # Polygonize mask into one polygon
         geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[name]['transform']) if v == 1)
         mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[name]['crs'])
-        mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[name]['crs'])
+        mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.union_all()], columns=['geometry'], crs = meta_data[name]['crs'])
 
     # Define parameters
     BAND_CORRESPONDENCE = {0: 'R', 1: 'G', 2: 'B'}
@@ -183,9 +183,9 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
         for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
             for stat in STAT_LIST:
 
-                stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
-                fig = stats_df.plot.box(by='CATEGORY', y=stat)
-                fig.update_layout(title=f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
+                stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].sort_values(by=['CATEGORY'], ignore_index=True)
+                fig = stats_df.plot.box(x='CATEGORY', y=stat)
+                fig.update_layout(title=f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band', margin=dict(l=10, r=25, t=50, b=10))
                 filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.webp')
                 fig.write_image(filepath)
                 written_files.append(filepath)

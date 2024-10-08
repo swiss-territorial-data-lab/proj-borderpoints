@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR)
+    _, written_files = main(BORDER_POINTS, OUTPUT_DIR)
 
     print()
     logger.success(f"The file {written_files[0]} was written. Let's check it out!")

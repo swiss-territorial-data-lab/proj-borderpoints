@@ -1,9 +1,9 @@
-# Classification of the border points based on the cadastral map of the canton of Fribourg.
+# Classification of the border points based on the cadastral plans of the canton of Fribourg.
 
-This project aims to classify on old cadastral maps points missing in the digitized version of the official cadastral survey.
+This project aims to classify on old cadastral plans points missing in the digitized version of the official cadastral survey.
 
 *Context*: In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
-These missing boundary points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
+These missing boundary points can be identified on old plans, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
 
 Two methods were tested:
 
@@ -30,7 +30,7 @@ The full documentation in available on our technical website: **link**.
 
 ### Requirements
 
-The historical maps can be heavy files. In our case, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
+The historical plans can be heavy files. In our case, 32 GB of RAM were needed to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
 
 The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
 
@@ -40,7 +40,7 @@ The installation is performed from this folder with the following steps:
 
 * Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
 * Get into the `object-detector` folder,
-* Switch to my branch,
+<!--* Switch to my branch,-->
 * The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
     * You can control the image existence by listing the available images with `docker images ls`.
     * If it is not available, build it from the folder of the object detector with `docker compose build`.
@@ -71,7 +71,7 @@ cd proj-borderpoints            # Command to run in the docker bash
 
 <!-- I will develop this section when we finalize the repo with some example data. For now, it's just key points. -->
 
-* Maps: RGB images or images with a color map in EPSG:2056.
+* Plans: RGB images or images with a color map in EPSG:2056.
 * Cadastral survey data: vector layer with the approximate position of cadastral points used to limit the production of tiles in the area of interest.
 
 When working with the ground truth, the following files are required in addition:
@@ -85,10 +85,10 @@ When working with the ground truth, the following files are required in addition
 
 The workflow can be divided into three parts:
 
-* Data preparation: call of the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire maps. More precisely, the following steps are performed:
-    - Transform the maps from a color map to RGB images,
-    - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the maps to the bounding box of the ground truth,
-    - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
+* Data preparation: call of the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced over defined bounding boxes and `prepare_whole_tiles.py` to work with entire plans. More precisely, the following steps are performed:
+    - Transform the plans from a color map to RGB images,
+    - If ground truth is available, format the labels according to the requirements of the STDL's object detector and clip the plans to the bounding box of the ground truth,
+    - Generate a vector layer with the information of the subtiles dividing the plans into square tiles of 512 or 256 pixels,
     - Clip the map to the subtiles.
 * Detection of the border points with the STDL's object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted after the experts' requirements.
@@ -99,7 +99,7 @@ The workflow can be divided into three parts:
 
 All the parameters are passed through a configuration file. Some fixed parameters are set for the whole process in `constants.py`.
 
-**Dataset with GT**
+**Training with GT**
 
 ```
 python scripts/instance_segmentation/prepare_data.py config/config_w_gt.yaml
@@ -126,7 +126,7 @@ python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
 python scripts/instance_segmentation/assess_point_classif.py config/config_w_gt.yaml
 ```
 
-**Whole tiles**
+**Inference on whole plans**
 
 ```
 python scripts/instance_segmentation/prepare_whole_tiles.py config/config_whole_tiles.yaml
@@ -138,7 +138,7 @@ python scripts/post_processing/check_w_land_cover.py config/config_whole_tiles.y
 python scripts/post_processing/heatmap.py config/config_whole_tiles.yaml
 ```
 
-The command lines above use the configuration files for the maps with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for maps on which no point was digitized as part of the ground truth. Only the path to the different folders should change between the two configurations.
+The command lines above use the configuration files for the plans with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for plans on which no point was digitized as part of the ground truth. Only the path to the different folders should change between the two configurations.
 
 
 ## Additional information
@@ -182,12 +182,12 @@ pip install -r requirements_classif.txt
 
 This workflow trains an algorithm to classify images of the border points.
 
-* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire maps. More precisely, the following steps are performed:
-    1. Transform the maps from a color map to RGB images,
-    2. Determine the symbol size at each map scale based on the ground truth,
-    3. Generate a vector layer with the map information and delineation,
-    4. Join survey points to maps and create a unique id based on point and map,
-    5. Clip the map to the survey points based on the determined symbol size from step ii.
+* Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire plans. More precisely, the following steps are performed:
+    1. Transform the plans from a color map to RGB images,
+    2. Determine the symbol size at each plan scale based on the ground truth,
+    3. Generate a vector layer with the plan information and delineation,
+    4. Join survey points to plans and create a unique id based on point and plan,
+    5. Clip the plan to the survey points based on the determined symbol size from step ii.
 * (*facultative*) Data augmentation: double the number of training images by flipping them and changing slightly the colorimetry with the script `data_augmentation.py`.
 * Feature extraction:
     - `color_treatment.py`: Create a mask indicating the symbol area on the image,	calculate the zonal stats on each color band for the determined areas,
@@ -205,7 +205,7 @@ The optimization for the classification was performed with the `optuna` package 
 
 Below, the command lines are presented for the algorithm version with a single model for the classification.
 
-**Points with GT**
+**Training with GT**
 
 ```
 python scripts/symbol_recognition/prepare_ground_truth.py config/config_symbol_classif.yaml
@@ -215,7 +215,7 @@ python scripts/symbol_recognition/color_treatment.py config/config_symbol_classi
 python scripts/symbol_recognition/train_model.py config/config_symbol_classif.yaml
 ```
 
-**Points on an entire map**
+**Classification of border points on entire plans**
 
 ```
 python scripts/symbol_recognition/prepare_symbol_classif.py config/config_symbol_classif.yaml

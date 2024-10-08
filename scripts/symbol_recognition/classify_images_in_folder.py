@@ -21,8 +21,8 @@ logger = misc.format_logger(logger)
 
 
 def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_model_dir, model_desc=''):
-    logger.info('Merge and scale data...')
 
+    logger.info('Merge and scale data...')
     model_dir = original_model_dir if MODEL.lower() in original_model_dir.lower() \
         else os.path.join(original_model_dir, MODEL)
     # TODO: faire un pipeline et sauver celui-ci uniquement
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     MODEL_DIR = cfg['model_dir']
 
     os.chdir(WORKING_DIR)
-    output_dir = OUTPUT_DIR if OUTPUT_DIR.endswith(MODEL) or OUTPUT_DIR.endswith(MODEL + '/') else os.path.join(OUTPUT_DIR, MODEL)
+    output_dir = OUTPUT_DIR if MODEL.lower() in OUTPUT_DIR.lower() else os.path.join(OUTPUT_DIR, MODEL)
     os.makedirs(output_dir, exist_ok=True)
     written_files = []
 

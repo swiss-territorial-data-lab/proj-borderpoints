@@ -41,11 +41,10 @@ def equalize_w_hist(name, image, meta, output_dir='outputs'):
     with rio.open(os.path.join(output_dir, 'aug_' + name), 'w', **meta[name]) as dst:
         dst.write(new_image.transpose(2, 0, 1))
 
-def main(tiles, output_dir='outputs'):
+def main(tile_dir, output_dir='outputs'):
 
     os.makedirs(output_dir, exist_ok=True)
 
-    tile_dir = tiles
     tile_list = glob(os.path.join(tile_dir, '*.tif'))
     image_data = {}
     meta_data = {}
@@ -65,8 +64,6 @@ def main(tiles, output_dir='outputs'):
             continue
         random_transformation = rng.choice(transformation_choices)
         random_transformation(name, image, meta_data, output_dir=output_dir)
-
-    # TODO: augment a second time for class 1r and 3b
 
     logger.success(f'Done! The output was saved in {output_dir}.')
 
@@ -98,4 +95,4 @@ if __name__ == '__main__':
 
     os.chdir(WORKING_DIR)
 
-    main(tiles=TILE_DIR, output_dir=OUTPUT_DIR)
+    main(tile_dir=TILE_DIR, output_dir=OUTPUT_DIR)
