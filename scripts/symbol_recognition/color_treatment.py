@@ -8,8 +8,8 @@ from tqdm import tqdm
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import rasterio as rio
-from matplotlib import pyplot as plt
 from rasterstats import zonal_stats
 from rasterio.features import shapes
 from shapely.geometry import shape
@@ -21,6 +21,7 @@ sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from constants import AUGMENTATION, OVERWRITE
 
+pd.options.plotting.backend = "plotly"
 logger = misc.format_logger(logger)
 
 # ----- Define functions -----
@@ -183,11 +184,10 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
             for stat in STAT_LIST:
 
                 stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
-                stats_df.plot.box(by='CATEGORY')
-                plt.title(f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
-                filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.png')
-                plt.savefig(filepath, bbox_inches='tight')
-                plt.close()
+                fig = stats_df.plot.box(by='CATEGORY', y=stat)
+                fig.update_layout(title=f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
+                filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.webp')
+                fig.write_image(filepath)
                 written_files.append(filepath)
 
 

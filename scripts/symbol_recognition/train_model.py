@@ -16,7 +16,6 @@ from sklearn.preprocessing import StandardScaler
 
 import plotly.graph_objects as go
 from joblib import dump
-import matplotlib.pyplot as plt
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc

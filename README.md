@@ -1,6 +1,6 @@
 # Classification of the border points based on the cadastral map of the canton of Fribourg.
 
-This project aims to classify on old cadastral maps points missing in the digitized versioin of the official cadastral survey.
+This project aims to classify on old cadastral maps points missing in the digitized version of the official cadastral survey.
 
 *Context*: In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. There, boundary points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
 These missing boundary points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
