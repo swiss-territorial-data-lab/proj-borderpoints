@@ -44,7 +44,7 @@ def main(path_surveying, tiles, nodata_gdf=None, remove_duplicates=True, output_
         tiles_gdf = tiles.copy()
     
     logger.info('Get point coordinates...')
-    if (survey_poly_gdf.geom_type == 'Polygon').all():
+    if (survey_poly_gdf.geom_type == 'MultiPolygon').all():
         pts_list = [
             Point(pt) for poly in survey_poly_gdf.geometry 
             for geom in poly.geoms 

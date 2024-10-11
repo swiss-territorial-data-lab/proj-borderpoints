@@ -57,7 +57,7 @@ for dst in ['val', 'tst']:
 
     confusion_matrix_df = pd.DataFrame(confusion_matrix(labels, predictions), columns=classes, index=classes)
     filepath = os.path.join(OUTPUT_DIR, f'{dst}_pt_confusion_matrix.csv')
-    confusion_matrix_df.transpose().to_csv(filepath)
+    confusion_matrix_df.to_csv(filepath)
     written_files.append(filepath)
 
     cl_report = classification_report(labels, predictions, output_dict=True)
