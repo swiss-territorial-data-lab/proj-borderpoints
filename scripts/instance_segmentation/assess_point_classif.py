@@ -34,7 +34,7 @@ written_files = []
 
 logger.info('Read data...')
 classified_points_gdf = gpd.read_file(CLASSIFIED_POINTS)
-classified_points_gdf['CATEGORY'] = classified_points_gdf.Code_type_ + classified_points_gdf.Couleur
+classified_points_gdf['CATEGORY'] = classified_points_gdf.Code_type_.astype('Int64').astype('str') + classified_points_gdf.Couleur
 classified_points_gdf.loc[classified_points_gdf.CATEGORY.isna(), 'CATEGORY'] = 'undetermined'
 classified_points_gdf = classified_points_gdf[classified_points_gdf.CATEGORY != '3n']
 split_aoi_tiles_gdf = gpd.read_file(SPLIT_AOI_TILES)
@@ -65,7 +65,7 @@ for dst in ['val', 'tst']:
     pd.DataFrame(cl_report).transpose().to_csv(filepath)
     written_files.append(filepath)
 
-    logger.info(f'{dst} dataset - f1 score = {f1_score(labels, predictions, average="weighted"):.3f}')
+    logger.info(f'{dst} dataset - f1 score = {f1_score(labels, predictions, average="macro"):.3f}')
 
 logger.success('Done! The following files were written:')
 for file in written_files:
