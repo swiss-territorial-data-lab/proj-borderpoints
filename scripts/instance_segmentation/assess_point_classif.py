@@ -33,10 +33,12 @@ written_files = []
 # ----- Processing -----
 
 logger.info('Read data...')
-classified_points_gdf = gpd.read_file(CLASSIFIED_POINTS)
+points_gdf = gpd.read_file(CLASSIFIED_POINTS)
+# Remove FP points to assess only wanted border points
+classified_points_gdf = points_gdf[~points_gdf.pt_id.isna()].copy()
 classified_points_gdf['CATEGORY'] = classified_points_gdf.Code_type_.astype('Int64').astype('str') + classified_points_gdf.Couleur
 classified_points_gdf.loc[classified_points_gdf.CATEGORY.isna(), 'CATEGORY'] = 'undetermined'
-classified_points_gdf = classified_points_gdf[classified_points_gdf.CATEGORY != '3n']
+classified_points_gdf = classified_points_gdf[classified_points_gdf.CATEGORY != '3n'].copy()
 split_aoi_tiles_gdf = gpd.read_file(SPLIT_AOI_TILES)
 split_aoi_tiles_2056 = split_aoi_tiles_gdf.to_crs(classified_points_gdf.crs)
 
@@ -45,13 +47,12 @@ comparison_gdf = gpd.sjoin(classified_points_gdf, split_aoi_tiles_2056[['dataset
 if classified_points_gdf.shape[0] != comparison_gdf.shape[0]:
     logger.warning(f'Ground truth points have been lost in the join with the classified points: {classified_points_gdf.shape[0] - comparison_gdf.shape[0]}.')
 
-# Only keep the validation and test datasets
-comparison_gdf = comparison_gdf[comparison_gdf.dataset.isin(['val', 'tst'])]
+comparison_gdf = comparison_gdf[comparison_gdf.dataset.isin(['trn', 'val', 'tst'])].copy()
 classes = comparison_gdf.CATEGORY.unique()
 classes.sort()
 
 logger.info('Save confusion matrix and classification report...')
-for dst in ['val', 'tst']:
+for dst in ['trn', 'val', 'tst']:
     labels = comparison_gdf.loc[comparison_gdf.dataset == dst, 'CATEGORY']
     predictions = comparison_gdf.loc[comparison_gdf.dataset == dst, 'det_category']
 

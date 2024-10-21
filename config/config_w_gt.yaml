@@ -3,13 +3,14 @@ prepare_data.py:
   output_dir:
     vectors: outputs/instance_segmentation/formatted_labels
     clipped_tiles: outputs/instance_segmentation/clipped_tiles
-  initial_image_dir: inputs/plans
   tile_dir: outputs/rgb_images
-  border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
-  plan_scales: inputs/plan_scales.xlsx
-  cadastral_surveying: inputs/MO/BDMO2.gpkg
-  # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
+  initial_files:
+    initial_image_dir: inputs/plans
+    border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+    bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
+    plan_scales: inputs/plan_scales.xlsx
+    cadastral_surveying: inputs/MO/BDMO2.gpkg
+    # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
   tile_suffix: _geo.tif
   convert_images: True
 
@@ -98,7 +99,7 @@ post_processing.py:
   subtiles: formatted_labels/subtiles.gpkg
   tiles: formatted_labels/tiles.gpkg
   category_ids_json: category_ids.json
-  score: 0.60
+  score: 0.65
   keep_datasets: True
 
 
@@ -132,3 +133,10 @@ assess_point_classif.py:
   output_dir: post_processing
   classified_points: post_processing/final_matched_points.gpkg
   split_aoi_tiles: object_detector/split_aoi_tiles.geojson
+
+
+heatmap.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  output_dir: outputs/instance_segmentation/post_processing/heatmap
+  matched_points: outputs/instance_segmentation/post_processing/final_matched_points.gpkg
+  bdmo_poly: inputs/MO/BDMO2.gpkg
