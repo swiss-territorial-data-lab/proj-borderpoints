@@ -45,7 +45,7 @@ split_aoi_tiles_2056 = split_aoi_tiles_gdf.to_crs(classified_points_gdf.crs)
 logger.info('Merge ground truth and classified points...')
 comparison_gdf = gpd.sjoin(classified_points_gdf, split_aoi_tiles_2056[['dataset', 'geometry']], lsuffix='pt', rsuffix='tile')
 if classified_points_gdf.shape[0] != comparison_gdf.shape[0]:
-    logger.warning(f'Ground truth points have been lost in the join with the classified points: {classified_points_gdf.shape[0] - comparison_gdf.shape[0]}.')
+    logger.warning(f'Classified points have been lost in the join with the tiles: {classified_points_gdf.shape[0] - comparison_gdf.shape[0]}.')
 
 comparison_gdf = comparison_gdf[comparison_gdf.dataset.isin(['trn', 'val', 'tst'])].copy()
 classes = comparison_gdf.CATEGORY.unique()

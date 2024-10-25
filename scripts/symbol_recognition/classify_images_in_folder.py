@@ -25,22 +25,17 @@ def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_mo
     logger.info('Merge and scale data...')
     model_dir = original_model_dir if MODEL.lower() in original_model_dir.lower() \
         else os.path.join(original_model_dir, MODEL)
-    # TODO: faire un pipeline et sauver celui-ci uniquement
-    with open(os.path.join(model_dir, f'scaler_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
-        scaler = load(f)
-    with open(os.path.join(model_dir, f'model_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
-        model = load(f)
+    with open(os.path.join(model_dir, f'pipeline_{MODEL}{'_' + model_desc if model_desc != '' else ''}.pkl'), 'rb') as f:
+        clf_pipeline = load(f)
 
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
     features_arr = features_gdf[features_list].to_numpy()
 
-    scaled_features_arr = scaler.transform(features_arr)
-
     logger.info('Apply classification model...')
-    pred_list = model.predict(scaled_features_arr)
+    pred_list = clf_pipeline.predict(features_arr)
     preds_df = pd.DataFrame({'image_name': features_gdf.image_name, 'pred': pred_list})
     if MODEL in ['RF', 'HGBC']:
-        preds_df['score'] = model.predict_proba(scaled_features_arr).max(axis=1).round(3)
+        preds_df['score'] = clf_pipeline.predict_proba(features_arr).max(axis=1).round(3)
 
     pts_gdf = image_info_gdf.copy()
     pts_gdf.loc[:, 'geometry'] = image_info_gdf.geometry.centroid

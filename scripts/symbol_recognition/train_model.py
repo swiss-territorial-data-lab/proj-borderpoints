@@ -12,6 +12,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassif
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
 from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 import plotly.graph_objects as go
@@ -43,61 +44,57 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
             random_state=42
         )
 
-    # Scale data 
+    # Set pipline up
     scaler = StandardScaler()
-    data_trn_scaled = scaler.fit_transform(data_trn)
-    data_tst_scaled = scaler.transform(data_tst)
-
-    # TODO: setup pipelines
     if MODEL == 'SVM':
         logger.info('Prepare SVM model...')
         # https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
         svc_model = svm.SVC(random_state=42, cache_size=1000)
         parameters = {
-            'C': [i/10 for i in range(5, 75, 1)],
-            'kernel': ['linear', 'rbf', 'sigmoid'],
-            'gamma': ['scale', 'auto']
+            'classifier__C': [i/10 for i in range(5, 75, 1)],
+            'classifier__kernel': ['linear', 'rbf', 'sigmoid'],
+            'classifier__gamma': ['scale', 'auto']
         }
-        clf = GridSearchCV(svc_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+        pipeline = Pipeline(steps=[('scaler', scaler), ('classifier', svc_model)])
 
     elif MODEL == 'RF':
         logger.info('Prepare RF model...')
         rf_model = RandomForestClassifier(random_state=42)
         parameters = {
-            'n_estimators': range(120, 200, 5),
-            'max_features': ['sqrt', 'log2'],
-            'class_weight': ['balanced', 'balanced_subsample']
+            'classifier__n_estimators': range(120, 200, 5),
+            'classifier__max_features': ['sqrt', 'log2'],
+            'classifier__class_weight': ['balanced', 'balanced_subsample']
         }
-        clf = GridSearchCV(rf_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+        pipeline = Pipeline(steps=[('scaler', scaler), ('classifier', rf_model)])
 
     elif MODEL == 'HGBC':
         logger.info('Prepare HGBC model...')
         hgcb_model = HistGradientBoostingClassifier(random_state=42, early_stopping=True, validation_fraction=0.2, class_weight='balanced')
         parameters = {
-            'learning_rate': [0.01, 0.1, 0.5],
-            'max_iter': [25, 50, 75],
-            'max_leaf_nodes': [15, 31, 63, None],
-            'max_features': [0.15, 0.25, 0.33],
-
+            'classifier__learning_rate': [0.01, 0.1, 0.5],
+            'classifier__max_iter': [25, 50, 75],
+            'classifier__max_leaf_nodes': [15, 31, 63, None],
+            'classifier__max_features': [0.15, 0.25, 0.33],
         }
-        clf = GridSearchCV(hgcb_model, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+        pipeline = Pipeline(steps=[('scaler', scaler), ('classifier', hgcb_model)])
 
     else:
         logger.critical(f'Model {MODEL} not implemented')
         sys.exit()
 
     logger.info('Train model with CV...')
-    clf.fit(data_trn_scaled, labels_trn)
+    clf = GridSearchCV(pipeline, parameters, n_jobs=10, verbose=1, scoring='recall_macro')
+    clf.fit(data_trn, labels_trn)
     logger.success(f"Best score: {clf.best_score_:.3f}")
     logger.success(f"Best parameters: {clf.best_params_}")
 
     logger.info('Test model...')
-    pred_tst = clf.predict(data_tst_scaled)
+    pred_tst = clf.predict(data_tst)
     metric = balanced_accuracy_score(labels_tst, pred_tst)
 
     logger.info('Save a geodataframe with the test features...')
     if MODEL in ['RF', 'HGBC']:
-        proba_pred_tst = clf.predict_proba(data_tst_scaled)
+        proba_pred_tst = clf.predict_proba(data_tst)
         classified_pts_tst_gdf = gpd.GeoDataFrame(
             {'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst, 'score': proba_pred_tst.max(axis=1).round(3)}, 
             geometry=geometries_tst
@@ -106,13 +103,9 @@ def train_model(features_gdf, features_list, label_name='CATEGORY', test_ids=Non
         classified_pts_tst_gdf = gpd.GeoDataFrame({'image_name': image_names_tst, 'label': labels_tst, 'pred': pred_tst}, geometry=geometries_tst)
     
     classified_pts_tst_gdf['correct'] = [True if row.label == row.pred else False for row in classified_pts_tst_gdf.itertuples()]
-
-    tst_data_df = pd.DataFrame(data_tst_scaled, columns=features_list, index= image_names_tst).reset_index().rename(columns={'index': 'image_name'})
-    classified_pts_tst_gdf = classified_pts_tst_gdf.merge(tst_data_df, how='inner', on='image_name')
-
     classified_pts_tst_gdf['method'] = 'test for the model training'
 
-    return scaler, clf, metric, classified_pts_tst_gdf
+    return clf, metric, classified_pts_tst_gdf
 
 
 def main(images, features_hog, features_stats, save_extra=False, output_dir='outputs'):
@@ -146,9 +139,10 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
+    features_gdf.drop_duplicates(subset='image_name', inplace=True)     # Points closer than 1 m can end up on the same image
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
 
-    scaler, clf, metric, classified_pts_tst_gdf = train_model(features_gdf, features_list)
+    clf, metric, classified_pts_tst_gdf = train_model(features_gdf, features_list)
 
     global_metric = balanced_accuracy_score(classified_pts_tst_gdf.label, classified_pts_tst_gdf.pred)
     logger.info(f'Balanced accuracy: {round(global_metric, 2)}')
@@ -156,14 +150,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
     if save_extra:
         labels_list = classified_pts_tst_gdf.label.sort_values().unique().tolist()
 
-        logger.info('Save scaler...')
-        filepath = os.path.join(output_dir_model, f'scaler_{MODEL}.pkl')
-        with open(filepath, 'wb') as f:
-            dump(scaler, f, protocol=5)
-        written_files.append(filepath)
-
-        logger.info('Save model...')
-        filepath = os.path.join(output_dir_model, f'model_{MODEL}.pkl')
+        logger.info('Save pipeline...')
+        filepath = os.path.join(output_dir_model, f'pipeline_{MODEL}.pkl')
         with open(filepath, 'wb') as f:
             dump(clf, f, protocol=5)
         written_files.append(filepath)
@@ -295,8 +283,8 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
             if MODEL == 'RF':
                 # Method of the mean decrease in impurity
-                importances = clf.best_estimator_.feature_importances_
-                std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_.estimators_], axis=0)
+                importances = clf.best_estimator_['classifier'].feature_importances_
+                std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_['classifier'].estimators_], axis=0)
 
                 forest_importances = pd.Series(importances, index=features_list)
 
@@ -308,10 +296,10 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
                 written_files.append(file_to_write)
 
             # Based on feature permutation
-            data_tst_scaled = classified_pts_tst_gdf[features_list].to_numpy()
+            data_tst = features_gdf[features_list].to_numpy()
 
             result = permutation_importance(
-                clf.best_estimator_, data_tst_scaled, classified_pts_tst_gdf.label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+                clf.best_estimator_, data_tst, features_gdf.CATEGORY.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
             )
             forest_importances = pd.Series(result.importances_mean, index=features_list)
 
