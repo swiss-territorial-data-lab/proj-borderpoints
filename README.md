@@ -1,9 +1,9 @@
 # Classification of the border points based on the cadastral plans of the canton of Fribourg.
 
-This project aims to classify missing border points on old cadastral maps in the digitized version of the official cadastral survey.
+This project aims to classify missing border points on old cadastral plans in the digitized version of the official cadastral survey.
 
 *Context*: In some municipalities of Fribourg, the official cadastral survey to the MO93 standard has not yet been implemented in the land register. In these cases, border points are not always represented in the official cadastral survey dataset. This leads to numerous errors when automatically checking the data consistency and makes it more difficult for users to understand the data. <br>
-These missing border points can be identified on old maps, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
+These missing border points can be identified on old plans, but their digitization represents a considerable amount of work. Therefore, we developed this algorithm to automatically classify these points.
 
 Two methods were tested:
 
@@ -30,7 +30,7 @@ The full documentation is available on our technical website: **link**.
 
 ### Requirements
 
-The historical maps can be large files. In our case, 32 GB of RAM were required to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
+The historical plans can be large files. In our case, 32 GB of RAM were required to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
 
 The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
 
@@ -88,8 +88,8 @@ The workflow is divided into three parts:
 * Data preparation: call the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced on defined bounding boxes and `prepare_whole_tiles.py` to work with entire plans. More precisely, the following steps are performed:
     - Transform the plans from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL object detector and clip the plans to the bounding box of the ground truth,
-    - Generate a vector layer with the information of the subtiles dividing the maps into square tiles of 512 or 256 pixels,
-    - Clip the map to the subtiles.
+    - Generate a vector layer with the information of the subtiles dividing the plans into square tiles of 512 or 256 pixels,
+    - Clip the plan to the subtiles.
 * Detection of the border points with the STDL's object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted according to the expert requirements.
     - `post_processing.py`: the detections are filtered by their confidence score and ...
