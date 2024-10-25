@@ -178,7 +178,6 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     stats_df.to_csv(filepath, index=False)
     written_files.append(filepath)
 
-
     if not images_gdf.empty and save_extra:
         for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
             for stat in STAT_LIST:
@@ -189,7 +188,6 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
                 filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.webp')
                 fig.write_image(filepath)
                 written_files.append(filepath)
-
 
     return stats_df, written_files
 

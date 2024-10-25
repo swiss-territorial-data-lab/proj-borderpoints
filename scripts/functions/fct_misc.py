@@ -18,7 +18,7 @@ def buffer_by_max_size(gdf, pt_sizes_gdf, factor=1, cap_style=1):
     Generate a buffer around each geometry of the passed Geodataframe depending on the scale with the size indicated in the second dataframe
     and multiplied by the factor (default is 1).
     """
-     
+
     gdf['buffer_size'] = [pt_sizes_gdf.loc[pt_sizes_gdf['scale'] == int(scale), 'max_dx'].iloc[0] for scale in gdf['scale'].to_numpy()]
     gdf.loc[:, 'geometry'] = gdf.buffer(gdf['buffer_size']*factor, cap_style=cap_style)
 

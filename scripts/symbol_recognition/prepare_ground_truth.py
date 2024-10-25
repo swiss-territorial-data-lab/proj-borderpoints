@@ -23,7 +23,7 @@ cfg = misc.get_config(os.path.basename(__file__), "The script prepares the initi
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
+OUTPUT_DIR_VECT = cfg['output_dir']['vectors']
 
 INITIAL_IMAGE_DIR = cfg['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
@@ -42,7 +42,8 @@ if CONVERT_IMAGES:
 pts_gdf, written_files = format_labels.main(BORDER_POINTS_PT, os.path.join(OUTPUT_DIR_VECT, 'GT'))
 pts_gdf['combo_id'] = pts_gdf['pt_id'] + ' - ' + pts_gdf['Num_plan']
 
-logger.info('Get the maximum size of border points by scale...')
+logger.info('Get the maximum size of border points according to scale...')
+
 pt_sizes_gdf, written_files = get_point_bbox_size.main(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
 
 tiles_gdf, _, _, tmp_written_files = get_delimitation_tiles.main(TILE_DIR, output_dir=OUTPUT_DIR_VECT, subtiles=False)
@@ -54,6 +55,7 @@ if not os.path.isfile(filepath) or OVERWRITE:
     
     logger.info('Transform points to polygons...')
     pts_gdf.rename(columns={'Echelle': 'scale'}, inplace=True)
+
     cs_points_poly_gdf = misc.buffer_by_max_size(pts_gdf, pt_sizes_gdf, factor=0.5, cap_style=3)
 
     # Get info on tile and image names

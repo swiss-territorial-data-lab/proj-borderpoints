@@ -1,5 +1,5 @@
 prepare_ground_truth.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
   initial_image_dir: inputs/plans
@@ -9,9 +9,9 @@ prepare_ground_truth.py:
   tile_suffix: _geo.tif
   convert_images: True
 
-
+ 
 prepare_symbol_classif.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
   initial_image_dir: inputs/plans

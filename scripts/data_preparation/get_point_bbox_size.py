@@ -31,6 +31,7 @@ def main(border_pts_path, output_dir='outputs'):
     if os.path.exists(filepath) and not OVERWRITE:
         logger.info("The file for the point size at each scale already exists. Reading from disk...")
         size_per_scale_df = pd.read_csv(filepath)
+
         return size_per_scale_df, []
 
     logger.info('Read data...')
@@ -58,7 +59,7 @@ def main(border_pts_path, output_dir='outputs'):
                 max_dx = dx
             if dy > max_dy:
                 max_dy = dy
-        
+                
         size_per_scale_dict['scale'].append(int(scale))
         size_per_scale_dict['max_dx'].append(max_dx)
         size_per_scale_dict['max_dy'].append(max_dy)
