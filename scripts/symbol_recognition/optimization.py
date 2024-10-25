@@ -17,14 +17,14 @@ from math import floor
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
 import functions.fct_optimization as opti
-import hog, train_separated_models
-from constants import AUGMENTATION
+import hog, train_model
+from constants import AUGMENTATION, MODEL
 
 logger = misc.format_logger(logger)
 
 # ----- Define functions -----
 
-def objective(trial, tiles_dict, images_gdf, stat_features_df):
+def objective(trial, tiles_dict, images_gdf, stat_features_df, output_dir):
 
     # Suggest value range to test
     min_image_size, max_image_size = (75, 124)
@@ -47,7 +47,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
     if ppc*cells_per_block > image_size:
         return 0
 
-    hog_features_df, _ = hog.main(tiles_dict, output_dir=OUTPUT_DIR, **dict_param)
+    hog_features_df, _ = hog.main(tiles_dict, output_dir=output_dir, **dict_param)
     if hog_features_df.empty:
         return 0
     
@@ -56,7 +56,7 @@ def objective(trial, tiles_dict, images_gdf, stat_features_df):
         augmented_images_gdf['image_name'] = augmented_images_gdf['image_name'].apply(lambda x: 'aug_' + x)
         images_gdf = pd.concat([images_gdf, augmented_images_gdf], ignore_index=True)
 
-    balanced_accuracy, _ = train_separated_models.main(images_gdf, hog_features_df, stat_features_df, output_dir=OUTPUT_DIR)
+    balanced_accuracy, _ = train_model.main(images_gdf, hog_features_df, stat_features_df, output_dir=output_dir)
 
     return balanced_accuracy
 
@@ -83,7 +83,8 @@ IMAGE_FILE = cfg['image_gpkg']
 BAND_STATS = cfg['band_stats']
 
 os.chdir(WORKING_DIR)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+output_dir = OUTPUT_DIR if MODEL.lower() in OUTPUT_DIR.lower() else os.path.join(OUTPUT_DIR, MODEL)
+os.makedirs(output_dir, exist_ok=True)
 written_files = []
 
 logger.info('Read unchanged data...')
@@ -98,11 +99,11 @@ for tile_path in tqdm(tile_list, 'Read tiles'):
         image_data[os.path.basename(tile_path)] = src.read().transpose(1, 2, 0)
 
 logger.info('Optimize HOG parameters...')
-study_path = os.path.join(OUTPUT_DIR, 'study.pkl')
+study_path = os.path.join(output_dir, 'study.pkl')
 
 study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(), study_name='Optimization of the HOG parameters')
 # study = load(study_path, 'r')
-objective = partial(objective, tiles_dict=image_data, images_gdf=images_gdf, stat_features_df=stat_features_df)
+objective = partial(objective, tiles_dict=image_data, images_gdf=images_gdf, stat_features_df=stat_features_df, output_dir=output_dir)
 study.optimize(objective, n_trials=100, callbacks=[callback])
 
 dump(study, study_path)
@@ -110,17 +111,17 @@ written_files.append(study_path)
 
 logger.info('Save the best hyperparameters')
 targets = {0: 'f1 score'}
-written_files.append(opti.save_best_hyperparameters(study, targets, output_dir=OUTPUT_DIR))
+written_files.append(opti.save_best_hyperparameters(study, targets, output_dir=output_dir))
 
 logger.info('Plot results...')
-output_plots = os.path.join(OUTPUT_DIR, 'plots')
+output_plots = os.path.join(output_dir, 'plots')
 os.makedirs(output_plots, exist_ok=True)
 
 written_files.extend(opti.plot_optimization_results(study, targets, output_path=output_plots))
 
 logger.info('Produce results for the best hyperparameters')
-hog_features_df, written_files_hog = hog.main(image_data, output_dir=OUTPUT_DIR, **study.best_params)
-_, written_files_svm = train_separated_models.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=OUTPUT_DIR)
+hog_features_df, written_files_hog = hog.main(image_data, output_dir=output_dir, **study.best_params)
+_, written_files_svm = train_model.main(images_gdf, hog_features_df, stat_features_df, save_extra=True, output_dir=output_dir)
 
 written_files.extend(written_files_hog)
 written_files.extend(written_files_svm)
