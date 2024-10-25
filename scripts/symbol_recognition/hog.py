@@ -26,13 +26,12 @@ logger = misc.format_logger(logger)
 def im_list_to_hog(im_list, ppc, cpb, orientations):
     hog_features = {}
     for name, image in tqdm(im_list.items()):
-        # ppc = floor(min(image.shape)/6)
-        fd = hog(image, orientations=orientations, pixels_per_cell=(ppc,ppc), cells_per_block=(cpb, cpb), block_norm= 'L2', visualize=False)
+        fd= hog(image, orientations=orientations, pixels_per_cell=(ppc,ppc), cells_per_block=(cpb, cpb), block_norm= 'L2', visualize=False)
         hog_features[name] = fd
 
     return hog_features
 
-def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold=0.004, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
+def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, variance_threshold=0.01, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
 # def main(tiles, image_size=114, ppc=21, cpb=3, orientations=6, variance_threshold=0.006, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
@@ -58,13 +57,8 @@ def main(tiles, image_size=86, ppc=22, cpb=3, orientations=6, variance_threshold
     cropped_images = {k: remove_black_border(v) for k, v in data_gray.items()}
     resized_images = {}
 
-    # Get the size of the smaller side of the images
-    min_size_images = {k: min(v.shape) for k, v in cropped_images.items()}
-    min_array_values = np.array(list(min_size_images.values()))
-
-    # Resize images to median value of the smaller side
+    # Resize images to median value of the small side
     for name, image in cropped_images.items():
-        # new_size = np.median(min_array_values)
         new_size = image_size
         if max(image.shape) <= new_size:
             resized_images[name] = resize(image, (new_size, new_size))

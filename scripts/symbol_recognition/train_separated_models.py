@@ -33,9 +33,16 @@ def merge_color_and_shape(colors_gdf, shapes_gdf, possible_classes, category_df=
             colors_gdf[['combo_id', 'color', 'color_score', 'color_method']], how='left', on='combo_id'
         )
     else:
-        classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
-            colors_gdf[['image_name', 'color', 'color_score', 'color_method']], how='left', on='image_name'
-        )
+        if MODEL in ['RF', 'HGBC']:
+            classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
+                colors_gdf[['image_name', 'color', 'color_score', 'color_method']], 
+                how='left', on='image_name'
+            )
+        else:
+            classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_method', 'geometry']].merge(
+                colors_gdf[['image_name', 'color', 'color_method']], 
+                how='left', on='image_name'
+            )
     if isinstance(category_df, pd.DataFrame):
         classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
         classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
@@ -125,15 +132,16 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
     
     # Get final features
     features_gdf = images_w_stats_gdf.merge(hog_features_df, how='inner', on='image_name')
+    features_gdf.drop_duplicates(subset='image_name', inplace=True)     # Points closer than 1 m can end up on the same image
     categories_list = features_gdf.CATEGORY
     features_gdf['color'] = split_label_info(categories_list, 'color')
     features_gdf['symbol_shape'] = split_label_info(categories_list, 'shape')
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'min', 'std', 'max', 'hog']]
 
     
-    scaler_shapes, clf_shapes, metric_shapes, classified_shapes_tst_gdf = train_model(features_gdf, features_list[7:], label_name='symbol_shape')
+    clf_shapes, metric_shapes, classified_shapes_tst_gdf = train_model(features_gdf, features_list[7:], label_name='symbol_shape')
     test_image_names = classified_shapes_tst_gdf.image_name
-    scaler_colors, clf_colors, metric_colors, classified_colors_tst_gdf = train_model(
+    clf_colors, metric_colors, classified_colors_tst_gdf = train_model(
         features_gdf[features_gdf.CATEGORY != '5n'], features_list[:7], label_name='color', test_ids=test_image_names
     )
     
@@ -150,20 +158,17 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
 
     if save_extra:
         labels_list = classified_pts_tst_gdf.pred.sort_values().unique().tolist()
-        shape_dict = {'desc': 'shape', 'model': clf_shapes, 'scaler': scaler_shapes, 'tst_results': classified_shapes_tst_gdf}
-        color_dict = {'desc': 'color', 'model': clf_colors, 'scaler': scaler_colors, 'tst_results': classified_colors_tst_gdf}
+        shape_dict = {'desc': 'shape', 'pipeline': clf_shapes, 'tst_results': classified_shapes_tst_gdf, 'features': [col for col in features_gdf.columns if col.split('_')[0] in ['hog']]}
+        color_dict = {
+            'desc': 'color', 'pipeline': clf_colors, 'tst_results': classified_colors_tst_gdf, 
+            'features': [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max']]
+        }
 
         for model in [shape_dict, color_dict]:
-            logger.info(f'Save scaler for {model["desc"]}...')
-            filepath = os.path.join(output_dir_model, f'scaler_{MODEL}_{model["desc"]}.pkl')
+            logger.info(f'Save pipeline for {model["desc"]}...')
+            filepath = os.path.join(output_dir_model, f'pipeline_{MODEL}_{model["desc"]}.pkl')
             with open(filepath, 'wb') as f:
-                dump(model['scaler'], f, protocol=5)
-            written_files.append(filepath)
-
-            logger.info(f'Save model for {model["desc"]}...')
-            filepath = os.path.join(output_dir_model, f'model_{MODEL}_{model["desc"]}.pkl')
-            with open(filepath, 'wb') as f:
-                dump(model['model'], f, protocol=5)
+                dump(model['pipeline'], f, protocol=5)
             written_files.append(filepath)
 
         logger.info('Save confusion matrix and classification report...')
@@ -294,14 +299,13 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
 
             for model in [shape_dict, color_dict]:
                 logger.info(f'Get the feature importance in the determination of {model["desc"]}...')
-                features_list = [col for col in model['tst_results'].columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
 
                 if MODEL == 'RF':
                     # Method of the mean decrease in impurity
-                    importances = model['model'].best_estimator_.feature_importances_
-                    std_feat_importance = std([tree.feature_importances_ for tree in model['model'].best_estimator_.estimators_], axis=0)
+                    importances = model['pipeline'].best_estimator_.feature_importances_
+                    std_feat_importance = std([tree.feature_importances_ for tree in model['pipeline'].best_estimator_.estimators_], axis=0)
 
-                    forest_importances = pd.Series(importances, index=features_list)
+                    forest_importances = pd.Series(importances, index=model['features'])
 
                     fig = forest_importances.plot.bar(error_y=std_feat_importance)
                     fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
@@ -311,12 +315,12 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
                     written_files.append(file_to_write)
 
                 # Based on feature permutation
-                data_tst_scaled = model['tst_results'][features_list].to_numpy()
+                data_tst = features_gdf.loc[features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
 
                 result = permutation_importance(
-                    model['model'].best_estimator_, data_tst_scaled, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+                    model['pipeline'].best_estimator_, data_tst, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
                 )
-                forest_importances = pd.Series(result.importances_mean, index=features_list).sort_values(ascending=False)
+                forest_importances = pd.Series(result.importances_mean, index=model['features']).sort_values(ascending=False)
 
                 fig = forest_importances.plot.bar(error_y=result.importances_std)
                 fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")

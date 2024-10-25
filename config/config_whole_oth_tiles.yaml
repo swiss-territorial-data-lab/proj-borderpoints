@@ -3,7 +3,7 @@ prepare_whole_tiles.py:
   working_dir: C:\Users\gwena\Documents\STDL\2_En_cours\points-limites\02_Data
   output_dir: 
     vectors: outputs/instance_segmentation/gpkg_whole_oth_tiles
-  initial_image_dir: inputs/other_plans/subset
+  initial_image_dir: inputs/other_plans
   tile_dir: outputs/rgb_oth_images
   cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
   # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
@@ -61,7 +61,7 @@ post_processing.py:
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   category_ids_json: category_ids.json
-  score: 0.60
+  score: 0.65
   keep_datasets: False
 
 

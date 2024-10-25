@@ -69,7 +69,7 @@ optimization.py:
 classify_images_in_folder.py:
   working_dir: /mnt/data-03/cherny/git/proj-borderpoints/outputs/symbol_classification
   output_dir: classification
-  model_dir: model_training/HGBC/augmented_images
+  model_dir: model_training/SVM/augmented_images
   tile_dir: ../rgb_images/symbol_images
   image_info_gpkg: labels_symbol_matching/MO_pt_polys.gpkg
   variance_filter: feature_engineering/variance_filter.pkl

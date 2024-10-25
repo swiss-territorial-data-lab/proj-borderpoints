@@ -26,14 +26,14 @@ WORKING_DIR = cfg['working_dir']
 OUTPUT_DIR_VECT= cfg['output_dir']['vectors']
 OUTPUT_DIR_CLIPPED_TILES = cfg['output_dir']['clipped_tiles']
 
-INITIAL_IMAGE_DIR = cfg['initial_image_dir']
+INITIAL_IMAGE_DIR = cfg['initial_files']['initial_image_dir']
 TILE_DIR = cfg['tile_dir']
 
-BORDER_POINTS = cfg['border_points']
-BBOX = cfg['bbox']
-CADASTRAL_SURVEYING = cfg['cadastral_surveying']
-PLAN_SCALES = cfg['plan_scales']
-OVERLAP_INFO = cfg['overlap_info'] if 'overlap_info' in cfg.keys() else None
+BORDER_POINTS = cfg['initial_files']['border_points']
+BBOX = cfg['initial_files']['bbox']
+CADASTRAL_SURVEYING = cfg['initial_files']['cadastral_surveying']
+PLAN_SCALES = cfg['initial_files']['plan_scales']
+OVERLAP_INFO = cfg['initial_files']['overlap_info'] if 'overlap_info' in cfg.keys() else None
 
 CONVERT_IMAGES = cfg['convert_images']
 TILE_SUFFIX = cfg['tile_suffix']

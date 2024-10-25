@@ -21,26 +21,21 @@ logger = misc.format_logger(logger)
 
 
 def classify_points(features_gdf, image_info_gdf, id_images_wo_info, original_model_dir, model_desc=''):
-    logger.info('Merge and scale data...')
 
+    logger.info('Merge and scale data...')
     model_dir = original_model_dir if MODEL.lower() in original_model_dir.lower() \
         else os.path.join(original_model_dir, MODEL)
-    print(model_desc)
-    with open(os.path.join(model_dir, f'scaler_{MODEL}{"_" + model_desc if model_desc != "" else ""}.pkl'), 'rb') as f:
-        scaler = load(f)
-    with open(os.path.join(model_dir, f'model_{MODEL}{"_" + model_desc if model_desc != "" else ""}.pkl'), 'rb') as f:
-        model = load(f)
+    with open(os.path.join(model_dir, f'pipeline_{MODEL}{"_" + model_desc if model_desc != "" else ""}.pkl'), 'rb') as f:
+        clf_pipeline = load(f)
 
     features_list = [col for col in features_gdf.columns if col.split('_')[0] in ['min', 'median', 'mean', 'std', 'max', 'hog']]
     features_arr = features_gdf[features_list].to_numpy()
 
-    scaled_features_arr = scaler.transform(features_arr)
-
     logger.info('Apply classification model...')
-    pred_list = model.predict(scaled_features_arr)
+    pred_list = clf_pipeline.predict(features_arr)
     preds_df = pd.DataFrame({'image_name': features_gdf.image_name, 'pred': pred_list})
     if MODEL in ['RF', 'HGBC']:
-        preds_df['score'] = model.predict_proba(scaled_features_arr).max(axis=1).round(3)
+        preds_df['score'] = clf_pipeline.predict_proba(features_arr).max(axis=1).round(3)
 
     pts_gdf = image_info_gdf.copy()
     pts_gdf.loc[:, 'geometry'] = image_info_gdf.geometry.centroid
@@ -80,7 +75,7 @@ if __name__ == '__main__':
     MODEL_DIR = cfg['model_dir']
 
     os.chdir(WORKING_DIR)
-    output_dir = OUTPUT_DIR if OUTPUT_DIR.endswith(MODEL) or OUTPUT_DIR.endswith(MODEL + '/') else os.path.join(OUTPUT_DIR, MODEL)
+    output_dir = OUTPUT_DIR if MODEL.lower() in OUTPUT_DIR.lower() else os.path.join(OUTPUT_DIR, MODEL)
     os.makedirs(output_dir, exist_ok=True)
     written_files = []
 

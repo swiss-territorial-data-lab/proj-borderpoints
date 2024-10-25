@@ -56,6 +56,8 @@ imageio==2.35.1
     # via scikit-image
 joblib==1.4.2
     # via scikit-learn
+kaleido==0.1.0.post1
+    # via -r requirements_classif.in
 lazy-loader==0.4
     # via scikit-image
 loguru==0.7.2
