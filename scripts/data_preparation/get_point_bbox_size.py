@@ -60,8 +60,6 @@ def main(border_pts_path, output_dir='outputs'):
             if dy > max_dy:
                 max_dy = dy
                 
-        if scale == None:
-            scale = 0
         size_per_scale_dict['scale'].append(int(scale))
         size_per_scale_dict['max_dx'].append(max_dx)
         size_per_scale_dict['max_dy'].append(max_dy)
@@ -93,7 +91,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR)
+    _, written_files = main(BORDER_POINTS, OUTPUT_DIR)
 
     print()
     logger.success(f"The file {written_files[0]} was written. Let's check it out!")

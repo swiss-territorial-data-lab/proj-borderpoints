@@ -19,7 +19,7 @@ logger = misc.format_logger(logger)
 tic = time()
 logger.info('Starting...')
 
-cfg = misc.get_config(os.path.basename(__file__), "The script prepares the initial files for symbol classification in images.")
+cfg = misc.get_config(os.path.basename(__file__), "The script prepares the initial files for the classification of symbol images.")
 
 # Load input parameters
 WORKING_DIR = cfg['working_dir']

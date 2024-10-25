@@ -153,7 +153,7 @@ The project is constituted of the following folders:
 ├── data              # Input data
 └── scripts           # Scripts
     ├── data_preparation        # Scripts for data preparation
-    ├── functions               # Functions!-- Add link? -->
+    ├── functions               # Functions
     ├── instance_segmentation   # Scripts for instance segmentation
     ├── post_processing         # Scripts for post-processing after the instance segmentation
     ├── sandbox                 # Test scripts not included in workflows
@@ -180,14 +180,14 @@ pip install -r requirements_classif.txt
 
 #### Workflow
 
-This workflow trains an algorithm to classify border points in images.
+This workflow trains an algorithm to classify images with a border point.
 
 * Data preparation: call of the appropriate preprocessing script, _i.e._ `prepare_ground_truth.py` to work with ground truth produced over defined bounding boxes and `prepare_symbol_classif.py` to work with entire maps. More precisely, the following steps are performed:
     1. Transform the maps from a color map to RGB images,
     2. Determine the symbol size at each map scale based on the ground truth,
     3. Generate a vector layer with the map information and delineation,
     4. Join survey points to maps and create a unique id based on point and map,
-    5. Clip the map to the survey points based on the symbol size determined from step 2.
+    5. Clip the map to the survey points based on the symbol size determined from step ii.
 * (*facultative*) Data augmentation: double the number of training images by flipping them and changing slightly the colorimetry with the script `data_augmentation.py`.
 * Feature extraction:
     - `color_treatment.py`: Create a mask indicating the symbol area on the image,	calculate the zonal statistics on each color band for the determined areas,
@@ -201,11 +201,11 @@ This workflow trains an algorithm to classify border points in images.
 
 All the parameters are passed through a configuration file. Some fixed parameters are set for the whole process in `constants.py`.
 
-The optimization for the classification was performed with the `optuna` package <!-- Add link? --> in the dedicated script `optimization.py`.
+The optimization for the classification was performed with the `optuna` package in the dedicated script `optimization.py`.
 
 Below, the command lines are presented for the algorithm version with a single model for the classification.
 
-**Points with GT** <!-- The title is not super clear: Model training? -->
+**Points with GT**
 
 ```
 python scripts/symbol_recognition/prepare_ground_truth.py config/config_symbol_classif.yaml
@@ -215,7 +215,7 @@ python scripts/symbol_recognition/color_treatment.py config/config_symbol_classi
 python scripts/symbol_recognition/train_model.py config/config_symbol_classif.yaml
 ```
 
-**Points on an entire map** <!-- The title is not super clear: Inference or Classification? -->
+**Points on an entire map**
 
 ```
 python scripts/symbol_recognition/prepare_symbol_classif.py config/config_symbol_classif.yaml
