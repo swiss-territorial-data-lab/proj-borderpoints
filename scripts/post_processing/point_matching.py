@@ -40,10 +40,10 @@ def resolve_multiple_matches(multiple_matches_gdf, detections_gdf):
     multi_pts_df['distance'] = multi_pts_df.geometry_pt.distance(multi_pts_df.geometry_det)
     multi_pts_df['weighted_score'] = multi_pts_df['distance'] / multi_pts_df['score']
 
-    # Keep best match in the gdf in regards to the distance and score
+    # Keep best match in the gdf in regards to the distance and score (= lowest weighted score)
     multi_pts_df.sort_values('weighted_score', ascending=True, inplace=True)
-    favorite_matches = multi_pts_df.duplicated('pt_id')
-    favorite_matches_gdf = multiple_matches_gdf[favorite_matches.sort_index()]
+    pts_to_drop = multi_pts_df.duplicated('pt_id')     # Mark duplicates as true except for the first occurence
+    favorite_matches_gdf = multiple_matches_gdf[~pts_to_drop.sort_index()]
 
     return favorite_matches_gdf
 
@@ -69,10 +69,13 @@ def test_intersection(border_pts_gdf, detections_gdf):
 
     logger.info("   Isolate points properly intersected...")
     multiple_intersections = intersection_count_df.duplicated('pt_id', keep=False) | (intersection_count_df['size'] > 1)
+    # Get points that are not duplicated ans not detected several times
     intersected_id = intersection_count_df.loc[~multiple_intersections, 'pt_id']
     pts_w_cat_gdf = intersected_pts_gdf[
         intersected_pts_gdf.pt_id.isin(intersected_id) & ~intersected_pts_gdf.det_category.isna() 
     ].copy()
+
+    logger.info("   Isolate points not intersected...")
     lonely_points_gdf = intersected_pts_gdf.loc[intersected_pts_gdf.det_category.isna(), border_pts_gdf.columns]
 
     logger.info("   Isolate points with multiple intersections")

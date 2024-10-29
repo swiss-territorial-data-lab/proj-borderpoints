@@ -118,7 +118,7 @@ point_matching.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
   output_dir: post_processing
   detections: post_processing/dst_detected_points.gpkg
-  border_points: ../../inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points.shp    # Version makes no diff, only bbox passed in preparation are considered.
+  border_points: ../../inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terain_points.shp    # Version makes no diff, only bbox passed in preparation are considered.
 
 
 check_w_land_cover.py:
