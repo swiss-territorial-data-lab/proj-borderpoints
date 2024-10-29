@@ -40,7 +40,6 @@ The installation is performed from this folder with the following steps:
 
 * Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
 * Get into the `object-detector` folder,
-<!--* Switch to my branch,-->
 * The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
     * You can control the image existence by listing the available images with `docker images ls`.
     * If it is not available, build it from the folder of the object detector with `docker compose build`.

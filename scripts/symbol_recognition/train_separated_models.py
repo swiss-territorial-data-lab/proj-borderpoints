@@ -8,7 +8,7 @@ import geopandas as gpd
 import pandas as pd
 from numpy import std, nan
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix
 
 import plotly.graph_objects as go
 from joblib import dump
@@ -80,6 +80,14 @@ def merge_color_and_shape(colors_gdf, shapes_gdf, possible_classes, category_df=
     classified_pts_gdf['method'] = methods_list
 
     return classified_pts_gdf
+
+
+def save_classification_report(df, result_type, output_dir):
+    cl_report = classification_report(df.label, df.pred, output_dict=True)
+    filepath = os.path.join(output_dir, f'classification_report_{result_type}.csv')
+    pd.DataFrame(cl_report).transpose().to_csv(filepath)
+
+    return filepath
 
 
 def split_label_info(labels, info_type):
@@ -179,10 +187,9 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
         confusion_matrix_df.to_csv(filepath)
         written_files.append(filepath)
 
-        cl_report = classification_report(classified_pts_tst_gdf.label, classified_pts_tst_gdf.pred, output_dict=True)
-        filepath = os.path.join(output_dir_model, 'classification_report.csv')
-        pd.DataFrame(cl_report).transpose().to_csv(filepath)
-        written_files.append(filepath)
+        written_files.append(save_classification_report(classified_colors_tst_gdf.rename(columns={'color': 'pred'}), 'color', output_dir_model))
+        written_files.append(save_classification_report(classified_shapes_tst_gdf.rename(columns={'symbol_shape': 'pred'}), 'shape', output_dir_model))
+        written_files.append(save_classification_report(classified_pts_tst_gdf, 'test', output_dir_model))
 
         filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
         classified_pts_tst_gdf.to_file(filepath)
@@ -302,8 +309,8 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
 
                 if MODEL == 'RF':
                     # Method of the mean decrease in impurity
-                    importances = model['pipeline'].best_estimator_.feature_importances_
-                    std_feat_importance = std([tree.feature_importances_ for tree in model['pipeline'].best_estimator_.estimators_], axis=0)
+                    importances = model['pipeline'].best_estimator_['classifier'].feature_importances_
+                    std_feat_importance = std([tree.feature_importances_ for tree in model['pipeline'].best_estimator_['classifier'].estimators_], axis=0)
 
                     forest_importances = pd.Series(importances, index=model['features'])
 
@@ -315,10 +322,13 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
                     written_files.append(file_to_write)
 
                 # Based on feature permutation
-                data_tst = features_gdf.loc[features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
+                if model['desc'] == 'color':
+                    data_tst = features_gdf.loc[(features_gdf.color!='various') & features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
+                else:
+                    data_tst = features_gdf.loc[features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
 
                 result = permutation_importance(
-                    model['pipeline'].best_estimator_, data_tst, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+                    model['pipeline'].best_estimator_['classifier'], data_tst, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
                 )
                 forest_importances = pd.Series(result.importances_mean, index=model['features']).sort_values(ascending=False)
 

@@ -299,7 +299,7 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
             data_tst = features_gdf[features_list].to_numpy()
 
             result = permutation_importance(
-                clf.best_estimator_, data_tst, features_gdf.CATEGORY.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+                clf.best_estimator_['classifier'], data_tst, features_gdf.CATEGORY.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
             )
             forest_importances = pd.Series(result.importances_mean, index=features_list)
 
