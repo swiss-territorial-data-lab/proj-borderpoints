@@ -281,34 +281,34 @@ def main(images, features_hog, features_stats, save_extra=False, output_dir='out
 
             logger.info('Get the feature importance...')
 
-            if MODEL == 'RF':
-                # Method of the mean decrease in impurity
-                importances = clf.best_estimator_['classifier'].feature_importances_
-                std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_['classifier'].estimators_], axis=0)
+        if MODEL == 'RF':
+            # Method of the mean decrease in impurity
+            importances = clf.best_estimator_['classifier'].feature_importances_
+            std_feat_importance = std([tree.feature_importances_ for tree in clf.best_estimator_['classifier'].estimators_], axis=0)
 
-                forest_importances = pd.Series(importances, index=features_list)
+            forest_importances = pd.Series(importances, index=features_list)
 
-                fig = forest_importances.plot.bar(error_y=std_feat_importance)
-                fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
+            fig = forest_importances.plot.bar(error_y=std_feat_importance)
+            fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
 
-                file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.html')
-                fig.write_html(file_to_write)
-                written_files.append(file_to_write)
-
-            # Based on feature permutation
-            data_tst = features_gdf[features_list].to_numpy()
-
-            result = permutation_importance(
-                clf.best_estimator_['classifier'], data_tst, features_gdf.CATEGORY.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
-            )
-            forest_importances = pd.Series(result.importances_mean, index=features_list)
-
-            fig = forest_importances.plot.bar(error_y=result.importances_std)
-            fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")
-
-            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.html')
+            file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI.html')
             fig.write_html(file_to_write)
             written_files.append(file_to_write)
+
+        # Based on feature permutation
+        data_tst = features_gdf[features_list].to_numpy()
+
+        result = permutation_importance(
+            clf.best_estimator_, data_tst, features_gdf.CATEGORY.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+        )
+        forest_importances = pd.Series(result.importances_mean, index=features_list)
+
+        fig = forest_importances.plot.bar(error_y=result.importances_std)
+        fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")
+
+        file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations.html')
+        fig.write_html(file_to_write)
+        written_files.append(file_to_write)
 
 
     return global_metric, written_files

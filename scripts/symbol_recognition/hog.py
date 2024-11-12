@@ -32,7 +32,7 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
     return hog_features
 
 # def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, variance_threshold=0.01, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
-def main(tiles, image_size=121, ppc=20, cpb=4, orientations=4, variance_threshold=0.005, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
+def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshold=0.005, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
 

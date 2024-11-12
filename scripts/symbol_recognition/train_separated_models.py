@@ -28,21 +28,21 @@ def merge_color_and_shape(colors_gdf, shapes_gdf, possible_classes, category_df=
     shapes_gdf.rename(columns={'pred': 'symbol_shape', 'score': 'shape_score', 'method':  'shape_method'}, inplace=True)
     colors_gdf.rename(columns={'pred': 'color', 'score': 'color_score', 'method':  'color_method'}, inplace=True)
 
+    parameter_to_keep_shape = ['image_name', 'symbol_shape', 'shape_method', 'geometry']
+    parameter_to_keep_color = ['combo_id' if 'combo_id' in colors_gdf.columns else 'image_name', 'color', 'color_method']
     if 'combo_id' in colors_gdf.columns:
-        classified_pts_gdf = shapes_gdf[['pt_id', 'combo_id', 'image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
-            colors_gdf[['combo_id', 'color', 'color_score', 'color_method']], how='left', on='combo_id'
-        )
+        parameter_to_keep_shape.extend(['pt_id', 'combo_id'])
+        merge_param = 'combo_id'
     else:
-        if MODEL in ['RF', 'HGBC']:
-            classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_score', 'shape_method', 'geometry']].merge(
-                colors_gdf[['image_name', 'color', 'color_score', 'color_method']], 
-                how='left', on='image_name'
-            )
-        else:
-            classified_pts_gdf = shapes_gdf[['image_name', 'symbol_shape', 'shape_method', 'geometry']].merge(
-                colors_gdf[['image_name', 'color', 'color_method']], 
-                how='left', on='image_name'
-            )
+        merge_param = 'image_name'
+    if MODEL in ['RF', 'HGBC']:
+        parameter_to_keep_shape.append('shape_score')
+        parameter_to_keep_color.append('color_score')
+
+    classified_pts_gdf = shapes_gdf[parameter_to_keep_shape].merge(
+            colors_gdf[parameter_to_keep_color], how='left', on=merge_param
+        )
+
     if isinstance(category_df, pd.DataFrame):
         classified_pts_gdf = classified_pts_gdf.merge(category_df, how='inner', on='image_name')
         classified_pts_gdf.rename(columns={'CATEGORY': 'label'}, inplace=True)
@@ -84,7 +84,7 @@ def merge_color_and_shape(colors_gdf, shapes_gdf, possible_classes, category_df=
 
 def save_classification_report(df, result_type, output_dir):
     cl_report = classification_report(df.label, df.pred, output_dict=True)
-    filepath = os.path.join(output_dir, f'classification_report_{result_type}.csv')
+    filepath = os.path.join(output_dir, f'classification_report{f"_{result_type}" if result_type else ""}.csv')
     pd.DataFrame(cl_report).transpose().to_csv(filepath)
 
     return filepath
@@ -189,7 +189,7 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
 
         written_files.append(save_classification_report(classified_colors_tst_gdf.rename(columns={'color': 'pred'}), 'color', output_dir_model))
         written_files.append(save_classification_report(classified_shapes_tst_gdf.rename(columns={'symbol_shape': 'pred'}), 'shape', output_dir_model))
-        written_files.append(save_classification_report(classified_pts_tst_gdf, 'test', output_dir_model))
+        written_files.append(save_classification_report(classified_pts_tst_gdf, None, output_dir_model))
 
         filepath = os.path.join(output_dir_model, 'classified_pts_tst.gpkg')
         classified_pts_tst_gdf.to_file(filepath)
@@ -304,40 +304,40 @@ def main(images, features_hog, features_stats, save_extra=False, do_plot=False, 
             fig.write_html(file_to_write)
             written_files.append(file_to_write)
 
-            for model in [shape_dict, color_dict]:
-                logger.info(f'Get the feature importance in the determination of {model["desc"]}...')
+        for model in [shape_dict, color_dict]:
+            logger.info(f'Get the feature importance in the determination of {model["desc"]}...')
 
-                if MODEL == 'RF':
-                    # Method of the mean decrease in impurity
-                    importances = model['pipeline'].best_estimator_['classifier'].feature_importances_
-                    std_feat_importance = std([tree.feature_importances_ for tree in model['pipeline'].best_estimator_['classifier'].estimators_], axis=0)
+            if MODEL == 'RF':
+                # Method of the mean decrease in impurity
+                importances = model['pipeline'].best_estimator_['classifier'].feature_importances_
+                std_feat_importance = std([tree.feature_importances_ for tree in model['pipeline'].best_estimator_['classifier'].estimators_], axis=0)
 
-                    forest_importances = pd.Series(importances, index=model['features'])
+                forest_importances = pd.Series(importances, index=model['features'])
 
-                    fig = forest_importances.plot.bar(error_y=std_feat_importance)
-                    fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
+                fig = forest_importances.plot.bar(error_y=std_feat_importance)
+                fig.update_layout(xaxis_title="Feature", yaxis_title="Mean decrease in impurity", title="Feature importances using MDI")
 
-                    file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI_{model["desc"]}.html')
-                    fig.write_html(file_to_write)
-                    written_files.append(file_to_write)
-
-                # Based on feature permutation
-                if model['desc'] == 'color':
-                    data_tst = features_gdf.loc[(features_gdf.color!='various') & features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
-                else:
-                    data_tst = features_gdf.loc[features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
-
-                result = permutation_importance(
-                    model['pipeline'].best_estimator_['classifier'], data_tst, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
-                )
-                forest_importances = pd.Series(result.importances_mean, index=model['features']).sort_values(ascending=False)
-
-                fig = forest_importances.plot.bar(error_y=result.importances_std)
-                fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")
-
-                file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations_{model["desc"]}.html')
+                file_to_write = os.path.join(output_dir_model, f'feature_importance_MDI_{model["desc"]}.html')
                 fig.write_html(file_to_write)
                 written_files.append(file_to_write)
+
+            # Based on feature permutation
+            if model['desc'] == 'color':
+                data_tst = features_gdf.loc[(features_gdf.color!='various') & features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
+            else:
+                data_tst = features_gdf.loc[features_gdf.image_name.isin(test_image_names), model['features']].to_numpy()
+
+            result = permutation_importance(
+                model['pipeline'].best_estimator_, data_tst, model['tst_results'].label.to_numpy(), n_repeats=10, random_state=42, n_jobs=2
+            )
+            forest_importances = pd.Series(result.importances_mean, index=model['features']).sort_values(ascending=False)
+
+            fig = forest_importances.plot.bar(error_y=result.importances_std)
+            fig.update_layout(xaxis_title="Feature", yaxis_title="Mean accuracy decrease", title="Feature importances using permutation on scaled variables")
+
+            file_to_write = os.path.join(output_dir_model, f'feature_importance_permutations_{model["desc"]}.html')
+            fig.write_html(file_to_write)
+            written_files.append(file_to_write)
 
 
     return global_metric, written_files

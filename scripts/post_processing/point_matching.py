@@ -69,7 +69,7 @@ def test_intersection(border_pts_gdf, detections_gdf):
 
     logger.info("   Isolate points properly intersected...")
     multiple_intersections = intersection_count_df.duplicated('pt_id', keep=False) | (intersection_count_df['size'] > 1)
-    # Get points that are not duplicated ans not detected several times
+    # Get points that are not duplicated and not detected several times
     intersected_id = intersection_count_df.loc[~multiple_intersections, 'pt_id']
     pts_w_cat_gdf = intersected_pts_gdf[
         intersected_pts_gdf.pt_id.isin(intersected_id) & ~intersected_pts_gdf.det_category.isna() 
