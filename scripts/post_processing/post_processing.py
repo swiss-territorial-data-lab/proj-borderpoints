@@ -149,7 +149,8 @@ detections_gdf = pd.concat(
     ignore_index=True
 )
 
-detections_gdf = detections_gdf[det_columns + ['scale', 'cluster_id']].copy()
+detections_gdf = detections_gdf[det_columns + ['scale', 'cluster_id', 'initial_tile']].copy()
+detections_gdf.drop(columns='image', inplace=True)
 
 logger.info('Get the category name of each detection...')
 # get corresponding class ids

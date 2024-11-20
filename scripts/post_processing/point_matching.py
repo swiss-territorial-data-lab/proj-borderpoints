@@ -159,12 +159,15 @@ lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(new_border_pts_gdf.
 lonely_dets_gdf.loc[:, 'buffer_size'] = [PT_NEIGBORHOOD[scale] for scale in lonely_dets_gdf['scale']]
 lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
-potential_miss_gdf = lonely_dets_gdf.sjoin(new_border_pts_gdf.loc[new_border_pts_gdf.det_category == 'undetermined', ['pt_id', 'geometry']])
+potential_miss_gdf = lonely_dets_gdf.sjoin(new_border_pts_gdf[new_border_pts_gdf.det_category == 'undetermined'].drop(columns=['det_id', 'det_category', 'score']))
 potential_miss_gdf.drop_duplicates('det_id', inplace=True)
 potential_miss_gdf.loc[:, 'geometry'] = potential_miss_gdf.geometry.centroid
+try:
+    potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist() + ['initial_tile']].copy()
+except KeyError:
+    potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist()].copy()
 
-all_pts_gdf = pd.concat([new_border_pts_gdf, potential_miss_gdf[detections_gdf.columns]], ignore_index=True)
-all_pts_gdf.drop(columns=['scale'], inplace=True)
+all_pts_gdf = pd.concat([new_border_pts_gdf, potential_miss_gdf], ignore_index=True)
 
 logger.info('Save result...')
 filepath = os.path.join(OUTPUT_DIR, 'matched_points.gpkg')
