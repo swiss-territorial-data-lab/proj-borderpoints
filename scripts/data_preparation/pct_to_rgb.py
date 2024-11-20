@@ -32,7 +32,7 @@ def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix
     
     os.makedirs(output_dir, exist_ok=True)
 
-    tiles_list = glob(os.path.join(input_dir, '**/*.tif'))
+    tiles_list = glob(os.path.join(input_dir, '**/*.tif'), recursive=True)
     if len(tiles_list) == 0:
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
