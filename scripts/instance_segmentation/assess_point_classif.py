@@ -5,7 +5,7 @@ from time import time
 
 import geopandas as gpd
 import pandas as pd
-from sklearn.metrics import confusion_matrix, classification_report, f1_score
+from sklearn.metrics import confusion_matrix, classification_report, precision_score, recall_score
 
 sys.path.insert(1, 'scripts')
 import functions.fct_misc as misc
@@ -66,7 +66,10 @@ for dst in ['trn', 'val', 'tst']:
     pd.DataFrame(cl_report).transpose().to_csv(filepath)
     written_files.append(filepath)
 
-    logger.info(f'{dst} dataset - f1 score = {f1_score(labels, predictions, average="macro"):.3f}')
+    precision = precision_score(labels, predictions, average="macro")
+    recall = recall_score(labels, predictions, average="macro")
+    f1_score = 2 * (precision * recall) / (precision + recall)
+    logger.info(f'{dst} dataset - f1 score = {f1_score:.3f}')
 
 logger.success('Done! The following files were written:')
 for file in written_files:
