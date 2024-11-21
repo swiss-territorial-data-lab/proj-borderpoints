@@ -158,7 +158,7 @@ The project is constituted of the following folders:
 
 The figure below shows the different available workflows and the scripts involved in them (click on it to see it larger).
 
-![Workflow](img/workflow_w_scripts.jpg)
+![Workflow](img/workflow_w_scripts.webp)
 
 
 ### Symbol classification
