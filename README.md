@@ -84,7 +84,7 @@ When working with the ground truth, the following files are required in addition
 
 The workflow is divided into three parts:
 
-* Data preparation: call the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced on defined bounding boxes and `prepare_entire_plans.py` to work with entire plans. More precisely, the following steps are performed:
+* Data preparation: call the appropriate preprocessing script, *i.e.* `prepare_ground_truth.py` to work with ground truth produced on defined bounding boxes and `prepare_entire_plans.py` to work with entire plans. More precisely, the following steps are performed:
     - Transform the plans from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL object detector and clip the plans to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the plans into square tiles of 512 or 256 pixels,
@@ -101,7 +101,7 @@ All the parameters are passed through a configuration file. Some fixed parameter
 **Training with GT**
 
 ```
-python scripts/instance_segmentation/prepare_data.py config/config_w_gt.yaml
+python scripts/instance_segmentation/prepare_ground_truth.py config/config_w_gt.yaml
 stdl-objdet generate_tilesets config/config_w_gt.yaml
 stdl-objdet train_model config/config_w_gt.yaml
 stdl-objdet make_detections config/config_w_gt.yaml
@@ -128,7 +128,7 @@ python scripts/instance_segmentation/assess_point_classif.py config/config_w_gt.
 **Inference on entire plans**
 
 ```
-python scripts/instance_segmentation/prepare_whole_tiles.py config/config_entire_plans.yaml
+python scripts/instance_segmentation/prepare_entire_plans.py config/config_entire_plans.yaml
 stdl-objdet generate_tilesets config/config_entire_plans.yaml
 stdl-objdet make_detections config/config_entire_plans.yaml
 python scripts/post_processing/post_processing.py config/config_entire_plans.yaml

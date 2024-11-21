@@ -1,4 +1,4 @@
-prepare_data.py:
+prepare_ground_truth.py:
   working_dir: .
   output_dir:
     vectors: outputs/instance_segmentation/formatted_labels
