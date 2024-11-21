@@ -153,7 +153,7 @@ The project is constituted of the following folders:
     ├── instance_segmentation   # Scripts for instance segmentation
     ├── post_processing         # Scripts for post-processing after the instance segmentation
     ├── sandbox                 # Test scripts not included in workflows
-    └── symbol_recognition      # Scripts for symbol classification
+    └── symbol_classification      # Scripts for symbol classification
 ```
 
 The figure below shows the different available workflows and the scripts involved in them (click on it to see it larger).
@@ -204,16 +204,16 @@ Below, the command lines are presented for the algorithm version with a single m
 **Training with GT**
 
 ```
-python scripts/symbol_recognition/prepare_ground_truth.py config/config_symbol_classif.yaml
-python scripts/symbol_recognition/data_augmentation.py config/config_symbol_classif.yaml
-python scripts/symbol_recognition/hog.py config/config_symbol_classif.yaml
-python scripts/symbol_recognition/color_treatment.py config/config_symbol_classif.yaml
-python scripts/symbol_recognition/train_model.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/prepare_ground_truth.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/data_augmentation.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/hog.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/color_treatment.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/train_model.py config/config_symbol_classif.yaml
 ```
 
 **Classification of border points on entire plans**
 
 ```
-python scripts/symbol_recognition/prepare_symbol_classif.py config/config_symbol_classif.yaml
-python scripts/symbol_recognition/classify_images_in_folder.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/prepare_symbol_classif.py config/config_symbol_classif.yaml
+python scripts/symbol_classification/classify_images_in_folder.py config/config_symbol_classif.yaml
 ```
