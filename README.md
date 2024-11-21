@@ -58,7 +58,7 @@ cd object-detector
 git checkout gs/code_improvement
 cd -
 docker compose build
-docker compose run --rm borderpoints-dev
+docker compose run --rm borderpoints
 cd proj-borderpoints            # Command to run in the docker bash
 ```
 
