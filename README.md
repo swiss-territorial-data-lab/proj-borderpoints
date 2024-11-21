@@ -84,7 +84,7 @@ When working with the ground truth, the following files are required in addition
 
 The workflow is divided into three parts:
 
-* Data preparation: call the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced on defined bounding boxes and `prepare_whole_tiles.py` to work with entire plans. More precisely, the following steps are performed:
+* Data preparation: call the appropriate preprocessing script, *i.e.* `prepare_data.py` to work with ground truth produced on defined bounding boxes and `prepare_entire_plans.py` to work with entire plans. More precisely, the following steps are performed:
     - Transform the plans from a color map to RGB images,
     - If ground truth is available, format the labels according to the requirements of the STDL object detector and clip the plans to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the plans into square tiles of 512 or 256 pixels,
@@ -125,20 +125,17 @@ python scripts/post_processing/check_w_land_cover.py config/config_w_gt.yaml
 python scripts/instance_segmentation/assess_point_classif.py config/config_w_gt.yaml
 ```
 
-**Inference on whole plans**
+**Inference on entire plans**
 
 ```
-python scripts/instance_segmentation/prepare_whole_tiles.py config/config_whole_tiles.yaml
-stdl-objdet generate_tilesets config/config_whole_tiles.yaml
-stdl-objdet make_detections config/config_whole_tiles.yaml
-python scripts/post_processing/post_processing.py config/config_whole_tiles.yaml
-python scripts/post_processing/point_matching.py config/config_whole_tiles.yaml
-python scripts/post_processing/check_w_land_cover.py config/config_whole_tiles.yaml
-python scripts/post_processing/heatmap.py config/config_whole_tiles.yaml
+python scripts/instance_segmentation/prepare_whole_tiles.py config/config_entire_plans.yaml
+stdl-objdet generate_tilesets config/config_entire_plans.yaml
+stdl-objdet make_detections config/config_entire_plans.yaml
+python scripts/post_processing/post_processing.py config/config_entire_plans.yaml
+python scripts/post_processing/point_matching.py config/config_entire_plans.yaml
+python scripts/post_processing/check_w_land_cover.py config/config_entire_plans.yaml
+python scripts/post_processing/heatmap.py config/config_entire_plans.yaml
 ```
-
-The command lines above use the configuration files for the plans with GT areas. The configuration file `config_whole_oth_tiles.yaml` was used for plans on which no point was digitized as part of the ground truth. Only the path to the different folders should change between the two configurations.
-
 
 ## Additional information
 
