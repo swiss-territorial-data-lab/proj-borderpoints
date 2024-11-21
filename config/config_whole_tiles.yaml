@@ -79,6 +79,6 @@ check_w_land_cover.py:
 
 heatmap.py:
   working_dir: .
-  output_dir: outputs/instance_segmentation/detections/heatmap
+  output_dir: outputs/instance_segmentation/detections
   matched_points: outputs/instance_segmentation/detections/final_matched_points.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg

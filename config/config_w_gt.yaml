@@ -89,7 +89,7 @@ assess_detections.py:
 
 
 post_processing.py:
-  working_dir: outputs/instance_segmentation
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
   input_dir: object_detector
   output_dir: post_processing
   detections:
@@ -104,7 +104,7 @@ post_processing.py:
 
 
 assess_w_post_process.py:
-  working_dir: outputs/instance_segmentation
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
   output_dir: post_processing
   subtiles: object_detector/split_aoi_tiles.geojson
   ground_truth: formatted_labels/ground_truth_labels.gpkg
@@ -137,6 +137,6 @@ assess_point_classif.py:
 
 heatmap.py:
   working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
-  output_dir: outputs/instance_segmentation/post_processing/heatmap
+  output_dir: outputs/instance_segmentation/post_processing
   matched_points: outputs/instance_segmentation/post_processing/final_matched_points.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg

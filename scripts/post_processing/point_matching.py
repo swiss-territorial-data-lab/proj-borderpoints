@@ -89,92 +89,91 @@ def test_intersection(border_pts_gdf, detections_gdf):
 
     return lonely_points_gdf, pts_w_cat_gdf
 
+if __name__ == '__main__':
 
-# Processing ---------------------------------------
+    # Start chronometer
+    tic = time()
+    logger.info('Starting...')
 
-# Start chronometer
-tic = time()
-logger.info('Starting...')
+    cfg = get_config(os.path.basename(__file__), 'The script matches the known border points with the segmented instances.')
 
-cfg = get_config(os.path.basename(__file__), 'The script matches the known border points with the segmented instances.')
+    # Load input parameters
+    WORKING_DIR = cfg['working_dir']
+    OUTPUT_DIR = cfg['output_dir']
 
-# Load input parameters
-WORKING_DIR = cfg['working_dir']
-OUTPUT_DIR = cfg['output_dir']
+    DETECTIONS = cfg['detections']
+    BORDER_POINTS = cfg['border_points']
 
-DETECTIONS = cfg['detections']
-BORDER_POINTS = cfg['border_points']
-
-# Point neighborhood = max size of the point bbox depending on scale
-PT_NEIGBORHOOD = {500: 2.4, 1000: 4.5, 2000: 6.8, 4000: 17.3}
-# Based on visual assessment, buffer distance = 1/8 max size of the point bbox depending on scale
-BUFFER_DISTANCE = {key: value/8 for key, value in PT_NEIGBORHOOD.items()}
+    # Point neighborhood = max size of the point bbox depending on scale
+    PT_NEIGBORHOOD = {500: 2.4, 1000: 4.5, 2000: 6.8, 4000: 17.3}
+    # Based on visual assessment, buffer distance = 1/8 max size of the point bbox depending on scale
+    BUFFER_DISTANCE = {key: value/8 for key, value in PT_NEIGBORHOOD.items()}
 
 
-# Processing  ---------------------------------------
+    # Processing  ---------------------------------------
 
-os.chdir(WORKING_DIR)
+    os.chdir(WORKING_DIR)
 
-logger.info('Read data...')
+    logger.info('Read data...')
 
-detections_gdf = gpd.read_file(DETECTIONS)
-detections_gdf = detections_gdf[detections_gdf.det_category!='0s'].copy()
-detections_gdf = detections_gdf[['det_id', 'det_category', 'score', 'scale', 'geometry']].copy()
+    detections_gdf = gpd.read_file(DETECTIONS)
+    detections_gdf = detections_gdf[detections_gdf.det_category!='0s'].copy()
+    detections_gdf = detections_gdf[['det_id', 'det_category', 'score', 'scale', 'geometry']].copy()
 
-border_pts_gdf = gpd.read_file(BORDER_POINTS)
+    border_pts_gdf = gpd.read_file(BORDER_POINTS)
 
-if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
-    logger.critical('Some border points have a duplicated id!')
-    sys.exit(1)
-if 'Num_box' in border_pts_gdf.columns:
-    border_pts_gdf = border_pts_gdf[(border_pts_gdf.Num_box.fillna(0).astype(int) <= 35) | (border_pts_gdf.Num_box.isna())]
+    if not border_pts_gdf[border_pts_gdf.duplicated('pt_id')].empty:
+        logger.critical('Some border points have a duplicated id!')
+        sys.exit(1)
+    if 'Num_box' in border_pts_gdf.columns:
+        border_pts_gdf = border_pts_gdf[(border_pts_gdf.Num_box.fillna(0).astype(int) <= 35) | (border_pts_gdf.Num_box.isna())]
 
-logger.info('Test intersection between the border points and detections...')
-lonely_points_gdf, pts_w_cat_gdf = test_intersection(border_pts_gdf, detections_gdf)
+    logger.info('Test intersection between the border points and detections...')
+    lonely_points_gdf, pts_w_cat_gdf = test_intersection(border_pts_gdf, detections_gdf)
 
-logger.info('Try again with a buffer for points with no intersection...')
-lonely_dets_gdf = detections_gdf[
-    ~detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist())
-].copy()
-lonely_dets_gdf['buffer_size'] = [BUFFER_DISTANCE[scale] for scale in lonely_dets_gdf['scale']]
-lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
+    logger.info('Try again with a buffer for points with no intersection...')
+    lonely_dets_gdf = detections_gdf[
+        ~detections_gdf.det_id.isin(pts_w_cat_gdf.det_id.unique().tolist())
+    ].copy()
+    lonely_dets_gdf['buffer_size'] = [BUFFER_DISTANCE[scale] for scale in lonely_dets_gdf['scale']]
+    lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
-if lonely_points_gdf.empty:
-    tmp_pts_w_cat_gdf = gpd.GeoDataFrame(crs="EPSG:2056", columns=pts_w_cat_gdf.columns)
-else:
-    lonely_points_gdf, tmp_pts_w_cat_gdf = test_intersection(lonely_points_gdf, lonely_dets_gdf)
+    if lonely_points_gdf.empty:
+        tmp_pts_w_cat_gdf = gpd.GeoDataFrame(crs="EPSG:2056", columns=pts_w_cat_gdf.columns)
+    else:
+        lonely_points_gdf, tmp_pts_w_cat_gdf = test_intersection(lonely_points_gdf, lonely_dets_gdf)
 
-logger.info('Merge results...')
-final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf], ignore_index=True)
-new_border_pts_gdf = pd.merge(border_pts_gdf, final_pts_w_cat_gdf[['det_id', 'det_category', 'score', 'pt_id']], how='left', on='pt_id')
+    logger.info('Merge results...')
+    final_pts_w_cat_gdf = pd.concat([pts_w_cat_gdf, tmp_pts_w_cat_gdf], ignore_index=True)
+    new_border_pts_gdf = pd.merge(border_pts_gdf, final_pts_w_cat_gdf[['det_id', 'det_category', 'score', 'pt_id']], how='left', on='pt_id')
 
-# Check if pts without category are matching across methods
-lonely_ids = lonely_points_gdf.loc[:, 'pt_id']
+    # Check if pts without category are matching across methods
+    lonely_ids = lonely_points_gdf.loc[:, 'pt_id']
 
-assert (new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'pt_id'].to_list() == lonely_ids).all(), 'Ids for undetermined points not matching!'
-new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'det_category'] = 'undetermined'
+    assert (new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'pt_id'].to_list() == lonely_ids).all(), 'Ids for undetermined points not matching!'
+    new_border_pts_gdf.loc[new_border_pts_gdf.det_category.isna(), 'det_category'] = 'undetermined'
 
-logger.info('Check if the remaining alone points are in the neighborhood of undetermined ones...')
-lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(new_border_pts_gdf.det_id.unique())].copy()
-lonely_dets_gdf.loc[:, 'buffer_size'] = [PT_NEIGBORHOOD[scale] for scale in lonely_dets_gdf['scale']]
-lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
+    logger.info('Check if the remaining alone points are in the neighborhood of undetermined ones...')
+    lonely_dets_gdf = detections_gdf[~detections_gdf.det_id.isin(new_border_pts_gdf.det_id.unique())].copy()
+    lonely_dets_gdf.loc[:, 'buffer_size'] = [PT_NEIGBORHOOD[scale] for scale in lonely_dets_gdf['scale']]
+    lonely_dets_gdf.loc[:, 'geometry'] = lonely_dets_gdf.buffer(lonely_dets_gdf.buffer_size)
 
-potential_miss_gdf = lonely_dets_gdf.sjoin(new_border_pts_gdf[new_border_pts_gdf.det_category == 'undetermined'].drop(columns=['det_id', 'det_category', 'score']))
-potential_miss_gdf.drop_duplicates('det_id', inplace=True)
-potential_miss_gdf.loc[:, 'geometry'] = potential_miss_gdf.geometry.centroid
-try:
-    potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist() + ['initial_tile']].copy()
-except KeyError:
-    potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist()].copy()
+    potential_miss_gdf = lonely_dets_gdf.sjoin(new_border_pts_gdf[new_border_pts_gdf.det_category == 'undetermined'].drop(columns=['det_id', 'det_category', 'score']))
+    potential_miss_gdf.drop_duplicates('det_id', inplace=True)
+    potential_miss_gdf.loc[:, 'geometry'] = potential_miss_gdf.geometry.centroid
+    try:
+        potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist() + ['initial_tile']].copy()
+    except KeyError:
+        potential_miss_gdf = potential_miss_gdf[detections_gdf.columns.tolist()].copy()
 
-all_pts_gdf = pd.concat([new_border_pts_gdf, potential_miss_gdf], ignore_index=True)
+    all_pts_gdf = pd.concat([new_border_pts_gdf, potential_miss_gdf], ignore_index=True)
 
-logger.info('Save result...')
-filepath = os.path.join(OUTPUT_DIR, 'matched_points.gpkg')
-all_pts_gdf.to_file(filepath)
+    logger.info('Save result...')
+    filepath = os.path.join(OUTPUT_DIR, 'matched_points.gpkg')
+    all_pts_gdf.to_file(filepath)
 
-logger.success(f'Done! The output was saved in {filepath}.')
+    logger.success(f'Done! The output was saved in {filepath}.')
 
-# Stop chronometer
-toc = time()
-logger.success(f"Nothing left to be done: exiting. Elapsed time: {(toc-tic):.2f} seconds")
+    # Stop chronometer
+    toc = time()
+    logger.success(f"Nothing left to be done: exiting. Elapsed time: {(toc-tic):.2f} seconds")

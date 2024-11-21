@@ -53,7 +53,7 @@ make_detections.py:
 
 
 post_processing.py:
-  working_dir: outputs/instance_segmentation
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
   input_dir: detections_oth_maps
   output_dir: detections_oth_maps
   subtiles: gpkg_whole_oth_tiles/subtiles.gpkg
@@ -66,21 +66,29 @@ post_processing.py:
 
 
 point_matching.py:
-  working_dir: outputs/instance_segmentation
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
   output_dir: detections_oth_maps
   detections: detections_oth_maps/detected_points.gpkg
   border_points: gpkg_whole_oth_tiles/MO_points.gpkg
 
 
 check_w_land_cover.py:
-  working_dir: .
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/
   output_dir: outputs/instance_segmentation/detections_oth_maps
   matched_points: outputs/instance_segmentation/detections_oth_maps/matched_points.gpkg
   land_cover: inputs/land_cover/couverture_du_sol.gpkg
 
 
 heatmap.py:
-  working_dir: .
-  output_dir: outputs/instance_segmentation/detections_oth_maps/heatmap
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/
+  output_dir: outputs/instance_segmentation/detections_oth_maps
   matched_points: outputs/instance_segmentation/detections_oth_maps/final_matched_points.gpkg
   bdmo_poly: inputs/MO/BDMO2.gpkg
+
+
+classif_shifted_points.py:
+  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data/outputs/instance_segmentation
+  output_dir: detections_oth_maps
+  final_points: detections_oth_maps/final_matched_points.gpkg
+  built_areas: ../../inputs/siedlung_2024_2056_FR.gpkg
+  heatmap: detections_oth_maps/heatmap/heatmap.gpkg
