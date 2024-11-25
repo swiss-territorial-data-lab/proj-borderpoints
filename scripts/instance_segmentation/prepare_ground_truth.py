@@ -6,7 +6,6 @@ from time import time
 import pandas as pd
 
 sys.path.insert(1,'scripts')
-from constants import OVERWRITE
 from data_preparation import format_labels, format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box
 import functions.fct_misc as misc
 

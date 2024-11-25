@@ -20,7 +20,7 @@ logger = format_logger(logger)
 
 # Functions ------------------------------------------
 
-def format_tiles(tile_path, tile_nbr, out_path, existing_tiles, nodata_key=255, tile_suffix='.tif'):
+def format_tiles(tile_path, out_path, nodata_key=255, tile_suffix='.tif'):
     """
     Formats a tiff image by renaming it, converting the color map, and reprojecting it if necessary.
     
@@ -136,14 +136,14 @@ def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix
         
         name_correspondence_list.append((tile_name, (str(tile_nbr) + '_' + end_out_path).rstrip('.tif')))
 
-        info_tuples_list.append(tile_path, tile_nbr, out_path)
+        info_tuples_list.append((tile_path, out_path))
 
         tile_nbr += 1
     
 
     job_outputs = Parallel(n_jobs=njobs, backend="loky")(
-        delayed(format_tiles)(tile_path, output_dir, nodata_key, tile_suffix) 
-        for tile_path, tile_nbr, out_path in tqdm(info_tuples_list, desc=f'Convert images from colormap to RGB, {njobs} at a time')
+        delayed(format_tiles)(tile_path, out_path, nodata_key, tile_suffix) 
+        for tile_path, out_path in tqdm(info_tuples_list, desc=f'Convert images from colormap to RGB, {njobs} at a time')
     )
 
     if len(name_correspondence_list) > 0:
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     tic = time()
     logger.info('Starting...')
 
-    cfg = get_config('prepare_data.py', 'The script converts the images from colormap to RGB.')
+    cfg = get_config('prepare_ground_truth.py', 'The script converts the images from colormap to RGB.')
 
     WORKING_DIR = cfg['working_dir']
     INPUT_DIR = cfg['initial_image_dir']
