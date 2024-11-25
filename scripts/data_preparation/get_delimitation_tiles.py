@@ -49,6 +49,18 @@ def control_overlap(gdf1, gdf2, threshold=0.5, op='larger'):
 
 
 def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
+    """
+    Extract the information of a tile into a dict and a GeoDataFrame.
+
+    Args:
+    tile (str): path to the tile
+    overlap_info (str or pandas DataFrame, optional): path to the csv file containing the information on the overlap of the tiles or the DataFrame with the same info. Defaults to None.
+    tile_suffix (str, optional): suffix of the filename, which is the part coming after the tile number or id. Defaults to '.tif'.
+    
+    Returns:
+        tuple: a tuple with a dict containing the tile information and a GeoDataFrame with the nodata areas of the tile
+    """
+    
     tiles_dict = {'id': [], 'name': [], 'number': [], 'scale': [], 'geometry': [],
                     'pixel_size_x': [], 'pixel_size_y': [], 'dimension': [], 'origin': [], 'max_dx': [], 'max_dy': []}
     
@@ -117,11 +129,53 @@ def extract_tile_info(tile, overlap_info=None, tile_suffix='.tif'):
     nodata_gdf = rasters.no_data_to_polygons(first_band, meta['transform'], meta['nodata'])
     nodata_gdf = pad_geodataframe(nodata_gdf, bounds, tile_size, max(pixel_size_x, pixel_size_y), cst.GRID_LARGE_TILES, cst.GRID_LARGE_TILES, max_dx, max_dy)
     nodata_gdf['tile_name'] = tile_name
+    nodata_gdf['tile_scale'] = tile_scale
 
     return (tiles_dict, nodata_gdf)
 
 
-def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
+def get_subtiles(nodata_gdf, tile_row):
+    tile_infos = {
+        'tile_size': tuple(map(int, tile_row.dimension.strip('()').split(', '))), 
+        'tile_origin': tuple(map(float, tile_row.origin.strip('()').split(', '))), 
+        'pixel_size_x': tile_row.pixel_size_x,
+        'pixel_size_y': tile_row.pixel_size_y,
+        'max_dx': tile_row.max_dx,
+        'max_dy': tile_row.max_dy
+    }
+    nodata_subset_gdf = nodata_gdf[nodata_gdf.tile_name==tile_row.name].copy()
+
+    # Make a large tiling grid to cover the image
+    temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_LARGE_TILES, grid_height=cst.GRID_LARGE_TILES, **tile_infos)
+
+    # Only keep tiles that do not overlap too much the nodata zone
+    large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_LARGE_TILES)
+    large_subtiles_gdf = temp_gdf[temp_gdf.id.isin(large_id_on_image)].copy()
+    large_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile_row.number)})' for subtile_id in large_subtiles_gdf.id] 
+    large_subtiles_gdf['initial_tile'] = tile_row.name
+
+    if (tile_row.max_dx == 0) and (tile_row.max_dy == 0):
+        # Make a smaller tiling grid to not lose too much data
+        temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_SMALL_TILES, grid_height=cst.GRID_SMALL_TILES, **tile_infos)
+        # Only keep small subtiles not under a large one
+        small_subtiles_gdf = gpd.overlay(temp_gdf, large_subtiles_gdf, how='difference', keep_geom_type=True)
+        small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area > 10].copy()
+        
+        if not small_subtiles_gdf.empty:
+            # Only keep tiles that do not overlap too much the nodata zone
+            small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_SMALL_TILES)
+            small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
+            small_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile_row.number)})' for subtile_id in small_subtiles_gdf.id]
+            small_subtiles_gdf['initial_tile'] = tile_row.name
+
+            subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
+    
+    subtiles_gdf = large_subtiles_gdf.copy()
+
+    return subtiles_gdf
+
+
+def main(tile_dir, overlap_info=None, tile_suffix='.tif', output_dir='outputs', subtiles=False):
     """Get the delimitation of the tiles in a directory
 
     Args:
@@ -187,12 +241,11 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
 
         if cst.CLIP_OR_PAD_SUBTILES == 'clip':
             logger.info('The tiles are clipped to the image border.')
-            tiling_zone = tiles_gdf.unary_union
             subtiles_gdf = gpd.overlay(
-                subtiles_gdf, gpd.GeoDataFrame({'tiling_id': [1], 'geometry': [tiling_zone]}, crs='EPSG:2056'), 
+                subtiles_gdf, tiles_gdf[['name', 'geometry']], 
                 how="intersection", keep_geom_type=True
             )
-            subtiles_gdf = subtiles_gdf[['id', 'initial_tile', 'geometry']]
+            subtiles_gdf = subtiles_gdf.loc[subtiles_gdf.initial_tile == subtiles_gdf.name, ['id', 'initial_tile', 'geometry']]
 
         filepath = os.path.join(output_dir, 'subtiles.gpkg')
         subtiles_gdf.to_file(filepath)
@@ -203,48 +256,6 @@ def get_delimitation_tiles(tile_dir, overlap_info=None, tile_suffix='.tif', outp
     
     logger.success('Done determining the tiling!')
     return tiles_gdf, nodata_gdf, subtiles_gdf, written_files
-
-
-def get_subtiles(nodata_gdf, tile_row):
-    tile_infos = {
-        'tile_size': tuple(map(int, tile_row.dimension.strip('()').split(', '))), 
-        'tile_origin': tuple(map(float, tile_row.origin.strip('()').split(', '))), 
-        'pixel_size_x': tile_row.pixel_size_x,
-        'pixel_size_y': tile_row.pixel_size_y,
-        'max_dx': tile_row.max_dx,
-        'max_dy': tile_row.max_dy
-    }
-    nodata_subset_gdf = nodata_gdf[nodata_gdf.tile_name==tile_row.name].copy()
-
-    # Make a large tiling grid to cover the image
-    temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_LARGE_TILES, grid_height=cst.GRID_LARGE_TILES, **tile_infos)
-
-    # Only keep tiles that do not overlap too much the nodata zone
-    large_id_on_image = control_overlap(temp_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_LARGE_TILES)
-    large_subtiles_gdf = temp_gdf[temp_gdf.id.isin(large_id_on_image)].copy()
-    large_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile_row.number)})' for subtile_id in large_subtiles_gdf.id] 
-    large_subtiles_gdf['initial_tile'] = tile_row.name
-
-    if (tile_row.max_dx == 0) and (tile_row.max_dy == 0):
-        # Make a smaller tiling grid to not lose too much data
-        temp_gdf = rasters.grid_over_tile(grid_width=cst.GRID_SMALL_TILES, grid_height=cst.GRID_SMALL_TILES, **tile_infos)
-        # Only keep smal subtiles not under a large one
-        small_subtiles_gdf = gpd.overlay(temp_gdf, large_subtiles_gdf, how='difference', keep_geom_type=True)
-        small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.area > 10].copy()
-        
-        if not small_subtiles_gdf.empty:
-            # Only keep tiles that do not overlap too much the nodata zone
-            small_id_on_image = control_overlap(small_subtiles_gdf[['id', 'geometry']].copy(), nodata_subset_gdf, threshold=cst.OVERLAP_SMALL_TILES)
-            small_subtiles_gdf = small_subtiles_gdf[small_subtiles_gdf.id.isin(small_id_on_image)].copy()
-            small_subtiles_gdf.loc[:, 'id'] = [f'({subtile_id}, {str(tile_row.number)})' for subtile_id in small_subtiles_gdf.id]
-            small_subtiles_gdf['initial_tile'] = tile_row.name
-
-            subtiles_gdf = pd.concat([subtiles_gdf, small_subtiles_gdf], ignore_index=True)
-    
-    subtiles_gdf = large_subtiles_gdf.copy()
-
-    return subtiles_gdf
-
     
 
 def pad_geodataframe(gdf, tile_bounds, tile_size, pixel_size, grid_width=256, grid_height=256, max_dx=0, max_dy=0):
@@ -312,7 +323,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, _, written_files = get_delimitation_tiles(TILE_DIR, CADASTRAL_SURVEYING,  OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
+    _, _, written_files = main(TILE_DIR,  OVERLAP_INFO, output_dir=OUTPUT_DIR, subtiles=True)
 
     print()
     logger.success("The following files were written. Let's check them out!")

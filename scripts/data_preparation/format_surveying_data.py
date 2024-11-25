@@ -12,7 +12,7 @@ from constants import OVERWRITE
 logger = format_logger(logger)
 
 
-def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplicates=True, output_dir='outputs'):
+def main(path_surveying, tiles, nodata_gdf=None, remove_duplicates=True, output_dir='outputs'):
     """
     Formats the surveying data by extracting points from the survey polygons and saving them in a GeoDataFrame.
     
@@ -44,7 +44,7 @@ def format_surveying_data(path_surveying, tiles, nodata_gdf=None, remove_duplica
         tiles_gdf = tiles.copy()
     
     logger.info('Get point coordinates...')
-    if (survey_poly_gdf.geom_type == 'Polygon').all():
+    if (survey_poly_gdf.geom_type == 'MultiPolygon').all():
         pts_list = [
             Point(pt) for poly in survey_poly_gdf.geometry 
             for geom in poly.geoms 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = format_surveying_data(CADASTRAL_SURVEYING, TILES, output_dir=OUTPUT_DIR)
+    _, written_files = main(CADASTRAL_SURVEYING, TILES, output_dir=OUTPUT_DIR)
 
     print()
     logger.success("The following files were written. Let's check them out!")

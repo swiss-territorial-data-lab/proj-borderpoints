@@ -1,22 +1,22 @@
-prepare_data.py:
-  working_dir: C:/Users/gwena/Documents/STDL/2_En_cours/points-limites/02_Data
+prepare_ground_truth.py:
+  working_dir: .
   output_dir:
     vectors: outputs/instance_segmentation/formatted_labels
     clipped_tiles: outputs/instance_segmentation/clipped_tiles
-  initial_image_dir: inputs/plans
-  tile_dir: outputs/instance_segmentation/rgb_images
-  border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
-  plan_scales: inputs/plan_scales.xlsx
-  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
-  # overlap_info: outputs/instance_segmentation/formatted_labels/max_point_size.csv
+  tile_dir: outputs/rgb_images
+  initial_files:
+    initial_image_dir: inputs/plans
+    border_points: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+    bbox: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Box/PL_realite_terrain_box.shp
+    plan_scales: inputs/plan_scales.xlsx
+    cadastral_surveying: inputs/MO/BDMO2.gpkg
   tile_suffix: _geo.tif
   convert_images: True
 
 
 generate_tilesets.py:
   debug_mode: 
-    enable: False  # sample of tiles
+    enable: False     # sample of tiles
     nb_tiles_max: 10
   working_directory: outputs/instance_segmentation
   datasets:
@@ -46,7 +46,7 @@ train_model.py:
   working_directory: outputs/instance_segmentation/object_detector
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_training_images
-  COCO_files: # relative paths, w/ respect to the working_folder
+  COCO_files:         # relative paths, w/ respect to the working_folder
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
@@ -98,7 +98,7 @@ post_processing.py:
   subtiles: formatted_labels/subtiles.gpkg
   tiles: formatted_labels/tiles.gpkg
   category_ids_json: category_ids.json
-  score: 0.55
+  score: 0.65
   keep_datasets: True
 
 
@@ -108,16 +108,16 @@ assess_w_post_process.py:
   subtiles: object_detector/split_aoi_tiles.geojson
   ground_truth: formatted_labels/ground_truth_labels.gpkg
   category_ids_json: object_detector/category_ids.json
-  name_correspondence: rgb_images/name_correspondence.csv
+  name_correspondence: ../rgb_images/name_correspondence.csv
   keep_datasets: True
   detections: post_processing/dst_detected_points.gpkg
 
 
 point_matching.py:
-  working_dir: outputs
-  output_dir: instance_segmentation/post_processing
-  detections: instance_segmentation/post_processing/dst_detected_points.gpkg
-  border_points: labels_symbol_matching/GT/ground_truth_labels.gpkg
+  working_dir: outputs/instance_segmentation
+  output_dir: post_processing
+  detections: post_processing/dst_detected_points.gpkg
+  border_points: ../../inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terain_points.shp    # Version makes no diff, only bbox passed in preparation are considered.
 
 
 check_w_land_cover.py:
@@ -132,3 +132,10 @@ assess_point_classif.py:
   output_dir: post_processing
   classified_points: post_processing/final_matched_points.gpkg
   split_aoi_tiles: object_detector/split_aoi_tiles.geojson
+
+
+heatmap.py:
+  working_dir: .
+  output_dir: outputs/instance_segmentation/post_processing
+  matched_points: outputs/instance_segmentation/post_processing/final_matched_points.gpkg
+  bdmo_poly: inputs/MO/BDMO2.gpkg

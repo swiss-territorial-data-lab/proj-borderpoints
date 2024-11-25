@@ -97,7 +97,7 @@ def format_tiles(tile_path, tile_nbr, out_path, existing_tiles, nodata_key=255, 
 
     return name_correspondence
 
-def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
+def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix='.tif'):
     """Convert images with a color palette to RGB images.
     Reproject the images to EPSG:2056 if the tranform or the CRS is not already corresponding to EPSG:2056.
 
@@ -111,7 +111,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
     os.makedirs(output_dir, exist_ok=True)
     njobs=5
 
-    tiles_list = glob(os.path.join(input_dir, '*.tif'))
+    tiles_list = glob(os.path.join(input_dir, '**/*.tif'), recursive=True)
     if len(tiles_list) == 0:
         logger.critical('No tile found in the input folder. Please control the path.')
         sys.exit(1)
@@ -130,7 +130,7 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
         if not cst.OVERWRITE and any(end_out_path in outpath for outpath in existing_tiles):
             continue
         
-        while any(os.path.basename(name).startswith(str(tile_nbr) + '_') for name in existing_tiles):
+        while any(os.path.basename(name).startswith(str(tile_nbr) + '_') for name in existing_tiles) and not cst.OVERWRITE:
             tile_nbr += 1
         out_path = os.path.join(output_dir, str(tile_nbr) + '_' + end_out_path)
         
@@ -148,9 +148,9 @@ def pct_to_rgb(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_
 
     if len(name_correspondence_list) > 0:
         save_name_correspondence(name_correspondence_list, output_dir, 'original_name', 'rgb_name')
-        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+        logger.success(f"Done converting color map images to RGB! The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.success(f"All files were already present in folder. Nothing done.")
+        logger.success(f"All files were already present in folder {output_dir}. Nothing to do.")
 
     logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
 
@@ -176,4 +176,4 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    pct_to_rgb(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)
+    main(INPUT_DIR, OUTPUT_DIR, PLAN_SCALES, NODATA_KEY, TILE_SUFFIX)

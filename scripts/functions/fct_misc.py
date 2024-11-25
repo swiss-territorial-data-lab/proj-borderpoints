@@ -18,7 +18,7 @@ def buffer_by_max_size(gdf, pt_sizes_gdf, factor=1, cap_style=1):
     Generate a buffer around each geometry of the passed Geodataframe depending on the scale with the size indicated in the second dataframe
     and multiplied by the factor (default is 1).
     """
-     
+
     gdf['buffer_size'] = [pt_sizes_gdf.loc[pt_sizes_gdf['scale'] == int(scale), 'max_dx'].iloc[0] for scale in gdf['scale'].to_numpy()]
     gdf.loc[:, 'geometry'] = gdf.buffer(gdf['buffer_size']*factor, cap_style=cap_style)
 
@@ -125,7 +125,7 @@ def format_color_info(images_gdf, band_stats_df):
 
     image_diff = images_gdf.shape[0] - images_w_stats_gdf.shape[0]
     if image_diff:
-        logger.warning(f'{image_diff} elements were lost when joining the images and stats. The list of id is returned.')
+        logger.warning(f'{image_diff} elements were lost when joining the images and stats. The list of ids is returned.')
         missing_ids = images_gdf.loc[~images_gdf.image_name.isin(images_w_stats_gdf.image_name), 'image_name'].tolist()
     else:
         logger.info('All images have some stat info. An empty list is returned.')

@@ -1,6 +1,4 @@
-geopandas
-joblib
-loguru
+networkx
 openpyxl
 optuna              # Unnecessary for the main workflow
 PyYAML

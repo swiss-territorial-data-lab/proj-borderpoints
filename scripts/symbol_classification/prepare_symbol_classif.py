@@ -9,8 +9,7 @@ import geopandas as gpd
 
 sys.path.insert(1,'scripts')
 from constants import OVERWRITE
-from data_preparation import format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box
-from sandbox import get_point_bbox_size
+from data_preparation import format_surveying_data, get_delimitation_tiles, pct_to_rgb, tiles_to_box, get_point_bbox_size
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
@@ -39,12 +38,12 @@ TILE_SUFFIX = cfg['tile_suffix']
 os.chdir(WORKING_DIR)
 
 if CONVERT_IMAGES:
-    pct_to_rgb.pct_to_rgb(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
+    pct_to_rgb.main(INITIAL_IMAGE_DIR, TILE_DIR, tile_suffix=TILE_SUFFIX)
 
 logger.info('Get the maximum size of border points by scale...')
-pt_sizes_gdf, written_files = get_point_bbox_size.get_point_bbox_size(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
+pt_sizes_gdf, written_files = get_point_bbox_size.main(BORDER_POINTS_POLY, OUTPUT_DIR_VECT)
 
-tiles_gdf, nodata_gdf, _, tmp_written_files = get_delimitation_tiles.get_delimitation_tiles(TILE_DIR, output_dir=OUTPUT_DIR_VECT, subtiles=False)
+tiles_gdf, nodata_gdf, _, tmp_written_files = get_delimitation_tiles.main(TILE_DIR, output_dir=OUTPUT_DIR_VECT, subtiles=False)
 written_files.extend(tmp_written_files)
 
 logger.info('Format cadastral surveying data...')
@@ -53,7 +52,7 @@ if not os.path.isfile(filepath) or OVERWRITE:
     nodata_gdf = nodata_gdf.dissolve(by='tile_name', as_index=False)
     # logger.info('Buffer nodata areas...')
     # nodata_gdf = misc.buffer_by_max_size(nodata_gdf, pt_sizes_gdf, factor=0.25)
-    cs_points_gdf, tmp_written_files = format_surveying_data.format_surveying_data(CADASTRAL_SURVEYING, tiles_gdf, nodata_gdf, remove_duplicates=False, output_dir=OUTPUT_DIR_VECT)
+    cs_points_gdf, tmp_written_files = format_surveying_data.main(CADASTRAL_SURVEYING, tiles_gdf, nodata_gdf, remove_duplicates=False, output_dir=OUTPUT_DIR_VECT)
     written_files.extend(tmp_written_files)
 
     logger.info('Transform points to polygons...')
@@ -70,7 +69,7 @@ else:
 
 logger.info('Clip image for each border point...')
 SYMBOL_IM_DIR = os.path.join(TILE_DIR, 'symbol_images')
-tiles_to_box.tiles_to_box(TILE_DIR, cs_points_poly_gdf, SYMBOL_IM_DIR)
+tiles_to_box.main(TILE_DIR, cs_points_poly_gdf, SYMBOL_IM_DIR)
 
 logger.info('Test if images intersect...')
 _, tmp_written_files = misc.find_intersecting_polygons(cs_points_poly_gdf, OUTPUT_DIR_VECT)

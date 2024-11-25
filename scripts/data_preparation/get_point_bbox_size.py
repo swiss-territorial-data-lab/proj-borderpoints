@@ -13,7 +13,7 @@ from functions.fct_misc import format_logger
 
 logger = format_logger(logger)
 
-def get_point_bbox_size(border_pts_path, output_dir='outputs'):
+def main(border_pts_path, output_dir='outputs'):
     """Get the maximum bounding box size of the border points at each scale.
 
     Args:
@@ -31,6 +31,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
     if os.path.exists(filepath) and not OVERWRITE:
         logger.info("The file for the point size at each scale already exists. Reading from disk...")
         size_per_scale_df = pd.read_csv(filepath)
+
         return size_per_scale_df, []
 
     logger.info('Read data...')
@@ -58,7 +59,7 @@ def get_point_bbox_size(border_pts_path, output_dir='outputs'):
                 max_dx = dx
             if dy > max_dy:
                 max_dy = dy
-        
+                
         size_per_scale_dict['scale'].append(int(scale))
         size_per_scale_dict['max_dx'].append(max_dx)
         size_per_scale_dict['max_dy'].append(max_dy)
@@ -90,7 +91,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
 
-    _, written_files = get_point_bbox_size(BORDER_POINTS, OUTPUT_DIR)
+    _, written_files = main(BORDER_POINTS, OUTPUT_DIR)
 
     print()
     logger.success(f"The file {written_files[0]} was written. Let's check it out!")

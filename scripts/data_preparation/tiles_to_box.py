@@ -17,7 +17,7 @@ import functions.fct_rasters as rasters
 logger = misc.format_logger(logger)
 
 
-def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
+def main(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     """Clip the tiles in a directory to the box geometries from a GeoDataFrame
 
     Args:
@@ -33,6 +33,9 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     logger.info('Read bounding boxes...')
     if isinstance(bboxes, str):
         bboxes_gdf = gpd.read_file(bboxes)
+        # Exclude areas added for symbol classification
+        bboxes_gdf.loc[:,'Num_box'] = bboxes_gdf.Num_box.astype(int)
+        bboxes_gdf = bboxes_gdf[bboxes_gdf.Num_box <= 35].copy()
         # Find tilepath matching initial plan number
         bboxes_gdf['tilepath'] = [
             tilepath 
@@ -43,7 +46,6 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
     elif isinstance(bboxes, gpd.GeoDataFrame):
         bboxes_gdf = bboxes.copy()
         bboxes_gdf['tilepath'] = [os.path.join(tile_dir, f'{initial_tile}.tif') for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
-        bboxes_gdf['Echelle'] = [initial_tile.split('_')[0] for initial_tile in bboxes_gdf.initial_tile.to_numpy()]
         if cst.CLIP_OR_PAD_SUBTILES == 'pad':
             logger.info('Subtiles not entirely covered by the tile will be padded.')
             pad_tiles = True
@@ -110,9 +112,9 @@ def tiles_to_box(tile_dir, bboxes, output_dir='outputs', tile_suffix='.tif'):
         misc.save_name_correspondence(name_correspondence_list, tile_dir, 'rgb_name', 'bbox_name')
 
     if len(name_correspondence_list) > 0:
-        logger.success(f"The files were written in the folder {output_dir}. Let's check them out!")
+        logger.success(f"Done clipping the tiles to the bboxes! The files were written in the folder {output_dir}. Let's check them out!")
     else:
-        logger.success(f"All files were already present in folder. Nothing done.")
+        logger.success(f"Done clipping the tiles to the bboxes! All files were already present in folder.")
         
 
 # ------------------------------------------
@@ -131,4 +133,4 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR_TILES, exist_ok=True)
 
-    tiles_to_box(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)
+    main(TILE_DIR, BBOX_PATH, OUTPUT_DIR_TILES)

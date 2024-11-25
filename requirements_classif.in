@@ -1,0 +1,11 @@
+geopandas
+kaleido==0.1.0.post1
+loguru
+openpyxl
+optuna              # Unnecessary for the main workflow
+plotly
+PyYAML
+rasterstats
+scikit-learn
+scikit-image
+tqdm

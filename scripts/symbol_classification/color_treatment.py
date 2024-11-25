@@ -8,8 +8,8 @@ from tqdm import tqdm
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import rasterio as rio
-from matplotlib import pyplot as plt
 from rasterstats import zonal_stats
 from rasterio.features import shapes
 from shapely.geometry import shape
@@ -19,8 +19,9 @@ from joblib import Parallel, delayed
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
-from constants import OVERWRITE
+from constants import AUGMENTATION, OVERWRITE
 
+pd.options.plotting.backend = "plotly"
 logger = misc.format_logger(logger)
 
 # ----- Define functions -----
@@ -28,7 +29,14 @@ logger = misc.format_logger(logger)
 def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_correspondance, stats_list, output_path):
         
     if not images_gdf.empty:
-        category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+        try:
+            category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif'), 'CATEGORY'].iloc[0]
+        except IndexError:
+            try:    # Check if we are looking for the augmented image
+                category = images_gdf.loc[images_gdf.image_name == image_name.rstrip('.tif').lstrip('aug_'), 'CATEGORY'].iloc[0]
+            except IndexError:
+                logger.info(f'No image found for {image_name}.')
+                return [{}, {}, {}]
 
     mask = binary_list[image_name]
     if (mask==0).all():
@@ -37,7 +45,7 @@ def get_stats_under_mask(image_name, meta_data, binary_list, images_gdf, band_co
     # Polygonize mask into one polygon
     geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[image_name]['transform']) if v == 1)
     mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[image_name]['crs'])
-    mask_gdf = gpd.GeoDataFrame([image_name], geometry = [mask_gdf.unary_union], columns=['geometry'], crs = meta_data[image_name]['crs'])  
+    mask_gdf = gpd.GeoDataFrame([image_name], geometry = [mask_gdf.union_all()], columns=['geometry'], crs = meta_data[image_name]['crs'])  
 
     stat_values_list = []
     for band in band_correspondance.keys():
@@ -64,20 +72,23 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     written_files = []
         
     logger.info('Read data...')
-    if image_desc_gpkg:     # Without the images description based on the GT, don't do the parts about the category.
+    if image_desc_gpkg:     # If the symbols on the images are known from GT, save info in a dataframe
         images_gdf = gpd.read_file(image_desc_gpkg)
         images_gdf.loc[images_gdf.CATEGORY == 'undetermined', 'CATEGORY'] = 'undet'
-    else:
+    else:                   # else create an empty dataframe that will switch off parts concerning GT processing
         images_gdf = pd.DataFrame()
 
     if isinstance(tiles, tuple):
         image_data = tiles[0]
         meta_data = tiles[1]
     else:
-        tile_list = glob(os.path.join(tiles, '*.tif'))
+        tile_dir = tiles
+        tile_list = glob(os.path.join(tile_dir, '*.tif'))
         image_data = {}
         meta_data = {}
         for tile_path in tqdm(tile_list, desc='Read images'):
+            if os.path.basename(tile_path).startswith('aug_') and not AUGMENTATION:
+                continue
             with rio.open(tile_path) as src:
                 tile_name = os.path.basename(tile_path)
                 image_data[tile_name] = src.read().transpose(1, 2, 0)
@@ -97,18 +108,37 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
 
     # Filter images to keep only the symbol pixels
     filtered_tile_dir = os.path.join(output_dir, 'filtered_symbols')
-    filtered_images = {}
     os.makedirs(filtered_tile_dir, exist_ok=True)
+    filtered_images = {}
     for name, image in tqdm(image_data.items(), desc='Save pixels under mask in a new image'):
+
+        mask = np.repeat(binary_list_final[name][..., np.newaxis], repeats=3, axis=2)
+        filtered_images[name] = np.where(mask, image, 0)
         
         filepath = os.path.join(filtered_tile_dir, name)
         if os.path.isfile(filepath) and not OVERWRITE:
             continue
 
-        mask = np.repeat(binary_list_final[name][..., np.newaxis], repeats=3, axis=2)
-        filtered_images[name] = np.where(mask, image, 0)
         with rio.open(filepath, 'w', **meta_data[name]) as src:
             src.write(filtered_images[name].transpose(2, 0, 1))
+
+        with rio.open(filepath, 'r') as src:
+            test_image = src.read()
+        comp_image = np.abs(filtered_images[name].transpose(2, 0, 1) - test_image)
+        if (comp_image!=0).any():
+            new_meta = meta_data.copy()
+            new_meta.update({'dtype': np.int8})
+            with rio.open(os.path.join(OUTPUT_DIR, 'comp_images', name), 'w', **new_meta[name]) as src:
+                src.write(comp_image)
+
+        mask = binary_list_final[name]
+        if (mask==0).all():
+            continue
+
+        # Polygonize mask into one polygon
+        geoms = ((shape(s), v) for s, v in shapes(mask.astype('uint8'), transform = meta_data[name]['transform']) if v == 1)
+        mask_gdf = gpd.GeoDataFrame(geoms, columns=['geometry', 'class'], crs = meta_data[name]['crs'])
+        mask_gdf = gpd.GeoDataFrame([name], geometry = [mask_gdf.union_all()], columns=['geometry'], crs = meta_data[name]['crs'])
 
     # Define parameters
     BAND_CORRESPONDENCE = {0: 'R', 1: 'G', 2: 'B'}
@@ -116,16 +146,14 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     stats_values_list = []
     param_dict = {'meta_data': meta_data, 'binary_list': binary_list_final, 'images_gdf': images_gdf, 
                   'band_correspondance': BAND_CORRESPONDENCE, 'stats_list': STAT_LIST, 'output_path': filtered_tile_dir}
+    image_data_keys = list(image_data.keys())
+    del image_data
     
-    stats_values_list = Parallel(n_jobs=1, backend='loky')(
+    stats_values_list = Parallel(n_jobs=5, backend='threading')(
         delayed(get_stats_under_mask)(name, **param_dict)
-        for name in tqdm(image_data.keys(), desc="Get statistics for each image")
+        for name in tqdm(image_data_keys, desc="Get statistics for each image")
     )
 
-    # for name, image in tqdm(image_data.items(), desc="Get statistics for each mask"):
-    #     stats_values_list.extend(get_stats_under_mask(name, meta_data, binary_list_final, images_gdf, BAND_CORRESPONDENCE, STAT_LIST, filtered_tile_dir))
-
-    # Transform list of dict in one dataframe per band
     stats_df_dict = {band: pd.DataFrame() for band in BAND_CORRESPONDENCE.keys()}
     count_no_symbol = 0
     for values_per_images in tqdm(stats_values_list, desc='Concatenate result'):
@@ -150,19 +178,16 @@ def main(tiles, image_desc_gpkg=None, save_extra=False, output_dir='outputs'):
     stats_df.to_csv(filepath, index=False)
     written_files.append(filepath)
 
-
     if not images_gdf.empty and save_extra:
         for band in tqdm(BAND_CORRESPONDENCE.keys(), desc='Produce boxplots for each band'):
             for stat in STAT_LIST:
 
-                stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].copy()
-                stats_df.plot.box(by='CATEGORY')
-                plt.title(f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band')
-                filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.png')
-                plt.savefig(filepath, bbox_inches='tight')
-                plt.close()
+                stats_df = stats_df_dict[band].loc[: , ['CATEGORY', stat]].sort_values(by=['CATEGORY'], ignore_index=True)
+                fig = stats_df.plot.box(x='CATEGORY', y=stat)
+                fig.update_layout(title=f'{stat.title()} on the {BAND_CORRESPONDENCE[band]} band', margin=dict(l=10, r=25, t=50, b=10))
+                filepath = os.path.join(output_dir, f'boxplot_filtered_stats_{BAND_CORRESPONDENCE[band]}_{stat}.webp')
+                fig.write_image(filepath)
                 written_files.append(filepath)
-
 
     return stats_df, written_files
 

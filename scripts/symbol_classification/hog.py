@@ -19,19 +19,20 @@ from math import floor
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
 from functions.fct_rasters import remove_black_border
+from constants import AUGMENTATION
 
 logger = misc.format_logger(logger)
 
 def im_list_to_hog(im_list, ppc, cpb, orientations):
     hog_features = {}
     for name, image in tqdm(im_list.items()):
-        # ppc = floor(min(image.shape)/6)
         fd= hog(image, orientations=orientations, pixels_per_cell=(ppc,ppc), cells_per_block=(cpb, cpb), block_norm= 'L2', visualize=False)
         hog_features[name] = fd
 
     return hog_features
 
-def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold=0.0093, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):
+# def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, variance_threshold=0.01, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
+def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshold=0.005, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -42,21 +43,22 @@ def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold
         tile_list = glob(os.path.join(tile_dir, '*.tif'))
         image_data = {}
         for tile_path in tqdm(tile_list, 'Read data'):
+            if os.path.basename(tile_path).startswith('aug_') and not AUGMENTATION:
+                continue
             with rio.open(tile_path) as src:
                 image_data[os.path.basename(tile_path)] = src.read().transpose(1, 2, 0)
+
+    if len(image_data.values()) == 0:
+        logger.critical('No image found')
+        sys.exit(1)
 
     logger.info('Format images...')
     data_gray = {key: color.rgb2gray(i) for key, i in image_data.items()}
     cropped_images = {k: remove_black_border(v) for k, v in data_gray.items()}
     resized_images = {}
 
-    # Get the small size of the small side of the images
-    min_size_images = {k: min(v.shape) for k, v in cropped_images.items()}
-    min_array_values = np.array(list(min_size_images.values()))
-
     # Resize images to median value of the small side
     for name, image in cropped_images.items():
-        # new_size = np.median(min_array_values)
         new_size = image_size
         if max(image.shape) <= new_size:
             resized_images[name] = resize(image, (new_size, new_size))
@@ -88,7 +90,7 @@ def main(tiles, image_size=94, ppc=18, cpb=2, orientations=4, variance_threshold
     feature_number = filtered_hog_features_df.shape[1]
     logger.info(f'Final number of HOG features: {feature_number}')
     if feature_number > 5000:
-        logger.warning('Too many features, please reduce the variance threshold.')
+        logger.warning('Too many features, please increase the variance threshold.')
         return pd.DataFrame(), []
 
     logger.info('Save features...')

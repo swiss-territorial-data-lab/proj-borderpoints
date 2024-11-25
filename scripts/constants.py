@@ -1,10 +1,12 @@
-OVERWRITE =  True
+# Data preparation
+OVERWRITE =  False
 GRID_LARGE_TILES = 512
 GRID_SMALL_TILES = 256
-# Thresholds
+## Thresholds
 OVERLAP_LARGE_TILES = 0.5
 OVERLAP_SMALL_TILES =  0.25
 CLIP_OR_PAD_SUBTILES = 'clip'
 
 # symbol classification
-MODEL = 'RF'
+AUGMENTATION = True
+MODEL = 'HGBC'
