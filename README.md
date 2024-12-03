@@ -12,7 +12,7 @@ Two methods were tested:
 
 Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, this method is presented in detail here. The second method is briefly described in the [additional information](#additional-information).
 
-The full documentation is available on our technical website: **link**.
+The full documentation is available on our [technical website](https://tech.stdl.ch/PROJ-BORDERPOINTS/).
 
 **Table of content**
 
