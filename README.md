@@ -54,8 +54,9 @@ The corresponding command lines are
 
 ```
 git clone https://github.com/swiss-territorial-data-lab/object-detector.git
+docker images ls
 cd object-detector
-git checkout gs/code_improvement
+docker compose build
 cd -
 docker compose build
 docker compose run --rm borderpoints
