@@ -73,12 +73,15 @@ cd proj-borderpoints            # Command to run in the docker bash
 
 * Plans: RGB images or images with a color map in EPSG:2056.
 * Cadastral survey data: vector layer with the approximate position of cadastral points used to limit the production of tiles in the area of interest.
+* land cover: vector layer with the land cover of the area of interest to classify missed non-materialized points.
 
 When working with the ground truth, the following files are required in addition:
 
 * Bounding boxes: vector layer of the areas were all the cadastral points were digitized.
 * Ground truth (GT): vector layer with the delineation and class of all the cadastral points in the bounding boxes.
 * Plan scales: Excel file with the number and scale of each plan used for the GT.
+
+The data used for the plans on which ground truth was digitalized are available in the `data` folder, except for the plans, which are downloadable [here](https://map.geo.fr.ch/STDL_Plans_georeferences/STDL_Plans_georeferences.zip).
 
 
 ## General workflow
