@@ -75,14 +75,14 @@ check_w_land_cover.py:
   working_dir: .
   output_dir: outputs/instance_segmentation/detections_oth_maps
   matched_points: outputs/instance_segmentation/detections_oth_maps/matched_points.gpkg
-  land_cover: data/land_cover/land_cover.gpkg
+  land_cover: data/land_cover.gpkg
 
 
 heatmap.py:
   working_dir: .
   output_dir: outputs/instance_segmentation/detections_oth_maps
   matched_points: outputs/instance_segmentation/detections_oth_maps/final_matched_points.gpkg
-  bdmo_poly: data/MO/BDMO2_subset.gpkg
+  bdmo_poly: data/BDMO2_subset.gpkg
 
 
 classif_shifted_points.py:
