@@ -1,5 +1,6 @@
 # Files
 **/*/test*.ipynb
+data/STDL_Plans_georeferences
 
 # Development & test folders
 output*/

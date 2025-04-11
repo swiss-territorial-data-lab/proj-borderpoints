@@ -10,7 +10,7 @@ Two methods were tested:
 * Instance segmentation with the STDL object detector, and
 * Image classification with `scikit-learn` package.
 
-Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, this method is presented in detail here. The second method is briefly described in the [additional information](#additional-information).
+Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts with a precision of 88% and a recall of 81%. Therefore, this method is presented in detail here. The second method is briefly described in the [additional information](#additional-information).
 
 The full documentation is available on our [technical website](https://tech.stdl.ch/PROJ-BORDERPOINTS/).
 
@@ -84,10 +84,10 @@ The following data are necessary for the segmentation and the post-processing:
     * subset of the swissTLM3D layer with the land cover of the area of interest to classify missed non-materialized points
     * [metadata of the original dataset](https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d)
     * path: `data/land_cover.gpkg`
-* settlment areas:
+* settlement areas:
     * subset of the vector layer with the settlement areas to improve matching between points and segmented polygons in those areas
     * [metadata of the original dataset](https://www.geocat.ch/datahub/dataset/4229c353-e780-42d8-9f8c-298c83920a3a)
-    * path: `data/sedlung_subset_2024_2056_FR.gpkg`
+    * path: `data/siedlung_subset_2024_2056_FR.gpkg`
 
 When working with the ground truth, the following files are required in addition:
 
@@ -96,17 +96,23 @@ When working with the ground truth, the following files are required in addition
     * provided by the Canton of Fribourg
     * path: `data/ground_truth/Realite_terrain_Box/PL_realite_terrain_box.shp`
 * Ground truth (GT):
-    * vector layer with the delineation and class of all the cadastral points in the bounding boxes
-    * provided by the Canton of Fribourg
-    * path: `data/data/ground_truth/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp`
+    * Polygons
+        * vector layer with the delineation and class of all the cadastral points in the bounding boxes
+        * provided by the Canton of Fribourg
+        * path: `data/ground_truth/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp`
+    * Points
+        * vector layer with the position of all the cadastral points in the bounding boxes
+        * created based on the ground truth polygons
+        * path: `data/ground_truth/Realite_terrain_Points/PL_realite_terrain_points.gpkg`
 * Plan scales: 
     * Excel file with the number and scale of each plan used for the GT
-    * path: `data/data/plan_scales.xlsx`
+    * path: `data/plan_scales.xlsx`
 * Cadastral survey data: 
     * vector layer with the approximate position of cadastral points used to match detections with existing points
     * produced based on the polygon dataset of the cadastral survey of the Canton of Fribourg at the time
     * path: `data/BDMO2_subset.gpkg`
 
+**DISCLAIMER**: The plans made available online thank to the Canton of Freiburg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
 
 ## General workflow
 
@@ -201,6 +207,10 @@ The required libraries can be installed from the file `requirements_classif.txt`
 ```
 pip install -r requirements_classif.txt
 ```
+
+#### Data
+
+The data required for this workflow is the same as for the instance segmentation, except for the ground truth points for which five additional zones where digitized to decrease some class confusions. This second version of the ground truth point is not provided in this repository.
 
 #### Workflow
 
