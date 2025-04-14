@@ -112,7 +112,7 @@ When working with the ground truth, the following files are required in addition
     * produced based on the polygon dataset of the cadastral survey of the Canton of Fribourg at the time
     * path: `data/BDMO2_subset.gpkg`
 
-**DISCLAIMER**: The plans made available online thank to the Canton of Freiburg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
+**DISCLAIMER**: The plans made available online thank to the Canton of Friburg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
 
 ## General workflow
 
