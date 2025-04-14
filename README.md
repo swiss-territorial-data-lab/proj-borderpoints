@@ -7,10 +7,10 @@ These missing border points can be identified on old plans, but their digitizati
 
 Two methods were tested:
 
-* Instance segmentation with the STDL's object detector, and
+* Instance segmentation with the STDL object detector, and
 * Image classification with `scikit-learn` package.
 
-Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts. Therefore, this method is presented in detail here. The second method is briefly described in the [additional information](#additional-information).
+Only the method based on instance segmentation gave satisfactory results for the cadastral survey experts with a precision of 88% and a recall of 81%. Therefore, this method is presented in detail here. The second method is briefly described in the [additional information](#additional-information).
 
 The full documentation is available on our [technical website](https://tech.stdl.ch/PROJ-BORDERPOINTS/).
 
@@ -32,13 +32,13 @@ The full documentation is available on our [technical website](https://tech.stdl
 
 The historical plans can be large files. In our case, 32 GB of RAM were required to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
 
-The STDL's object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
+The STDL object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
 
 ### Installation
 
 The installation is performed from this folder with the following steps:
 
-* Clone the [STDL's object detector](https://github.com/swiss-territorial-data-lab/object-detector),
+* Clone the [STDL object detector](https://github.com/swiss-territorial-data-lab/object-detector),
 * Get into the `object-detector` folder,
 * The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
     * You can control the image existence by listing the available images with `docker images ls`.
@@ -66,20 +66,53 @@ cd proj-borderpoints            # Command to run in the docker bash
 **All workflow commands are supposed to be launched in Docker from the `proj-borderpoints` directory.**
 
 
-
 ## Data
 
-<!-- I will develop this section when we finalize the repo with some example data. For now, it's just key points. -->
+The data used for the proof of concept are available in the `data` folder, except for the plans, which are downloadable [here](https://map.geo.fr.ch/STDL_Plans_georeferences/STDL_Plans_georeferences.zip).
 
-* Plans: RGB images or images with a color map in EPSG:2056.
-* Cadastral survey data: vector layer with the approximate position of cadastral points used to limit the production of tiles in the area of interest.
+The following data are necessary for the segmentation and the post-processing:
+
+* Plans: 
+    * RGB images or images with a color map in EPSG:2056
+    * provided by the Canton of Fribourg
+    * to be [downloaded](https://map.geo.fr.ch/STDL_Plans_georeferences/STDL_Plans_georeferences.zip),  placed in the `data` folder, and unzipped. The expected path is `data/STDL_Plans_georeferences`.
+* Approximated missing points:
+    * vector layer with the missing points of cadastral surveying with their position approximated from the digitized lines
+    * provided by the Canton of Fribourg
+    * path: `data/ground_truth/Shapefile PL_manquants/PL_manquant_BDMO2.gpkg`
+* land cover:
+    * subset of the swissTLM3D layer with the land cover of the area of interest to classify missed non-materialized points
+    * [metadata of the original dataset](https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d)
+    * path: `data/land_cover.gpkg`
+* settlement areas:
+    * subset of the vector layer with the settlement areas to improve matching between points and segmented polygons in those areas
+    * [metadata of the original dataset](https://www.geocat.ch/datahub/dataset/4229c353-e780-42d8-9f8c-298c83920a3a)
+    * path: `data/siedlung_subset_2024_2056_FR.gpkg`
 
 When working with the ground truth, the following files are required in addition:
 
-* Bounding boxes: vector layer of the areas were all the cadastral points were digitized.
-* Ground truth (GT): vector layer with the delineation and class of all the cadastral points in the bounding boxes.
-* Plan scales: Excel file with the number and scale of each plan used for the GT.
+* Bounding boxes:
+    * vector layer of the areas were all the cadastral points were digitized
+    * provided by the Canton of Fribourg
+    * path: `data/ground_truth/Realite_terrain_Box/PL_realite_terrain_box.shp`
+* Ground truth (GT):
+    * Polygons
+        * vector layer with the delineation and class of all the cadastral points in the bounding boxes
+        * provided by the Canton of Fribourg
+        * path: `data/ground_truth/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp`
+    * Points
+        * vector layer with the position of all the cadastral points in the bounding boxes
+        * created based on the ground truth polygons
+        * path: `data/ground_truth/Realite_terrain_Points/PL_realite_terrain_points.gpkg`
+* Plan scales: 
+    * Excel file with the number and scale of each plan used for the GT
+    * path: `data/plan_scales.xlsx`
+* Cadastral survey data: 
+    * vector layer with the approximate position of cadastral points used to match detections with existing points
+    * produced based on the polygon dataset of the cadastral survey of the Canton of Fribourg at the time
+    * path: `data/BDMO2_subset.gpkg`
 
+**DISCLAIMER**: The plans made available online thank to the Canton of Freiburg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
 
 ## General workflow
 
@@ -90,7 +123,7 @@ The workflow is divided into three parts:
     - If ground truth is available, format the labels according to the requirements of the STDL object detector and clip the plans to the bounding box of the ground truth,
     - Generate a vector layer with the information of the subtiles dividing the plans into square tiles of 512 or 256 pixels,
     - Clip the plan to the subtiles.
-* Detection of the border points with the STDL's object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
+* Detection of the border points with the STDL object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted according to the expert requirements.
     - `post_processing.py`: the detections are filtered by their confidence score and ...
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
@@ -174,6 +207,10 @@ The required libraries can be installed from the file `requirements_classif.txt`
 ```
 pip install -r requirements_classif.txt
 ```
+
+#### Data
+
+The data required for this workflow is the same as for the instance segmentation, except for the ground truth points for which five additional zones where digitized to decrease some class confusions. This second version of the ground truth point is not provided in this repository.
 
 #### Workflow
 

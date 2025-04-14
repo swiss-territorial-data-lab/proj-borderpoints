@@ -2,10 +2,10 @@ prepare_ground_truth.py:
   working_dir: .
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
-  initial_image_dir: inputs/plans
+  initial_image_dir: data/plans
   tile_dir: outputs/rgb_images
-  border_points_pt: inputs/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points_v240822.shp
-  border_points_poly: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+  border_points_pt: data/ground_truth/PL_realite_terrain_20240614/PL_realite_terrain_points_v240822.shp
+  border_points_poly: data/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
   tile_suffix: _geo.tif
   convert_images: True
 
@@ -14,10 +14,10 @@ prepare_symbol_classif.py:
   working_dir: .
   output_dir:
     vectors: outputs/symbol_classification/labels_symbol_matching
-  initial_image_dir: inputs/plans
+  initial_image_dir: data/plans
   tile_dir: outputs/rgb_images
-  border_points_poly: inputs/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
-  cadastral_surveying: inputs/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.shp
+  border_points_poly: data/ground_truth/PL_realite_terrain_20240614/Realite_terrain_Polygone/PL_realite_terrain_polygones.shp
+  cadastral_surveying: data/ground_truth/PL_realite_terrain_20240614/Shapefile PL_manquants/PL_manquant_BDMO2.gpkg
   tile_suffix: _geo.tif
   convert_images: False
 
