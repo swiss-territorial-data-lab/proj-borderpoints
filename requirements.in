@@ -2,4 +2,4 @@ networkx
 openpyxl
 optuna              # Unnecessary for the main workflow
 PyYAML
-stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v.2.3.4
