@@ -30,7 +30,7 @@ The full documentation is available on our [technical website](https://tech.stdl
 
 ### Requirements
 
-The historical plans can be large files. In our case, 32 GB of RAM were required to transform the color of the image from color map to RGB space. The rest of the process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
+The process was performed on a machine with 16 GB of RAM and a nvidia L4 GPU.
 
 The STDL object detector can only run on *Linux* machines, as it is based on detectron2. To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
 
@@ -112,7 +112,7 @@ When working with the ground truth, the following files are required in addition
     * produced based on the polygon dataset of the cadastral survey of the Canton of Fribourg at the time
     * path: `data/BDMO2_subset.gpkg`
 
-**DISCLAIMER**: The plans made available online thank to the Canton of Friburg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
+**DISCLAIMER**: The plans made available online thank to the Canton of Fribourg are a slightly different version of the those used in the proof of concept. This difference in the input data, added to the variability inherent in the use of detectron2 for segmentation, leads to some differences in the results compared to the published documentation.
 
 ## General workflow
 
