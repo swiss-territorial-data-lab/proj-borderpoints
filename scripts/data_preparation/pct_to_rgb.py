@@ -96,7 +96,7 @@ def main(input_dir, output_dir='outputs/rgb_images', nodata_key=255, tile_suffix
             )
             meta.update(transform=new_transform, height=converted_image.shape[1], width=converted_image.shape[2])
 
-        meta.update(count=3, nodata=nodata_value)
+        meta.update(count=3, nodata=nodata_value, compression='lzw')
         with rio.open(out_path, 'w', **meta) as dst:
             dst.write(converted_image)
         
