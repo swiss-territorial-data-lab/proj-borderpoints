@@ -3,9 +3,9 @@ prepare_entire_plans.py:
   working_dir: .
   output_dir: 
     vectors: outputs/instance_segmentation/gpkg_whole_oth_tiles
-  initial_image_dir: data/plans
+  initial_image_dir: data/STDL_Plans_georeferences
   tile_dir: outputs/rgb_oth_images
-  cadastral_surveying: data/ground_truth/PL_manquant_BDMO2/PL_manquant_BDMO2.gpkg
+  cadastral_surveying: data/ground_truth/Shapefile PL_manquants/PL_manquant_BDMO2.gpkg
   convert_images: True
 
 
@@ -43,7 +43,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../model/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../object_detector/logs/model_0006499.pth # trained model minimizing the validation loss, monitor via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: False
@@ -90,4 +90,4 @@ classif_shifted_points.py:
   output_dir: detections_oth_maps
   final_points: detections_oth_maps/final_matched_points.gpkg
   built_areas: ../../data/siedlung_subset_2024_2056_FR.gpkg
-  heatmap: detections_oth_maps/heatmap/heatmap.gpkg
+  heatmap: detections_oth_maps/heatmap.gpkg

@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
-from folium import Map, plugins
+# from folium import Map, plugins
 
 sys.path.insert(1, 'scripts')
 from functions.fct_misc import format_logger, get_config
@@ -68,11 +68,11 @@ for zone in tqdm(fp_points_with_zones_gdf.zone.unique(), desc='Create a grid to 
     fp_points_in_zone_gdf = fp_points_with_zones_gdf[fp_points_with_zones_gdf.zone==zone].copy()
 
 # Plot heatmap
-# https://geopandas.org/en/stable/gallery/plotting_with_folium.html#Folium-Heatmaps
-map = Map(location=[46.7, 7.1], zoom_start=11, control_scale=True,)
-heat_data = [[point.xy[1][0], point.xy[0][0]] for point in fp_points_gdf.geometry.to_crs(4326)]
-plugins.HeatMap(heat_data).add_to(map)
-map.save(os.path.join(OUTPUT_DIR, f'heatmap.html'))
+# # https://geopandas.org/en/stable/gallery/plotting_with_folium.html#Folium-Heatmaps
+# map = Map(location=[46.7, 7.1], zoom_start=11, control_scale=True,)
+# heat_data = [[point.xy[1][0], point.xy[0][0]] for point in fp_points_gdf.geometry.to_crs(4326)]
+# plugins.HeatMap(heat_data).add_to(map)
+# map.save(os.path.join(OUTPUT_DIR, f'heatmap.html'))
 
 # Get density of points in the grid
 fp_points_on_grid_gdf = total_grid_gdf.sjoin(fp_points_gdf[['pt_id', 'geometry']])

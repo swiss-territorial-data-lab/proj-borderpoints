@@ -55,7 +55,7 @@ logger.info('Format heatmap...')
 # Do not consider FP in "large" built-up areas
 large_built_areas_gdf = built_areas_gdf[built_areas_gdf.area > 1600].copy()
 logger.info('     - Exclude built-up areas...')
-heatmap_countryside_gdf = heatmap_gdf[~heatmap_gdf.intersects(large_built_areas_gdf.union_all())].reset_index(drop=True)
+heatmap_countryside_gdf = heatmap_gdf[~heatmap_gdf.intersects(large_built_areas_gdf.unary_union)].reset_index(drop=True)
 
 logger.info('     - Only keep elements with a high count or part of a cluster...')
 heatmap_countryside_gdf.loc[:, 'geometry'] = heatmap_countryside_gdf.buffer(1)
