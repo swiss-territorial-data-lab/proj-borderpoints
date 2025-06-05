@@ -125,10 +125,10 @@ The workflow is divided into three parts:
     - Clip the plan to the subtiles.
 * Detection of the border points with the STDL object detector: the necessary documentation is available in the [associated GitHub repository](https://github.com/swiss-territorial-data-lab/object-detector)
 * Post-processing: produce one file with all the detections formatted according to the expert requirements.
-    - `post_processing.py`: the detections are filtered by their confidence score and ...
+    - `post_processing.py`: the detections are filtered by their confidence score and merged to their neighbors on adjacent tiles if they share the same class,
     - `point_matching.py`: the detections are matched with the points of the cadastral surveying for areas where it is not fully updated yet,
-    - `check_w_land_cover.py`: use the data on land cover to assign the class "non-materialized point" to undetermined points in building and stagnant waters.
-    - `heatmap.py`: highlight areas with a high concentration of false positive points.
+    - `check_w_land_cover.py`: use the data on land cover to assign the class "non-materialized point" to undetermined points in building and stagnant waters,
+    - `heatmap.py`: highlight areas with a high concentration of false positive points,
 
 All the parameters are passed through a configuration file. Some fixed parameters are set for the whole process in `constants.py`.
 
@@ -170,6 +170,8 @@ python scripts/post_processing/point_matching.py config/config_entire_plans.yaml
 python scripts/post_processing/check_w_land_cover.py config/config_entire_plans.yaml
 python scripts/post_processing/heatmap.py config/config_entire_plans.yaml
 ```
+
+An additional script, `classif_shifted_points.py`, was produced to maximize the quantity of points classified, but its impact on the metrics was never assessed. It considers a larger neighborhood for point matching, but only points away from settlments and and on hotspot or cluster of the heatmap.
 
 ## Additional information
 
