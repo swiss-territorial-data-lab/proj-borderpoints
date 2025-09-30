@@ -12,9 +12,10 @@ from skimage import color
 from skimage.feature import hog
 from skimage.transform import resize
 import sklearn.feature_selection as sfse
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 from joblib import dump, load
-from math import floor
 
 sys.path.insert(1,'scripts')
 import functions.fct_misc as misc
@@ -32,9 +33,10 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
     return hog_features
 
 # def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, variance_threshold=0.01, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
-def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshold=0.005, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):   # Double model
+def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, fit_filter=True, pca_dir='PCA', save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
+    pca_dir = os.path.join(output_dir, pca_dir) if output_dir not in pca_dir else pca_dir
 
     if isinstance(tiles, dict):
         image_data = tiles
@@ -73,20 +75,28 @@ def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshol
 
     logger.info('Select features based on variance...')
     if fit_filter:
-        variance_filter = sfse.VarianceThreshold(threshold=variance_threshold)
-        try: 
-            filtered_var_features = variance_filter.fit_transform(hog_features_df.to_numpy())
-        except ValueError as e:
-            if "No feature in X meets the variance threshold" in str(e):
-                return pd.DataFrame(), []
-            else:
-                raise(e)
+        scaler = StandardScaler()
+        scaler_transformer = scaler.fit(hog_features_df.to_numpy())
+        scaled_features = scaler_transformer.transform(hog_features_df.to_numpy())
+        pca = PCA(n_components=100, random_state=42)
+        pca_transformer = pca.fit(scaled_features)
+        print("Mean explained variance:", np.mean(pca_transformer.explained_variance_ratio_))
+        number_pc = np.sum(pca_transformer.explained_variance_ratio_ > np.mean(pca_transformer.explained_variance_ratio_))
+        print("Cumulative:", np.cumsum(pca_transformer.explained_variance_ratio_[:number_pc]))
+        # Only keep features with a variance higher than mean
+        features_pca = pca_transformer.transform(scaled_features)[:, :number_pc]
     else:
-        with open(filter_path, 'rb') as f:
-            variance_filter = load(f)
-        filtered_var_features = variance_filter.transform(hog_features_df.to_numpy())
+        nbr_pc = 29
+        logger.info(f'Load {nbr_pc} PCA elements...')
+        with open(os.path.join(pca_dir, 'pca_transformer.pkl'), 'rb') as f:
+            pca_transformer = load(f)
+        with open(os.path.join(pca_dir, 'scaler_transformer.pkl'), 'rb') as f:
+            scaler_transformer = load(f)
+        scaled_features = scaler_transformer.transform(hog_features_df.to_numpy())
+        features_pca = pca_transformer.transform(hog_features_df.to_numpy())[:, :nbr_pc]
         
-    filtered_hog_features_df = pd.DataFrame(filtered_var_features, index=hog_features_df.index)
+        
+    filtered_hog_features_df = pd.DataFrame(features_pca, index=hog_features_df.index)
     feature_number = filtered_hog_features_df.shape[1]
     logger.info(f'Final number of HOG features: {feature_number}')
     if feature_number > 5000:
@@ -99,10 +109,15 @@ def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshol
     written_files = [filepath]
 
     if save_extra:
-        logger.info('Save variance filter...')
-        filepath = os.path.join(output_dir, 'variance_filter.pkl')
+        logger.info('Save PCA elements...')
+        os.makedirs(pca_dir, exist_ok=True)
+        filepath = os.path.join(pca_dir, 'pca_transformer.pkl')
         with open(filepath, 'wb') as f:
-            dump(variance_filter, f, protocol=5)
+            dump(pca_transformer, f, protocol=5)
+        written_files.append(filepath)
+        filepath = os.path.join(pca_dir, 'scaler_transformer.pkl')
+        with open(filepath, 'wb') as f:
+            dump(scaler_transformer, f, protocol=5)
         written_files.append(filepath)
 
     return filtered_hog_features_df, written_files
