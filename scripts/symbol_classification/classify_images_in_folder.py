@@ -71,7 +71,7 @@ if __name__ == '__main__':
     TILE_DIR = cfg['tile_dir']
 
     IMAGE_INFO_GPKG = cfg['image_info_gpkg']
-    VARIANCE_FILTER = cfg['variance_filter']
+    PATH_FILTER = cfg['path_filter']
     MODEL_DIR = cfg['model_dir']
 
     os.chdir(WORKING_DIR)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     logger.info('Extract HOG features...')
     hog_features_df, written_files_hog = hog.main(
         image_data,
-        fit_filter=False, filter_path=VARIANCE_FILTER, output_dir=output_dir
+        fit_filter=False, filter_path=PATH_FILTER, output_dir=output_dir
     )
     hog_features_df = misc.format_hog_info(hog_features_df)
 

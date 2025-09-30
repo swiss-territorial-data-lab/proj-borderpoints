@@ -32,11 +32,12 @@ def im_list_to_hog(im_list, ppc, cpb, orientations):
 
     return hog_features
 
-# def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, variance_threshold=0.01, fit_filter=True, filter_path=None, save_extra=False, output_dir='outputs'):     # Single model
-def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, fit_filter=True, pca_dir='PCA', save_extra=False, output_dir='outputs'):   # Double model
+def main(tiles, image_size=98, ppc=17, cpb=3, orientations=4, fit_filter=True, filter_path='_', save_extra=False, output_dir='outputs'):     # Single model
+# def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, fit_filter=True, pca_dir='PCA', save_extra=False, output_dir='outputs'):   # Double model
 
     os.makedirs(output_dir, exist_ok=True)
-    pca_dir = os.path.join(output_dir, pca_dir) if output_dir not in pca_dir else pca_dir
+    if filter_path == '_':
+        filter_path = os.path.join(output_dir, 'PCA') if 'PCA'.lower() not in output_dir.lower() else output_dir
 
     if isinstance(tiles, dict):
         image_data = tiles
@@ -88,9 +89,9 @@ def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, fit_filter=True, 
     else:
         nbr_pc = 29
         logger.info(f'Load {nbr_pc} PCA elements...')
-        with open(os.path.join(pca_dir, 'pca_transformer.pkl'), 'rb') as f:
+        with open(os.path.join(filter_path, 'pca_transformer.pkl'), 'rb') as f:
             pca_transformer = load(f)
-        with open(os.path.join(pca_dir, 'scaler_transformer.pkl'), 'rb') as f:
+        with open(os.path.join(filter_path, 'scaler_transformer.pkl'), 'rb') as f:
             scaler_transformer = load(f)
         scaled_features = scaler_transformer.transform(hog_features_df.to_numpy())
         features_pca = pca_transformer.transform(hog_features_df.to_numpy())[:, :nbr_pc]
@@ -110,12 +111,12 @@ def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, fit_filter=True, 
 
     if save_extra:
         logger.info('Save PCA elements...')
-        os.makedirs(pca_dir, exist_ok=True)
-        filepath = os.path.join(pca_dir, 'pca_transformer.pkl')
+        os.makedirs(filter_path, exist_ok=True)
+        filepath = os.path.join(filter_path, 'pca_transformer.pkl')
         with open(filepath, 'wb') as f:
             dump(pca_transformer, f, protocol=5)
         written_files.append(filepath)
-        filepath = os.path.join(pca_dir, 'scaler_transformer.pkl')
+        filepath = os.path.join(filter_path, 'scaler_transformer.pkl')
         with open(filepath, 'wb') as f:
             dump(scaler_transformer, f, protocol=5)
         written_files.append(filepath)
