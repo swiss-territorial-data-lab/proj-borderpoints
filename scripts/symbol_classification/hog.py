@@ -73,9 +73,10 @@ def main(tiles, image_size=110, ppc=15, cpb=3, orientations=5, variance_threshol
 
     logger.info('Select features based on variance...')
     if fit_filter:
-        variance_filter = sfse.VarianceThreshold(threshold=variance_threshold)
+        variance_transform = sfse.VarianceThreshold(threshold=variance_threshold)
+        variance_filter = variance_transform.fit(hog_features_df.to_numpy())
         try: 
-            filtered_var_features = variance_filter.fit_transform(hog_features_df.to_numpy())
+            filtered_var_features = variance_filter.transform(hog_features_df.to_numpy())
         except ValueError as e:
             if "No feature in X meets the variance threshold" in str(e):
                 return pd.DataFrame(), []
